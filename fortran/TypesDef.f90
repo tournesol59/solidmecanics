@@ -30,6 +30,7 @@ MODULE Types
      real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
      real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
      real,pointer         :: x(:),y(:)      ! Koordinaten der Gitterpunkte    !
+					    ! Anzahl: (nraumx+1)*(nraumy+1)   !
   end type tMesh
 
   type tZeiten
@@ -47,14 +48,20 @@ MODULE Types
   end type tZeiten
 
   type tRandbedingungen
+     integer              :: randltype      ! RandTyp links: 1=Fixed, 2=Momentum, 3=Freibiegung
      real,pointer         :: randl(:)       ! Randwerte links                 !
+     integer              :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Momentum, 3=Freibiegung
      real,pointer         :: randr(:)       ! Randwerte rechts                !
+     integer              :: randotype      ! RandTyp oben: 1=Fixed, 2=Momentum, 3=Freibiegung
      real,pointer         :: rando(:)       ! Randwerte oben                  !
+     integer              :: randutype      ! RandTyp unten: 1=Fixed, 2=Momentum, 3=Freibiegung
      real,pointer         :: randu(:)       ! Randwerte unten                 !
   end type tRandbedingungen
   
-  type tConstants
+  type tConstants  ! Original for Waermetransportsproblem geplant !
      real                 :: Pi             ! Pi                              !
+     real                 :: EY             ! Young Module                    !
+     real                 :: nu             ! Poisson coefficient             !
      real                 :: kappa          ! Eigenfrequenz                   !
      real                 :: waerme         ! Waermeleitfaehigkeit            !
      real                 :: eps            ! Genauigkeit                     !
