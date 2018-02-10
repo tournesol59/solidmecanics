@@ -18,7 +18,11 @@ module Interpol2D_mod
   interface interpolref
      module procedure interpolref
   end interface
-  
+   
+  interface basisdifferenz
+     module procedure basisdifferenz
+  end interface
+ 
   interface christoffei
      module procedure christoffei
   end interface
@@ -30,10 +34,14 @@ module Interpol2D_mod
   interface lgderivf
      module procedure lgderivf
   end interface
-
+ 
+  interface trychristoffei
+     module procedure trychristoffei
+  end interface
 
 !------------------------------------------------------------!
- public :: fillinterpol, interpolref, christoffei, lgeval, lgderivf  !, lgderivS, lgderivf_S
+ public :: fillinterpol, interpolref, basisdifferenz, christoffei &
+            , lgeval, trychristoffei  !, lgderivS, lgderivf_S
 !------------------------------------------------------------!
  ! Global Variablen
  !!! type(tNode),pointer  :: derivbasis(:, :)  ! 2D array von real basis Vektor-derivativen  in der naturalen x,y,z Basis Richtungen!
@@ -274,7 +282,7 @@ module Interpol2D_mod
    use types 
    implicit none
     type(tMesh),intent(in)                   :: Gitter
-    real,intent(inout)               :: chicoeff(1:8,1:200)  ! 2nd Dimension ist nraumx*nraumy
+    real,intent(inout)               :: chicoeff(1:8,1:100)  ! 2nd Dimension ist nraumx*nraumy
     ! Ein Kristoffei coefficient K{g}{a,b} wird oft in dem Formeln benutzt
     ! der(Ua)%dxb = sum,g K{g}{a,b}*Ug,  wo die Ua,Ug sind das lokal BasisVektoren
     ! Hier die der(Ua)%dxb Koordinaten, aber planar!
@@ -347,20 +355,61 @@ module Interpol2D_mod
 
      enddo
    enddo
-
- 
   END SUBROUTINE christoffei
+
 
   !**************************************************************************!
   !                                                                          !
   ! Funktion lgeval                                                          !
   !                                                                          !
   !      Funktion: berechnet die Werten von Polynoms an dem Node (xi,yi)     !
-  !      generische Lagrange 2D Polynoms fuer Interpolation der realen Loesung! 
+  !     generische Lagrange 2D Polynoms fuer Interpolation der realen Loesung! 
   !                                                                          !
   !**************************************************************************!
-
   subroutine lgeval(n,x,y,pi,fxy)
+     use types
+     implicit none
+     integer,intent(in)           :: n   ! Order der Interpolation2D 2 = x,y,x*y,x**2, y**2
+     real,intent(in)              :: x
+     real,intent(in)              :: y ! Punkt der Evaluation   
+     integer,intent(in)           :: pi  ! Indiz des Facets
+     real,intent(out)             :: fxy  ! Resultat
+     ! pi nimmt 6 differenten Forms auf einen Referenznetz von 6 facets
+     ! facet a/ eqn: x  +z=1 
+     ! facet b/ eqn:   y+z=1 
+     ! facet c/ eqn:-x+y+z=1 
+     ! facet d/ eqn:-x  +z=1 
+     ! facet e/ eqn:  -y+z=1 
+     ! facet f/ eqn: x-y+z=1 
+     select case (pi)
+       case (1)
+          fxy = 1-x
+       case (2)
+          fxy = 1-y
+       case (3)
+          fxy = 1+x-y
+       case (4)
+          fxy = 1+x
+       case (5)
+          fxy = 1+y
+       case (6)
+          fxy = 1-x+y
+     end select
+        
+!     WRITE(*,*)  'Value p(',pi,') =', fxy
+  END subroutine lgeval
+
+
+  !**************************************************************************!
+  !                                                                          !
+  ! Funktion lgeval3                                                         !
+  !                                                                          !
+  !      Funktion: berechnet die Werten von Polynoms an dem Node (xi,yi)     !
+  !      generische Lagrange 2D Polynoms mit zweiter Ordnung (x*y)           ! 
+  !      fuer Interpolation der realen Loesung                               !
+  !**************************************************************************!
+
+  subroutine lgeval3(n,x,y,pi,fxy)
      use types
      implicit none
      integer,intent(in)           :: n   ! Order der Interpolation2D 2 = x,y,x*y,x**2, y**2
@@ -385,54 +434,64 @@ module Interpol2D_mod
           fxy = 0.25*(-x*y+y-x+1)
      end select
         
-     WRITE(*,*)  'Value p(',pi,') =', fxy
-  END subroutine lgeval
+!     WRITE(*,*)  'Value p(',pi,') =', fxy
+  END subroutine lgeval3
 
 
   !**************************************************************************!
   !                                                                          !
-  ! Subroutine lderivf                                                       !
+  ! Funktion trychristoffei                                                  !
   !                                                                          !
-  !      procedure: berechnet die Integral des Verschiebungsgradients auf    !
-  !      einer realen Flaeschenelement von Indiz k; Ausgang = Vektor(3)       ! 
+  !      Funktion: nach basisdifferenz und christoffei call, prueft die Werte!
+  !                von chicoeff, indem man sie am Bildschirm displayen       ! 
   !                                                                          !
   !**************************************************************************!
 
-  SUBROUTINE lgderivf(n,Gitter,ki,kj,dF,der_x,der_y,res)
+  SUBROUTINE trychristoffei(Gitter, chicoeff)
      use types
      implicit none
-     integer,intent(in)           :: n  ! Order der Interpolation2D 2 =default
-     type(tMesh),intent(in)       :: Gitter ! Gitter definiert in "TypesDef"
-     integer,intent(in)           :: ki
-     integer,intent(in)           :: kj ! Indizen des Elements
-     real,intent(in)              :: dF ! Flaeschen des Elements = (a1 x a2).n
-     real,pointer,intent(in)      :: der_x(:) ! Eingang = Vektor(2) pointer von
-                                     ! realen auf-x differenzierten Basisvektoren
-     real,pointer,intent(in)      :: der_y(:) ! Eingang = Vektor(2) pointer von
-                                     ! realen auf-y differenzierten Basisvektoren
+    type(tMesh),intent(in)           :: Gitter
+    real,intent(inout)               :: chicoeff(1:8,1:100)  ! 2nd Dimension ist nraumx*nraumy
+    ! lokal Variables
+    integer                          :: i,j,k,l
 
-     real,dimension(1:3),intent(out) :: res  ! Resultat der Berechnung
-     ! lokal
-     integer                      :: i,j,k
-     integer                      :: nrows=5,ncols=5 ! Anzeige Parameters
-     integer                      :: xs, ys    ! Anzeige step fuer den Matrix der_x
-     CHARACTER(LEN=*), PARAMETER  :: FMT7I = "(4I5, 4I5, 4I5, 4I5, 4I5, 4I5, 4I5)" !, 4I5, 4I5, 4I5, 4I5)"
-     CHARACTER(LEN=*), PARAMETER  :: FMT6E = "(4I5, 5E14.7, 5E14.7, 5E14.7, 5E14.7, 5E14.7, 5E14.7)" !, 5E14.7, 5E14.7)"
-     xs = Gitter%nraumx / ncols
-     ys = Gitter%nraumy / nrows
-     WRITE(*,'(A12)')  "   lgderivf"    !  man zeigt die Vektor-Eingaenge der_x, 
-     WRITE(*,'(A12)')  "vektor ax%dx" !  um die Werte mit den Ausgaenge zu pruefen
-     WRITE(*,'(A12)')  " ==========="
-     WRITE(*,FMT7I)  0, 1, 1+xs, 1+2*xs, 1+3*xs, 1+4*xs, 1+5*xs
-     do i=1,nrows
-       WRITE(*,FMT6E)  1+(i-1)*ys,der_x(1),der_x(1+xs),der_x(1+2*xs),der_x(1+3*xs),der_x(1+4*xs),der_x(1+5*xs)
-     end do
-     
+  ! Display input
+    write(*,*)
+    do j=0,Gitter%nraumy-1
+         write(*,302) '     x-data column j   =',j
+         write(*,102) (Gitter%x(j*Gitter%nraumx+i+1), i=0,Gitter%nraumx-1)
+    enddo
+    write(*,*)
+    do j=0,Gitter%nraumy-1
+         write(*,302) '     y-data column j   =',j
+         write(*,102) (Gitter%y(j*Gitter%nraumx+i+1), i=0,Gitter%nraumx-1)
+    enddo
+  ! Display output
+    write(*,*)
+    do j=0,Gitter%nraumy-1
+      do i=0,Gitter%nraumx-1
+         k=j*Gitter%nraumx+i+1
+         write(*,302) '    Node k   =' ,k,'  {'
 
-     res(1)=0.0  ! stub procedure im Moment !
-     res(2)=0.0
-     res(3)=0.0
-     END SUBROUTINE lgderivf
+          write(*,202) '      gamma{x}{xx}   = ' ,chicoeff(1,k)
+          write(*,202) '      gamma{y}{xx}   = ' ,chicoeff(2,k)
+          write(*,202) '      gamma{x}{xy}   = ' ,chicoeff(3,k)
+          write(*,202) '      gamma{y}{xy}   = ' ,chicoeff(4,k)
+          write(*,202) '      gamma{x}{yx}   = ' ,chicoeff(5,k)
+          write(*,202) '      gamma{y}{yx}   = ' ,chicoeff(6,k)
+          write(*,202) '      gamma{x}{yy}   = ' ,chicoeff(7,k)
+          write(*,202) '      gamma{y}{yy}   = ' ,chicoeff(8,k)
+
+        write(*,*) '   }'
+        write(*,*)
+
+      enddo
+    enddo
+
+ 102  format (f10.5)
+ 202  format (a,f10.5)
+ 302  format (a,i10)
+  END SUBROUTINE trychristoffei
 
 end module Interpol2D_mod
 

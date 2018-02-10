@@ -30,7 +30,7 @@ program solidmain
   type(tConstants)           :: Const      ! Konstanten                      !
   type(tFileIO)              :: FileIO     ! Ausgabesteuerung                !
   type(tExakt)               :: Exakt      ! Exakte Loesung                  !
-  real,pointer               :: Uvar(:,:)  ! Feld mit der numerischen Loesung!
+  real,pointer               :: Uvar(:,:)  ! Feld mit der numerischen Loesung!!=Tr(spanng) !
   real,pointer               :: rhs(:,:)   ! Feld für die Rechte Seite       !
   !--------------------------------------------------------------------------!   
 
@@ -38,6 +38,7 @@ program solidmain
   real,pointer        :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:) &
                         ,der_a2yx_x(:),der_a2yx_y(:),der_a2yy_x(:),der_a2yy_y(:)
 
+  integer             :: allocStat
   ! ------------------------------------------< Eingabegroessen einlesen >---!
 
   call input(Gitter,Exakt,Const,FileIO)       
@@ -45,7 +46,7 @@ program solidmain
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
   call allocatefields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const)  
-  ! other
+
   allocate(der_a1xx_x(100))
   allocate(der_a1xx_y(100))
 
@@ -57,18 +58,53 @@ program solidmain
 
   allocate(der_a2yy_x(100))
   allocate(der_a2yy_y(100))
+
   ! --------------------------------------------------< Gitter festlegen >---!
 
-  !call createMesh(Gitter)          
+   call createMesh(Gitter)          
+   call trychristoffei(Gitter, chicoeff)
 
-  write(*,*) '================    Calculation starts now    ================ '
+  write(*,*) '================    Interpolation starts now    ================ '
   write(*,*)
 
-  call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
-                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+ ! call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
+ !                                ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
 
-  call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
-                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+  write(*,*) '     differenz der lokalen Basis kompletiert    '
+  !call trychristoffei(Gitter, chicoeff)
 
+
+ ! call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
+ !                                ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+
+  write(*,*) '     Christoffei Koeffizienten berechnet   '
+ ! call trychristoffei(Gitter, chicoeff)
+
+
+  ! ------------------------------------------< Speicherplatz allokieren >---!
+
+  !call deallocateFields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const) 
+    deallocate(Gitter%x, Gitter%y, RB%randl, RB%randr, RB%rando, RB%randu, &
+         Exakt%loesung, Uvar, rhs, chicoeff, STAT = allocStat )
+    
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateFields: Could not deallocate correctly!'
+       STOP
+    end if 
+  
+  deallocate(der_a1xx_x)
+  deallocate(der_a1xx_y)
+
+  deallocate(der_a1xy_x)
+  deallocate(der_a1xy_y)
+
+  deallocate(der_a2yx_x)
+  deallocate(der_a2yx_y)
+
+  deallocate(der_a2yy_x)
+  deallocate(der_a2yy_y)
+
+    write(*,*) 
+    write(*,*) '============= Program terminated correctly ================ '
 
 end program solidmain

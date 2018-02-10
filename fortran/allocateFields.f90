@@ -8,6 +8,8 @@
 !                                                                            !
 !      Mesh%x,Mesh%y            Koordinaten der Gitterpunkte                 !
 !      Uvar                     Feld mit der numerischen Lösung              !
+!      Verschiebung(1:3,:) ! 3 Verschiebungen in der Mitte der Platte        !
+!      TensionTg(1:4,:)    ! array pointer: Spannung tengential              !
 !                                                                            !
 !****************************************************************************!
 
@@ -28,7 +30,7 @@ module allocateFields_mod
 
 contains
 
-  subroutine allocateFields(Mesh,RB,Uvar,rhs,Exakt,chicoeff,Const)
+  subroutine allocateFields(Mesh,RB,Uvar,rhs,Exakt,chicoeff,Const,VarNum)
     
     use TYPES
     
@@ -41,28 +43,32 @@ contains
     !                                                                        !
     type(tMesh)            :: Mesh       ! Gitterwerte                       !
     type(tRandbedingungen) :: RB         ! Randbedingungen                   !
-    real,pointer           :: Uvar(:,:)  ! Feld mit der numerischen Loesung  !
+    real,pointer           :: Uvar(:,:)  ! Feld mit der numerischen Auswertg !=Tr(spanng)!
     real,pointer           :: rhs(:,:)   ! Feld für die Rechte Seite         !
     type(tExakt)           :: Exakt      ! Exakte Loesung                    !
-    real,pointer           :: chicoeff(:,:) ! Feld fuer derivat-BasisVektor !
+    real,pointer           :: chicoeff(:,:) ! Feld fuer derivat-BasisVektor  !
     type(tConstants)       :: Const      ! Konstanten                        !
+    type(tNumeric)         :: VarNum     ! Numerische Felder mit Loesungen   !
     !                                                                        !
     ! Local variable declaration                                             !
     !                                                                        !
     integer                 :: allocStat                                     !
     !------------------------------------------------------------------------!
     intent(in)              :: Const
-    intent(inout)           :: Mesh,RB,Exakt,chicoeff
+    intent(inout)           :: Mesh,RB,Exakt,chicoeff,VarNum !
     !------------------------------------------------------------------------!
 
 
-    allocate(Mesh%x(1:Mesh%nraumx),Mesh%y(1:Mesh%nraumy),  &
+    allocate(Mesh%x(1:Mesh%nraumx*Mesh%nraumy),Mesh%y(1:Mesh%nraumx*Mesh%nraumy),  &
          RB%randl(1:Mesh%nraumx), RB%randr(1:Mesh%nraumx), &
          RB%rando(1:Mesh%nraumy), RB%randu(1:Mesh%nraumy), &
          Uvar(1:Mesh%nraumx,1:Mesh%nraumy),                &
          rhs(1:Mesh%nraumx,1:Mesh%nraumy),                 &
          Exakt%loesung(1:Mesh%nraumx,1:Mesh%nraumy),       &
          chicoeff(1:8,1:Mesh%nraumx*Mesh%nraumy), &
+         VarNum%Verschiebung(1:3,Mesh%nraumx*Mesh%nraumy), &  
+         VarNum%TensionTg(1:4,Mesh%nraumx*Mesh%nraumy), &
+         VarNum%Tension3(1:2,Mesh%nraumx*Mesh%nraumy), &
          STAT = allocStat )
     
     if (allocStat.NE.0) then
@@ -74,7 +80,7 @@ contains
 
 
 
-  subroutine deallocateFields(Mesh,RB,Uvar,rhs,Exakt,chicoeff)
+  subroutine deallocateFields(Mesh,RB,Uvar,rhs,Exakt,chicoeff,Const,VarNum)
     
     use TYPES
     
@@ -91,16 +97,23 @@ contains
     real,pointer           :: Uvar(:,:)  ! Feld mit der numerischen Loesung  !
     real,pointer           :: rhs(:,:)   ! Feld für die Rechte Seite         !
     real,pointer           :: chicoeff(:,:,:) ! Feld fuer derivat-BasisVektor !
+    type(tConstants)       :: Const      ! Konstanten                        !
+    type(tNumeric)         :: VarNum    ! Numerische Felder mit Loesungen    !
     !                                                                        !
     ! Local variable declaration                                             !
     !                                                                        !
     integer                 :: allocStat                                     !
     !------------------------------------------------------------------------!
-    intent(inout)           :: Mesh,RB,Exakt,chicoeff
+    intent(in)              :: Const
+    intent(inout)           :: Mesh,RB,Exakt,chicoeff,VarNum 
     !------------------------------------------------------------------------!
   
     deallocate(Mesh%x, Mesh%y, RB%randl, RB%randr, RB%rando, RB%randu, &
-         Exakt%loesung, Uvar, rhs, chicoeff, STAT = allocStat )
+         Exakt%loesung, Uvar, rhs, chicoeff, & 
+         VarNum%Verschiebung, VarNum%TensionTg, VarNum%Tension3, &
+       STAT = allocStat )
+
+
     
     if (allocStat.NE.0) then
        print *, 'ERROR AllocateFields: Could not deallocate correctly!'

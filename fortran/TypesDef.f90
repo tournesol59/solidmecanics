@@ -30,10 +30,16 @@ MODULE Types
      real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
      real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
      real,pointer         :: x(:),y(:)      ! Koordinaten der Gitterpunkte    !
-					    ! Anzahl: (nraumx+1)*(nraumy+1)   !
+					    ! Anzahl: (nraumx)*(nraumy)       !
   end type tMesh
 
-  type tZeiten
+  type tNumeric
+    real, pointer     :: Verschiebung(:,:) ! 3 Verschiebungen in der Mitte der Platte !
+    real, pointer     :: TensionTg(:,:)    ! array pointer: Spannung tengential Tensor  !
+    real, pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung 3 !
+  end type tNumeric
+
+  type tZeiten  ! wird nicht beutzt fuer Platten Festigkeit  !
      real                 :: zeit           ! Endzeitpunkt                    !
      real                 :: sigma          ! Sicherheit gegen Stabilitaet    !
      real                 :: dtin           ! delta t     (fuer delta t fest) !
@@ -62,6 +68,7 @@ MODULE Types
      real                 :: Pi             ! Pi                              !
      real                 :: EY             ! Young Module                    !
      real                 :: nu             ! Poisson coefficient             !
+         ! REST WIRD NICHT BENUTZT !
      real                 :: kappa          ! Eigenfrequenz                   !
      real                 :: waerme         ! Waermeleitfaehigkeit            !
      real                 :: eps            ! Genauigkeit                     !
@@ -121,7 +128,7 @@ MODULE Types
 
   !---------------------------------------------------------------------------!
   public  :: tMesh, tZeiten, tRandbedingungen, tConstants, tLogicals, &
-             tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D
+             tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, tNumeric
   !---------------------------------------------------------------------------!
 
 ! contains

@@ -47,7 +47,7 @@ module createmesh_mod
   !---<  nraumx   = anzahl der inneren punkte                 >-----------
   !---<  nraumx+1 = anzahl der inneren zellen                 >-----------
 
-  Mesh%dx     = (Mesh%endx-Mesh%startx)/(Mesh%nraumx+1)
+  Mesh%dx     = (Mesh%endx-Mesh%startx)/(Mesh%nraumx-1)
   Mesh%dxq    = 1./Mesh%dx
   Mesh%dxx    = Mesh%dx*Mesh%dx
   Mesh%dxxq   = Mesh%dxq*Mesh%dxq
@@ -55,7 +55,6 @@ module createmesh_mod
   !---<  x(0)             = linker  rand                      >-----------
   !---<  x(nraumx+1)      = rechter rand                      >-----------
   !---<  x(i) i=1,nraumx  = innere  punkte                    >-----------
-  
   do i= 0,Mesh%nraumx-1 
     do j= 0,Mesh%nraumy-1
      Mesh%x(j*(Mesh%nraumx)+i+1)   = Mesh%startx + i*Mesh%dx
@@ -65,7 +64,7 @@ module createmesh_mod
   !---<  nraumy   = anzahl der inneren punkte                 >-----------
   !---<  nraumy+1 = anzahl der inneren zellen                 >-----------
   
-  Mesh%dy     = (Mesh%endy - Mesh%starty)/(Mesh%nraumy+1)
+  Mesh%dy     = (Mesh%endy - Mesh%starty)/(Mesh%nraumy-1)
   Mesh%dyq    = 1./Mesh%dy
   Mesh%dyy    = Mesh%dy*Mesh%dy
   Mesh%dyyq   = Mesh%dyq*Mesh%dyq
@@ -76,7 +75,7 @@ module createmesh_mod
   
    do j= 0,Mesh%nraumy-1 
     do i= 0,Mesh%nraumx-1
-     Mesh%y(j*(Mesh%nraumx+1)+i+1)   = Mesh%starty + j*Mesh%dy
+     Mesh%y(j*(Mesh%nraumx)+i+1)   = Mesh%starty + j*Mesh%dy
     enddo
   enddo
 
@@ -94,7 +93,6 @@ module createmesh_mod
   Mesh%xlen = Mesh%endx - Mesh%startx
   Mesh%ylen = Mesh%endy - Mesh%starty
   
-
   end subroutine createMesh
 
 end module createmesh_mod
