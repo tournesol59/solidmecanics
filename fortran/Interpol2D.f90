@@ -11,33 +11,29 @@ module Interpol2D_mod
   implicit none
   private
   
-  interface fillinterpol
-     module procedure fillinterpol
-  end interface
+!  interface fillinterpol
+!     module procedure fillinterpol
+!  end interface
 
-  interface interpolref
-     module procedure interpolref
-  end interface
+!  interface interpolref
+!     module procedure interpolref
+!  end interface
    
-  interface basisdifferenz
-     module procedure basisdifferenz
-  end interface
+!  interface basisdifferenz
+!     module procedure basisdifferenz
+!  end interface
  
-  interface christoffei
-     module procedure christoffei
-  end interface
+!  interface christoffei
+!     module procedure christoffei
+!  end interface
 
-  interface lgeval
-     module procedure lgeval
-  end interface
-
-  interface lgderivf
-     module procedure lgderivf
-  end interface
+!  interface lgeval
+!     module procedure lgeval
+!  end interface
  
-  interface trychristoffei
-     module procedure trychristoffei
-  end interface
+!  interface trychristoffei
+!     module procedure trychristoffei
+!  end interface
 
 !------------------------------------------------------------!
  public :: fillinterpol, interpolref, basisdifferenz, christoffei &

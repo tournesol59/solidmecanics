@@ -1,11 +1,11 @@
-program solidmain
+program main
 
   use types
   use input_mod
   use allocatefields_mod
   use createmesh_mod
   use interpol2d_mod
-  use calcgradientsurf_mod
+!  use calcgradientsurf_mod
 
   implicit none
   ! Testen CalcGradientSurf, 
@@ -32,6 +32,7 @@ program solidmain
   type(tExakt)               :: Exakt      ! Exakte Loesung                  !
   real,pointer               :: Uvar(:,:)  ! Feld mit der numerischen Loesung!!=Tr(spanng) !
   real,pointer               :: rhs(:,:)   ! Feld für die Rechte Seite       !
+  type(tNumeric)             :: VarNum     ! Numerische Felder mit Loesungen   !
   !--------------------------------------------------------------------------!   
 
   real,pointer        :: chicoeff(:,:)
@@ -45,7 +46,7 @@ program solidmain
 
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
-  call allocatefields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const)  
+  call allocatefields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const,VarNUm)  
 
   allocate(der_a1xx_x(100))
   allocate(der_a1xx_y(100))
@@ -107,4 +108,4 @@ program solidmain
     write(*,*) 
     write(*,*) '============= Program terminated correctly ================ '
 
-end program solidmain
+end program main
