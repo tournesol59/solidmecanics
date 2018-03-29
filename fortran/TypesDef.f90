@@ -29,7 +29,7 @@ MODULE Types
      real                 :: dyy            ! dy^2 (Delta y * Delta y )       !
      real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
      real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
-     real,pointer         :: x(:),y(:)      ! Koordinaten der Gitterpunkte    !
+     real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
 					    ! Anzahl: (nraumx)*(nraumy)       !
   end type tMesh
 
@@ -68,6 +68,7 @@ MODULE Types
      real                 :: Pi             ! Pi                              !
      real                 :: EY             ! Young Module                    !
      real                 :: nu             ! Poisson coefficient             !
+     integer              :: auto           ! Automatishes Auswahl eines vordefinierten Mesh !
          ! REST WIRD NICHT BENUTZT !
      real                 :: kappa          ! Eigenfrequenz                   !
      real                 :: waerme         ! Waermeleitfaehigkeit            !
@@ -87,6 +88,7 @@ MODULE Types
      character(20)        :: RB_Typ         ! Art der Randbedingungen         !
      character(20)        :: AW_Typ         ! Art der Anfangswerte            !
      character(20)        :: RHS_Datei      ! Datei mit Beschreibung der Quell!
+
   end type tConstants
 
   type tLogicals

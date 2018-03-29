@@ -61,25 +61,28 @@ program main
   allocate(der_a2yy_y(100))
 
   ! --------------------------------------------------< Gitter festlegen >---!
-
-   call createMesh(Gitter)          
+   if (Const%auto == 1) then
+      call createMesh(Gitter)    
+   else 
+      call createMesh2(Gitter)
+   endif
    call trychristoffei(Gitter, chicoeff)
 
   write(*,*) '================    Interpolation starts now    ================ '
   write(*,*)
 
- ! call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
- !                                ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+  call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
+                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
 
   write(*,*) '     differenz der lokalen Basis kompletiert    '
-  !call trychristoffei(Gitter, chicoeff)
+  call trychristoffei(Gitter, chicoeff)
 
 
- ! call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
- !                                ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+  call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
+                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
 
   write(*,*) '     Christoffei Koeffizienten berechnet   '
- ! call trychristoffei(Gitter, chicoeff)
+  call trychristoffei(Gitter, chicoeff)
 
 
   ! ------------------------------------------< Speicherplatz allokieren >---!

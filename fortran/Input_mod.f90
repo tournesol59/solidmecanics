@@ -72,7 +72,7 @@ subroutine Input(Mesh,Exakt,Const,FileIO)
   read (5,*)               
   read (5,201) Const%EY
   read (5,201) Const%nu
-  
+
   ! ----------------------------------<  Kontroll-Ausgabe der Groessen >--
   
   write(*,102) ' Rechengebiet: '
@@ -89,6 +89,11 @@ subroutine Input(Mesh,Exakt,Const,FileIO)
   write(*,102) ' '
   write(*,202) '    nu       = ' ,Const%nu
   write(*,102) ' '
+
+  write(*,*) 'confirm (1) or press (0) to choose a predefined curved square meshregion'
+
+  ! --- Rechengebiet:
+  read (5,301) Const%auto
 
   ! ----------------------------------<  set the logical values  >--------
 

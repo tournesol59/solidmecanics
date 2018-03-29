@@ -16,7 +16,13 @@
 module createmesh_mod
   implicit none
 
-  public :: createMesh
+  public :: createMesh, createMesh2
+!********************************************************************!
+!  Variable Tabelle der Biegung-Plate fuer ohne Einlesen der Werte                                  !
+!  (default is 10x10 Punkten)                                                                    !
+!********************************************************************!
+  real,dimension(10)        ::X1 =(/ -5.6, -5.0, -4.0, -2.8, -1.0,  1.0,  2.8,  4.0, 5.0, 5.6 /) 
+  real,dimension(10)        ::Z1 = (/ -2.4, -2.0, -1.33,-0.75,-0.2, -0.2,-0.75,-1.33,-2.0, -2.4 /) 
 
   contains
 
@@ -94,5 +100,72 @@ module createmesh_mod
   Mesh%ylen = Mesh%endy - Mesh%starty
   
   end subroutine createMesh
+
+
+
+
+  subroutine createMesh2(Mesh)
+
+  use types
+
+  implicit none
+
+  !--------------------------------------------------------------------------!
+  ! Variablendeklarationen                                                   !
+  !--------------------------------------------------------------------------!
+  ! Liste der übergebenen Argumente                                          !
+  !                                                                          !
+  type(tMesh)                :: Mesh       ! Gitterwerte                     !
+  !                                                                          !
+  ! Local variable declaration                                               !
+  !                                                                          !
+  integer                    :: i,j        ! Zählvariablen                   !
+  !--------------------------------------------------------------------------!
+  !!! intent(in)                 :: Const
+  intent(inout)              :: Mesh
+  !--------------------------------------------------------------------------!
+
+
+  !-----------------------------------<  calculate constants  >-----------
+  !
+  !---<  nraumx   = anzahl der inneren punkte                 >-----------
+  !---<  nraumx+1 = anzahl der inneren zellen                 >-----------
+   
+  Mesh%startx = X1(1)
+  Mesh%endx = X1(10)
+
+  Mesh%dx     = (Mesh%endx-Mesh%startx)/(Mesh%nraumx-1)
+  Mesh%dxq    = 1./Mesh%dx
+  Mesh%dxx    = Mesh%dx*Mesh%dx
+  Mesh%dxxq   = Mesh%dxq*Mesh%dxq
+
+  do i= 0,Mesh%nraumx-1 
+    do j= 0,Mesh%nraumy-1
+     Mesh%x(j*(Mesh%nraumx)+i+1)   = X1(i+1)
+    enddo
+  enddo
+
+  Mesh%dy     = (Mesh%endy - Mesh%starty)/(Mesh%nraumy-1)
+  Mesh%dyq    = 1./Mesh%dy
+  Mesh%dyy    = Mesh%dy*Mesh%dy
+  Mesh%dyyq   = Mesh%dyq*Mesh%dyq
+
+   do j= 0,Mesh%nraumy-1 
+    do i= 0,Mesh%nraumx-1
+     Mesh%y(j*(Mesh%nraumx)+i+1)   = Mesh%starty + j*Mesh%dy
+    enddo
+  enddo
+  
+  !------------ no information about dz,dzq,dzz,dzzq is used ------!
+
+  do i= 0,Mesh%nraumx-1 
+     do j= 0,Mesh%nraumy-1
+     Mesh%x(j*(Mesh%nraumx)+i+1)   = Z1(i+1)
+    enddo
+  enddo
+  
+  Mesh%xlen = Mesh%endx - Mesh%startx
+  Mesh%ylen = Mesh%endy - Mesh%starty
+  end subroutine createMesh2
 
 end module createmesh_mod

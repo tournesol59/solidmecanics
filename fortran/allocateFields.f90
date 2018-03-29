@@ -59,7 +59,9 @@ contains
     !------------------------------------------------------------------------!
 
 
-    allocate(Mesh%x(1:Mesh%nraumx*Mesh%nraumy),Mesh%y(1:Mesh%nraumx*Mesh%nraumy),  &
+    allocate(Mesh%x(1:Mesh%nraumx*Mesh%nraumy), &
+	 Mesh%y(1:Mesh%nraumx*Mesh%nraumy),  &
+	 Mesh%z(1:Mesh%nraumx*Mesh%nraumy),  &
          RB%randl(1:Mesh%nraumx), RB%randr(1:Mesh%nraumx), &
          RB%rando(1:Mesh%nraumy), RB%randu(1:Mesh%nraumy), &
          Uvar(1:Mesh%nraumx,1:Mesh%nraumy),                &
@@ -108,7 +110,7 @@ contains
     intent(inout)           :: Mesh,RB,Exakt,chicoeff,VarNum 
     !------------------------------------------------------------------------!
   
-    deallocate(Mesh%x, Mesh%y, RB%randl, RB%randr, RB%rando, RB%randu, &
+    deallocate(Mesh%x, Mesh%y, Mesh%z, RB%randl, RB%randr, RB%rando, RB%randu, &
          Exakt%loesung, Uvar, rhs, chicoeff, & 
          VarNum%Verschiebung, VarNum%TensionTg, VarNum%Tension3, &
        STAT = allocStat )

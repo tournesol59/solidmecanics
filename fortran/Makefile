@@ -72,12 +72,12 @@ endif
 #	rm -f $<
 
 #Regeln fuer Module
-$(TYPES): TypesDef.o
-${INPUT_MOD}: Input_mod.o
-$(ALLOCATEFIELDS): allocateFields.o
-${CREATEMESH}: createMesh.o
-{INTERPOL2D}: Interpol2D.o
-{LAGRANGE2D}: Lagrange2D.o
+$(TYPES): typesdef.o
+${INPUT_MOD}: input_mod.o
+$(ALLOCATEFIELDS): allocatefields.o
+${CREATEMESH}: createmesh.o
+{INTERPOL2D}: interpol2D.o
+{LAGRANGE2D}: Lagrange2d.o
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -96,16 +96,16 @@ sgi:
 ######################################################
 # Targets, die letztendlich das Programm Herstellen
 #
-library: $(LIB)(TypesDef.o) \
-	 $(LIB)(Input_mod.o) \
-	 $(LIB)(allocateFields.o) \
-	 $(LIB)(createMesh.o) \
-	 $(LIB)(Interpol2D.o) \
-	 $(LIB)(Lagrange2D.o)
+library: $(LIB)(typesdef.o) \
+	 $(LIB)(input_mod.o) \
+	 $(LIB)(allocatefields.o) \
+	 $(LIB)(createmesh.o) \
+	 $(LIB)(interpol2d.o) \
+	 $(LIB)(Lagrange2d.o)
 
 
 praktikum:library main.o
-	$(F90) $(F90_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
+	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
 	rm -f main.o 
 	@echo "============================================="
 	@echo "   Program Praktikum successfully compiled   "

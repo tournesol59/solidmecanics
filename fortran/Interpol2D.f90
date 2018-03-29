@@ -194,7 +194,7 @@ module Interpol2D_mod
       der_a1xx_x(j*Gitter%nraumx+1)=der_a1xx_x(j*Gitter%nraumx+2)
       der_a1xx_y(j*Gitter%nraumx+1)=der_a1xx_y(j*Gitter%nraumx+2)
     end do
-     do j=0,Gitter%nraumy-2
+     do j=0,Gitter%nraumy-2  ! Kopie des vorheriges index fuer das Rand, weil differenzieren unmoeglich ist !
       der_a1xx_x(j*Gitter%nraumx+Gitter%nraumy-1)=der_a1xx_x(j*Gitter%nraumx+Gitter%nraumy-2)
       der_a1xx_x(j*Gitter%nraumx+Gitter%nraumy)=der_a1xx_x(j*Gitter%nraumx+Gitter%nraumy-2)
       der_a1xx_y(j*Gitter%nraumx+Gitter%nraumy-1)=der_a1xx_y(j*Gitter%nraumx+Gitter%nraumy-2)
