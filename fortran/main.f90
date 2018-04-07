@@ -5,6 +5,8 @@ program main
   use allocatefields_mod
   use createmesh_mod
   use interpol2d_mod
+  use Lagrange2d_mod
+  use Lagrangegrad2d_mod
 !  use calcgradientsurf_mod
 
   implicit none
@@ -32,21 +34,25 @@ program main
   type(tExakt)               :: Exakt      ! Exakte Loesung                  !
   real,pointer               :: Uvar(:,:)  ! Feld mit der numerischen Loesung!!=Tr(spanng) !
   real,pointer               :: rhs(:,:)   ! Feld für die Rechte Seite       !
-  type(tNumeric)             :: VarNum     ! Numerische Felder mit Loesungen   !
+  type(tNumeric)             :: VarNum     ! Numerische Felder mit Loesungen !
   !--------------------------------------------------------------------------!   
-
-  real,pointer        :: chicoeff(:,:)
-  real,pointer        :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:) &
+  real,pointer   :: SparseSkalarProdRow1(:) ! sparse matrix csr format: three vectors (1)
+  real,pointer   :: SparseSkalarProdCol(:) ! sparse matrix csr format: three vectors (2)
+  real,pointer   :: SparseSkalarProdVal(:) ! sparse matrix csr format: three vectors (3)
+  real,pointer   :: chicoeff(:,:)
+  real,pointer   :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:) &
                         ,der_a2yx_x(:),der_a2yx_y(:),der_a2yy_x(:),der_a2yy_y(:)
 
-  integer             :: allocStat
+  integer        :: allocStat
   ! ------------------------------------------< Eingabegroessen einlesen >---!
 
   call input(Gitter,Exakt,Const,FileIO)       
 
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
-  call allocatefields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const,VarNUm)  
+  call allocatefields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const,VarNum)  
+
+  call linlgallocatesparse(Gitter, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal) 
 
   allocate(der_a1xx_x(100))
   allocate(der_a1xx_y(100))
@@ -85,6 +91,10 @@ program main
   call trychristoffei(Gitter, chicoeff)
 
 
+  !--------------------------------------< Matrix fuellen >---------------!
+
+  call linlgfillmatrix(Gitter, Const, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
+
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
   !call deallocateFields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const) 
@@ -95,7 +105,15 @@ program main
        print *, 'ERROR AllocateFields: Could not deallocate correctly!'
        STOP
     end if 
-  
+   
+    deallocate(SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal, &
+           STAT = allocStat);
+      
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateSparseMatrix: Could not deallocate correctly!'
+       STOP
+    end if 
+
   deallocate(der_a1xx_x)
   deallocate(der_a1xx_y)
 

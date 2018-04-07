@@ -69,9 +69,11 @@ contains
          Exakt%loesung(1:Mesh%nraumx,1:Mesh%nraumy),       &
          chicoeff(1:8,1:Mesh%nraumx*Mesh%nraumy), &
          VarNum%Verschiebung(1:3,Mesh%nraumx*Mesh%nraumy), &  
-         VarNum%TensionTg(1:4,Mesh%nraumx*Mesh%nraumy), &
+         VarNum%TensionTg(1:3,Mesh%nraumx*Mesh%nraumy), &
          VarNum%Tension3(1:2,Mesh%nraumx*Mesh%nraumy), &
          STAT = allocStat )
+     ! TensionTg sigma_xx, sigma_xy=sigma_yx and sigma_yy  !
+     ! Tension3 sigma_xz and sigma_yz  (sigma_zz=0)
     
     if (allocStat.NE.0) then
        print *, 'ERROR AllocateFields: Could not allocate all variables!'

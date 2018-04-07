@@ -46,7 +46,8 @@ LINUX_FLAGS = \
 	ALLOCATEFIELDS="ALLOCATEFIELDS_mod.mod" \
 	CREATEMESH="CREATEMESH_mod.mod" \
 	INTERPOL2D="INTERPOL2D_mod.mod" \
-        LAGRANGE2D="LAGRANGE2D_mod.mod"
+        LAGRANGE2D="LAGRANGE2D_mod.mod" \
+        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
@@ -57,7 +58,8 @@ LINUX_FLAGS = \
 	ALLOCATEFIELDS="allocatefields_mod.mod" \
 	CREATEMESH="createmesh_mod.mod" \
 	INTERPOL2D="interpol2d_mod.mod" \
-        LAGRANGE2D="lagrange2d_mod.mod"
+        LAGRANGE2D="lagrange2d_mod.mod" \
+        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod"
 endif
 
 ####################################################################
@@ -76,8 +78,9 @@ $(TYPES): typesdef.o
 ${INPUT_MOD}: input_mod.o
 $(ALLOCATEFIELDS): allocatefields.o
 ${CREATEMESH}: createmesh.o
-{INTERPOL2D}: interpol2D.o
+{INTERPOL2D}: interpol2d.o
 {LAGRANGE2D}: Lagrange2d.o
+{LAGRANGEGRAD2D}: Lagrangegrad2d.o 
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -101,8 +104,8 @@ library: $(LIB)(typesdef.o) \
 	 $(LIB)(allocatefields.o) \
 	 $(LIB)(createmesh.o) \
 	 $(LIB)(interpol2d.o) \
-	 $(LIB)(Lagrange2d.o)
-
+	 $(LIB)(Lagrange2d.o) \
+	 $(LIB)(Lagrangegrad2d.o)
 
 praktikum:library main.o
 	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
@@ -133,11 +136,12 @@ cleanall:
 $(LIB)(Input_mod.o): $(TYPES)
 $(LIB)(createMesh.o): $(TYPES)
 $(LIB)(allocateFields.o): $(TYPES)
-$(LIB)(Interpol2D.o): $(TYPES)
+$(LIB)(interpol2D.o): $(TYPES)
 $(LIB)(createMesh.o): $(TYPES)
-$(LIB)(Lagrange2D.o): $(TYPES) $(INTERPOL2D) 
+$(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) 
+$(LIB)(Lagrangegrad2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE2D)
 main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
-         $(LAGRANGE2D)
+         $(LAGRANGE2D) $(LAGRANGEGRAD2D)
 
 
 
