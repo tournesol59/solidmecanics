@@ -7,12 +7,13 @@ program main
   use interpol2d_mod
   use Lagrange2d_mod
   use Lagrangegrad2d_mod
-!  use calcgradientsurf_mod
+  use Lagrange1d_mod
+  use hermite1d_mod
+  use hermite2d_mod
 
   implicit none
-  ! Testen CalcGradientSurf, 
 
-  ! Parameter des Gitter,netz: Ebene auf eine Fläche
+ ! Parameter des Gitter,netz: Ebene auf eine Fläche
  ! integer      :: NRAUMX=20
  ! integer      :: NRAUMY=10
  ! real         :: STARTX=0.0
@@ -22,7 +23,7 @@ program main
   ! Referenz Flaeche ist ein Rechteck-quadratnetz mit NRAUMX*NRAUMY Elementen
 
   ! Parameter der Interpolation
-  integer      :: ORDER=2
+  integer      :: ORDER=3   ! 2 before
 
   !--------------------------------------------------------------------------!
   ! Variablendeklarationen                                                   !
@@ -42,8 +43,10 @@ program main
   real,pointer   :: chicoeff(:,:)
   real,pointer   :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:) &
                         ,der_a2yx_x(:),der_a2yx_y(:),der_a2yy_x(:),der_a2yy_y(:)
+!  Testen Lagrange1d functions
+  type(tPolynom) :: pol_pts, pol_root1, pol_nom1, pol_value, pol_lagr, pol_der, pol_herm
 
-  integer        :: allocStat
+  integer        :: i,j, allocStat
   ! ------------------------------------------< Eingabegroessen einlesen >---!
 
   call input(Gitter,Exakt,Const,FileIO)       
@@ -66,7 +69,7 @@ program main
   allocate(der_a2yy_x(100))
   allocate(der_a2yy_y(100))
 
-  ! --------------------------------------------------< Gitter festlegen >---!
+  ! --------------------------< Gitter festlegen >---------------------!
    if (Const%auto == 1) then
       call createMesh(Gitter)    
    else 
@@ -74,24 +77,46 @@ program main
    endif
    call trychristoffei(Gitter, chicoeff)
 
+  ! --------------------------< Temporary test of one module >---------------------!
+  write(*,*) '================    Verification module Lagrange1d starts now ======== '
+  pol_pts%n=3
+  pol_pts%coeffs=  (/ -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+  pol_root1%n=3
+  pol_root1%coeffs=  (/ -1.0, -2.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+  call expandfromroots(pol_root1, pol_nom1)
+
+  pol_value%n=3
+  pol_value%coeffs=  (/ -1.0, 0.5, -0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+  call expandlagrange(pol_pts, pol_value, pol_lagr)
+
+  write(*,*) '================    Verification module Hermite1d starts now ======== '
+
+  pol_der%n=3
+  pol_der%coeffs=  (/ 0.5, 0.1, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+  call expandhermite(pol_pts, pol_value, pol_der, pol_herm)
+  ! -----------< Calculation of curvature, possibility of interpolation after>-----!
+
   write(*,*) '================    Interpolation starts now    ================ '
   write(*,*)
-
+! call from Interpol2d
   call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
                                  ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
 
   write(*,*) '     differenz der lokalen Basis kompletiert    '
+! call from Interpol2d
   call trychristoffei(Gitter, chicoeff)
 
-
+! call from Interpol2d
   call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
                                  ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
 
   write(*,*) '     Christoffei Koeffizienten berechnet   '
+! call from Interpol2d
   call trychristoffei(Gitter, chicoeff)
 
 
-  !--------------------------------------< Matrix fuellen >---------------!
+  !----------< Matrix fuellen :: generic name common to Lagrange // Hermite>-----------!
 
   call linlgfillmatrix(Gitter, Const, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
 
@@ -105,7 +130,8 @@ program main
        print *, 'ERROR AllocateFields: Could not deallocate correctly!'
        STOP
     end if 
-   
+
+   !call from LagrangeGrad2d:
     deallocate(SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal, &
            STAT = allocStat);
       

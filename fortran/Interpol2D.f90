@@ -143,11 +143,11 @@ module Interpol2D_mod
       ! solution is the right hand side . Das wird mit der Loesung ueberschrieben
       call fillinterpol(n, k, Gitter%x, Gitter%y, MatrixInterp, solution)
     ! call LAPACK procedure
-      call SGESV( 6, 1, MatrixInterp, 6, pivot, solution, 6, ok)
+    !  call SGESV( 6, 1, MatrixInterp, 6, pivot, solution, 6, ok)
 
-      do i=1,6
-         Coefficients(i,k)=solution(i)  ! Kopie der Loesung in dem richtigen Table
-      enddo
+    !  do i=1,6
+    !     Coefficients(i,k)=solution(i)  ! Kopie der Loesung in dem richtigen Table
+    !  enddo
     ! und geht weiter
     enddo
 

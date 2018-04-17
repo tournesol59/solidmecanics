@@ -46,7 +46,10 @@ LINUX_FLAGS = \
 	ALLOCATEFIELDS="ALLOCATEFIELDS_mod.mod" \
 	CREATEMESH="CREATEMESH_mod.mod" \
 	INTERPOL2D="INTERPOL2D_mod.mod" \
+        LAGRANGE1D="LAGRANGE1D_mod.mod" \
         LAGRANGE2D="LAGRANGE2D_mod.mod" \
+        HERMITE1D="HERMITE1D_mod.mod" \
+        HERMITE2D="HERMITE2D_mod.mod" \
         LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod"
 else
 LINUX_FLAGS = \
@@ -58,8 +61,11 @@ LINUX_FLAGS = \
 	ALLOCATEFIELDS="allocatefields_mod.mod" \
 	CREATEMESH="createmesh_mod.mod" \
 	INTERPOL2D="interpol2d_mod.mod" \
-        LAGRANGE2D="lagrange2d_mod.mod" \
-        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod"
+        LAGRANGE1D="Lagrange1d_mod.mod" \
+        LAGRANGE2D="Lagrange2d_mod.mod" \
+        HERMITE1D="hermite1d_mod.mod" \
+        HERMITE2D="hermite2d_mod.mod" \
+        LAGRANGEGRAD2D="Lagrangegrad2d_mod.mod"
 endif
 
 ####################################################################
@@ -79,7 +85,10 @@ ${INPUT_MOD}: input_mod.o
 $(ALLOCATEFIELDS): allocatefields.o
 ${CREATEMESH}: createmesh.o
 {INTERPOL2D}: interpol2d.o
+{LAGRANGE1D}: Lagrange1d.o
 {LAGRANGE2D}: Lagrange2d.o
+{HERMITE1D}: hermite1d.o
+{HERMITE2D}: hermite2d.o
 {LAGRANGEGRAD2D}: Lagrangegrad2d.o 
 
 ####################################################################
@@ -104,11 +113,15 @@ library: $(LIB)(typesdef.o) \
 	 $(LIB)(allocatefields.o) \
 	 $(LIB)(createmesh.o) \
 	 $(LIB)(interpol2d.o) \
+	 $(LIB)(Lagrange1d.o) \
 	 $(LIB)(Lagrange2d.o) \
+	 $(LIB)(hermite1d.o) \
+	 $(LIB)(hermite2d.o) \
 	 $(LIB)(Lagrangegrad2d.o)
 
 praktikum:library main.o
-	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
+#	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -L/usr/lib/libblas -llapack
+	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
 	rm -f main.o 
 	@echo "============================================="
 	@echo "   Program Praktikum successfully compiled   "
@@ -138,10 +151,14 @@ $(LIB)(createMesh.o): $(TYPES)
 $(LIB)(allocateFields.o): $(TYPES)
 $(LIB)(interpol2D.o): $(TYPES)
 $(LIB)(createMesh.o): $(TYPES)
-$(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) 
+$(LIB)(Lagrange1d.o): $(TYPES)
+$(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D)
+$(LIB)(hermite1d.o): $(TYPES)
+$(LIB)(hermite2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D) $(HERMITE1D) 
 $(LIB)(Lagrangegrad2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE2D)
 main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
-         $(LAGRANGE2D) $(LAGRANGEGRAD2D)
+         $(LAGRANGE1D) $(HERMITE1D) $(LAGRANGE2D)  $(LAGRANGEGRAD2D) \
+         $(HERMITE2D)
 
 
 

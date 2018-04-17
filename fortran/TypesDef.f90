@@ -128,9 +128,14 @@ MODULE Types
      real                 :: nraum          ! Anzahl der Gitterpunkte im Raum !
   end type tHyper1D
 
+  type tPolynom
+    integer               :: n              ! degree =>  dimension n+1        !
+    real,dimension(11)    :: coeffs(1:11)      ! Koeffizienten  order<10         !
+  end type tPolynom
+
   !---------------------------------------------------------------------------!
   public  :: tMesh, tZeiten, tRandbedingungen, tConstants, tLogicals, &
-             tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, tNumeric
+             tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, tNumeric, tPolynom
   !---------------------------------------------------------------------------!
 
 ! contains

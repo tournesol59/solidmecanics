@@ -30,6 +30,11 @@ MODULE Hermite2d_mod
  !-----------------------------------------
   contains
 
+!**************************************************************!
+!							       !
+!  Subroutine fillhermitepol                                   !
+!                             !
+!**************************************************************!
     SUBROUTINE fillhermitepol(n, quad, MatrixInterp)
     use types
     implicit none
