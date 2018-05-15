@@ -18,11 +18,12 @@ module createmesh_mod
 
   public :: createMesh, createMesh2
 !********************************************************************!
-!  Variable Tabelle der Biegung-Plate fuer ohne Einlesen der Werte                                  !
-!  (default is 10x10 Punkten)                                                                    !
+!  Variable Tabelle der Biegung-Plate fuer Einlesen der (10x10)Werte !
 !********************************************************************!
-  real,dimension(10)        ::X1 =(/ -5.6, -5.0, -4.0, -2.8, -1.0,  1.0,  2.8,  4.0, 5.0, 5.6 /) 
-  real,dimension(10)        ::Z1 = (/ -2.4, -2.0, -1.33,-0.75,-0.2, -0.2,-0.75,-1.33,-2.0, -2.4 /) 
+  real,dimension(10)        :: X1 = (/ -0.8000, -0.6337, -0.4589, -0.2778, &
+            -0.0930, 0.0930, 0.2778, 0.4589, 0.6337, 0.8000 /) 
+  real,dimension(10)        :: Z1 = (/ -0.2144, -0.1309, -0.0672, -0.0243, &
+            -0.0027, -0.0027, -0.0243, -0.0672, -0.1309, -0.2144 /) 
 
   contains
 
@@ -103,7 +104,9 @@ module createmesh_mod
 
 
 
-
+  !--------------------------------------------------------------------------!
+  !  Automatic creation of the mesh with the data in the header              !
+  !--------------------------------------------------------------------------!
   subroutine createMesh2(Mesh)
 
   use types
@@ -118,7 +121,8 @@ module createmesh_mod
   type(tMesh)                :: Mesh       ! Gitterwerte                     !
   !                                                                          !
   ! Local variable declaration                                               !
-  !                                                                          !
+  !    
+  !
   integer                    :: i,j        ! Zählvariablen                   !
   !--------------------------------------------------------------------------!
   !!! intent(in)                 :: Const
@@ -126,10 +130,11 @@ module createmesh_mod
   !--------------------------------------------------------------------------!
 
 
-  !-----------------------------------<  calculate constants  >-----------
-  !
+  !-----------------------------------<  set constants  >-----------
   !---<  nraumx   = anzahl der inneren punkte                 >-----------
   !---<  nraumx+1 = anzahl der inneren zellen                 >-----------
+  Mesh%nraumx = 10
+  Mesh%nraumy = 10
    
   Mesh%startx = X1(1)
   Mesh%endx = X1(10)
@@ -145,6 +150,9 @@ module createmesh_mod
     enddo
   enddo
 
+  Mesh%starty = 0.0
+  Mesh%endy = 1.0
+  
   Mesh%dy     = (Mesh%endy - Mesh%starty)/(Mesh%nraumy-1)
   Mesh%dyq    = 1./Mesh%dy
   Mesh%dyy    = Mesh%dy*Mesh%dy
@@ -160,12 +168,12 @@ module createmesh_mod
 
   do i= 0,Mesh%nraumx-1 
      do j= 0,Mesh%nraumy-1
-     Mesh%x(j*(Mesh%nraumx)+i+1)   = Z1(i+1)
+     Mesh%z(j*(Mesh%nraumx)+i+1)   = Z1(i+1)
     enddo
   enddo
   
   Mesh%xlen = Mesh%endx - Mesh%startx
   Mesh%ylen = Mesh%endy - Mesh%starty
-  end subroutine createMesh2
+ end subroutine createMesh2
 
 end module createmesh_mod

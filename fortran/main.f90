@@ -37,6 +37,9 @@ program main
   real,pointer               :: rhs(:,:)   ! Feld für die Rechte Seite       !
   type(tNumeric)             :: VarNum     ! Numerische Felder mit Loesungen !
   !--------------------------------------------------------------------------!   
+  real,pointer   :: SkalarProdMatrixQ(:,:)
+  real,pointer   :: SkalarProdMatrixT(:,:,:)
+
   real,pointer   :: SparseSkalarProdRow1(:) ! sparse matrix csr format: three vectors (1)
   real,pointer   :: SparseSkalarProdCol(:) ! sparse matrix csr format: three vectors (2)
   real,pointer   :: SparseSkalarProdVal(:) ! sparse matrix csr format: three vectors (3)
@@ -54,8 +57,8 @@ program main
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
   call allocatefields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const,VarNum)  
-
-  call linlgallocatesparse(Gitter, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal) 
+  call linlg2allocatesdns(Gitter, SkalarProdMatrixQ, SkalarProdMatrixT)
+  !call linlgallocatesparse(Gitter, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal) 
 
   allocate(der_a1xx_x(100))
   allocate(der_a1xx_y(100))
@@ -75,26 +78,27 @@ program main
    else 
       call createMesh2(Gitter)
    endif
-   call trychristoffei(Gitter, chicoeff)
+ !  call trychristoffei(Gitter, chicoeff)
 
   ! --------------------------< Temporary test of one module >---------------------!
-  write(*,*) '================    Verification module Lagrange1d starts now ======== '
+  !write(*,*) '================    Verification module Lagrange1d starts now ======== '
   pol_pts%n=3
-  pol_pts%coeffs=  (/ -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+  pol_pts%coeffs=  (/ -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
 
-  pol_root1%n=3
-  pol_root1%coeffs=  (/ -1.0, -2.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-  call expandfromroots(pol_root1, pol_nom1)
+!  pol_root1%n=3
+!  pol_root1%coeffs=  (/ -1.0, -2.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+!  call expandfromroots(pol_root1, pol_nom1)
 
   pol_value%n=3
-  pol_value%coeffs=  (/ -1.0, 0.5, -0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
-  call expandlagrange(pol_pts, pol_value, pol_lagr)
+  pol_value%coeffs=  (/ -1.0, 0.5, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+  !call expandlagrange(pol_pts, pol_value, pol_lagr)
 
-  write(*,*) '================    Verification module Hermite1d starts now ======== '
+  !write(*,*) '================    Verification module Hermite1d starts now ======== '
 
   pol_der%n=3
   pol_der%coeffs=  (/ 0.5, 0.1, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
-  call expandhermite(pol_pts, pol_value, pol_der, pol_herm)
+  !call expandhermite(pol_pts, pol_value, pol_der, pol_herm)
+
   ! -----------< Calculation of curvature, possibility of interpolation after>-----!
 
   write(*,*) '================    Interpolation starts now    ================ '
@@ -102,10 +106,10 @@ program main
 ! call from Interpol2d
   call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
                                  ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
-
+  call linlg2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
   write(*,*) '     differenz der lokalen Basis kompletiert    '
 ! call from Interpol2d
-  call trychristoffei(Gitter, chicoeff)
+  !call trychristoffei(Gitter, chicoeff)
 
 ! call from Interpol2d
   call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
@@ -113,16 +117,32 @@ program main
 
   write(*,*) '     Christoffei Koeffizienten berechnet   '
 ! call from Interpol2d
-  call trychristoffei(Gitter, chicoeff)
+  !call trychristoffei(Gitter, chicoeff)
 
 
   !----------< Matrix fuellen :: generic name common to Lagrange // Hermite>-----------!
 
-  call linlgfillmatrix(Gitter, Const, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
-
+ ! call linlgfillmatrix(Gitter, Const, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
+   call linlg2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
-  !call deallocateFields(Gitter,RB,Uvar,rhs,Exakt,chicoeff,Const) 
+    deallocate(der_a1xx_x)
+    deallocate(der_a1xx_y)
+
+    deallocate(der_a1xy_x)
+    deallocate(der_a1xy_y)
+
+    deallocate(der_a2yx_x)
+    deallocate(der_a2yx_y)
+
+    deallocate(der_a2yy_x)
+    deallocate(der_a2yy_y)
+
+    deallocate(SkalarProdMatrixQ, SkalarProdMatrixT, STAT = allocStat )
+ 
+ !   deallocate(SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal, &
+ !          STAT = allocStat);
+
     deallocate(Gitter%x, Gitter%y, RB%randl, RB%randr, RB%rando, RB%randu, &
          Exakt%loesung, Uvar, rhs, chicoeff, STAT = allocStat )
     
@@ -131,26 +151,11 @@ program main
        STOP
     end if 
 
-   !call from LagrangeGrad2d:
-    deallocate(SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal, &
-           STAT = allocStat);
       
     if (allocStat.NE.0) then
        print *, 'ERROR AllocateSparseMatrix: Could not deallocate correctly!'
        STOP
     end if 
-
-  deallocate(der_a1xx_x)
-  deallocate(der_a1xx_y)
-
-  deallocate(der_a1xy_x)
-  deallocate(der_a1xy_y)
-
-  deallocate(der_a2yx_x)
-  deallocate(der_a2yx_y)
-
-  deallocate(der_a2yy_x)
-  deallocate(der_a2yy_y)
 
     write(*,*) 
     write(*,*) '============= Program terminated correctly ================ '

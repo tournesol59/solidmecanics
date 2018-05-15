@@ -71,6 +71,7 @@ contains
          VarNum%Verschiebung(1:3,Mesh%nraumx*Mesh%nraumy), &  
          VarNum%TensionTg(1:3,Mesh%nraumx*Mesh%nraumy), &
          VarNum%Tension3(1:2,Mesh%nraumx*Mesh%nraumy), &
+         VarNum%BiegMoment(1:4,Mesh%nraumx*Mesh%nraumy), &
          STAT = allocStat )
      ! TensionTg sigma_xx, sigma_xy=sigma_yx and sigma_yy  !
      ! Tension3 sigma_xz and sigma_yz  (sigma_zz=0)
@@ -114,7 +115,7 @@ contains
   
     deallocate(Mesh%x, Mesh%y, Mesh%z, RB%randl, RB%randr, RB%rando, RB%randu, &
          Exakt%loesung, Uvar, rhs, chicoeff, & 
-         VarNum%Verschiebung, VarNum%TensionTg, VarNum%Tension3, &
+         VarNum%Verschiebung, VarNum%TensionTg, VarNum%Tension3, VarNum%BiegMoment, &
        STAT = allocStat )
 
 

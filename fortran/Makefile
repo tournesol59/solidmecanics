@@ -120,6 +120,7 @@ library: $(LIB)(typesdef.o) \
 	 $(LIB)(Lagrangegrad2d.o)
 
 praktikum:library main.o
+# works only with a proper installation of lapack (not my debian)
 #	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -L/usr/lib/libblas -llapack
 	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
 	rm -f main.o 
@@ -160,6 +161,7 @@ main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
          $(LAGRANGE1D) $(HERMITE1D) $(LAGRANGE2D)  $(LAGRANGEGRAD2D) \
          $(HERMITE2D)
 
+	@echo "make cleanall completed..."
 
 
 

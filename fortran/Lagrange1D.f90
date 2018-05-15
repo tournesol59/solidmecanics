@@ -92,11 +92,11 @@ SUBROUTINE expand2nom(pol_1, pol)
   real                        :: sumup
   integer                     :: i
 ! verification
-  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
+!  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
 
   do i=pol%n+1,1,-1
     if (i.eq.(pol%n+1)) then
-       sumup=0.0
+       sumup=pol%coeffs(i)*pol_1%coeffs(2) ! let's try and it will be zero if i>=n+1
        pol%coeffs(i+1)=0.0  ! ensures shifting towards lower expand
     else
       sumup=pol%coeffs(i)*pol_1%coeffs(2) 
@@ -107,8 +107,8 @@ SUBROUTINE expand2nom(pol_1, pol)
   pol%n = pol%n+1
 
 ! verification
-  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
-
+!  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
+  write(*,*)
 102 format (f10.5)
 END SUBROUTINE expand2nom
 
@@ -150,12 +150,12 @@ SUBROUTINE expandfromroots(pol_roots, pol_nom)
   integer                     :: i
   type(tPolynom)              :: pol_1
 ! verification
-  write(*,103) (pol_roots%coeffs(i), i=1,pol_roots%n)
-
+!  write(*,113) pol_roots%n
+!  write(*,103) (pol_roots%coeffs(i), i=1,pol_roots%n+1) !(n+1)is not a root,but leading coeff
   pol_nom%n=1                          !  Initialization to a first order polynom
   pol_nom%coeffs(2)= - pol_roots%coeffs(1)  ! minus size
-  pol_nom%coeffs(1)=pol_roots%coeffs(pol_roots%n+1)
-  do i=3,pol_nom%n+1  ! rest iz zero
+  pol_nom%coeffs(1)= 1.0
+  do i=3,pol_nom%n+2  ! rest iz zero
      pol_nom%coeffs(i)=0.0
   enddo
   do i=2,pol_roots%n
@@ -165,10 +165,15 @@ SUBROUTINE expandfromroots(pol_roots, pol_nom)
     call expand2nom(pol_1, pol_nom)
   enddo
 
+  do i=1,pol_roots%n+1  ! multiplikation per Major Term
+    pol_nom%coeffs(i)= pol_nom%coeffs(i)*pol_roots%coeffs(pol_roots%n+1)
+  enddo
+
 ! verification
   write(*,103) (pol_nom%coeffs(i), i=1,pol_nom%n+1)
-
+  write(*,*)
 103 format (f10.5)
+113 format (i10)
 END SUBROUTINE expandfromroots
 
 !**************************************************************!
@@ -190,20 +195,21 @@ SUBROUTINE expandlagrange(pol_pts, pol_value, pol_lagr)
   write(*,104) (pol_value%coeffs(i), i=1,pol_value%n)
 
 ! Initialization
-  pol_lagr%n=pol_value%n
+  pol_lagr%n=pol_value%n-1   ! degree of inteprolation = number of points -1
   do i=1,pol_lagr%n
      pol_lagr%coeffs(i)=0.0
   enddo
-  pol_nom%n=pol_value%n
+  pol_nom%n=pol_value%n-1
   do i=1,pol_nom%n
      pol_nom%coeffs(i)=0.0
   enddo
 
 ! Calculus of each Lagrange Polynom corresp. to a node
   do i=1,pol_value%n
-     pol_roots%n=pol_value%n
+     pol_roots%n=pol_value%n-1
+      write(*,104) pol_value%coeffs(i)
      term=1.0
-     do j=1,pol_roots%n
+     do j=1,pol_value%n   ! n is important to review all points, even if n-1 are taken
        if (j.le.(i-1)) then
          pol_roots%coeffs(j)= - pol_pts%coeffs(j)
          term=term/(pol_pts%coeffs(i)-pol_pts%coeffs(j)) 
@@ -214,18 +220,18 @@ SUBROUTINE expandlagrange(pol_pts, pol_value, pol_lagr)
       !! nothing 
        endif
      enddo
-         term=term*pol_value%coeffs(i)
-         pol_roots%coeffs(pol_value%n+1)=term
+     term=term
+     pol_roots%coeffs(pol_roots%n+1)=term !!!
      ! now expand pol_root and sum,up to lagrange polynom each coeff
-  call expandfromroots(pol_roots, pol_nom)
-     do j=1,pol_nom%n
-         pol_lagr%coeffs(j) = pol_lagr%coeffs(j)+pol_nom%coeffs(j)  
+     call expandfromroots(pol_roots, pol_nom)
+     do j=1,pol_nom%n+1
+         pol_lagr%coeffs(j) = pol_lagr%coeffs(j)+pol_nom%coeffs(j)*pol_value%coeffs(i)  ! the sum of all Lagrange polynoms mult by their value i
      enddo   
   enddo
 
 ! verification
-  write(*,104) (pol_lagr%coeffs(i), i=1,pol_lagr%n)
-
+  write(*,104) (pol_lagr%coeffs(i), i=1,pol_lagr%n+1)
+  write(*,*)'------ end expand -------'
 104 format (f10.5)
 END SUBROUTINE expandlagrange
   

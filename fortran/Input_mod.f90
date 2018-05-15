@@ -66,12 +66,15 @@ subroutine Input(Mesh,Exakt,Const,FileIO)
   read (5,201) Mesh%endy
   read (5,301) Mesh%nraumx
   read (5,301) Mesh%nraumy
+  
 
   ! --- Parameters:
   read (5,*)
-  read (5,*)               
+  read (5,*)       
+
   read (5,201) Const%EY
   read (5,201) Const%nu
+!  Const%h = 0.15  ! Could not explain why read fails for h
 
   ! ----------------------------------<  Kontroll-Ausgabe der Groessen >--
   
@@ -80,11 +83,14 @@ subroutine Input(Mesh,Exakt,Const,FileIO)
   write(*,202) '    starty   = ' ,Mesh%starty
   write(*,202) '    endx     = ' ,Mesh%endx
   write(*,202) '    endy     = ' ,Mesh%endy
+
   write(*,302) '    nraumx   = ' ,Mesh%nraumx
   write(*,302) '    nraumy   = ' ,Mesh%nraumy
   write(*,102) ' '
 
-  write(*,102) 'platten material parameter'
+  write(*,102) 'platten material parameter'  
+!  write(*,202) '    h        = ' ,Const%h
+!  write(*,102) ' '
   write(*,202) '    EY       = ' ,Const%EY
   write(*,102) ' '
   write(*,202) '    nu       = ' ,Const%nu

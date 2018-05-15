@@ -462,6 +462,11 @@ module Interpol2D_mod
          write(*,302) '     y-data column j   =',j
          write(*,102) (Gitter%y(j*Gitter%nraumx+i+1), i=0,Gitter%nraumx-1)
     enddo
+    write(*,*)
+    do j=0,Gitter%nraumy-1
+         write(*,302) '     z-data column j   =',j
+         write(*,102) (Gitter%z(j*Gitter%nraumx+i+1), i=0,Gitter%nraumx-1)
+    enddo
   ! Display output
     write(*,*)
     do j=0,Gitter%nraumy-1

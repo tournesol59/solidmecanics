@@ -35,8 +35,9 @@ MODULE Types
 
   type tNumeric
     real, pointer     :: Verschiebung(:,:) ! 3 Verschiebungen in der Mitte der Platte !
-    real, pointer     :: TensionTg(:,:)    ! array pointer: Spannung tengential Tensor  !
-    real, pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung 3 !
+    real, pointer     :: TensionTg(:,:)    ! array pointer: Spannung tengential Tensor!
+    real, pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung 3  !
+    real, pointer     :: BiegMoment(:,:)   ! BiegMoment Tensor, nicht tangential    !
   end type tNumeric
 
   type tZeiten  ! wird nicht beutzt fuer Platten Festigkeit  !
@@ -68,6 +69,7 @@ MODULE Types
      real                 :: Pi             ! Pi                              !
      real                 :: EY             ! Young Module                    !
      real                 :: nu             ! Poisson coefficient             !
+!     real                 :: h              ! Groesse (Height), Konstant      !
      integer              :: auto           ! Automatishes Auswahl eines vordefinierten Mesh !
          ! REST WIRD NICHT BENUTZT !
      real                 :: kappa          ! Eigenfrequenz                   !
