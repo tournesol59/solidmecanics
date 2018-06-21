@@ -121,8 +121,8 @@ library: $(LIB)(typesdef.o) \
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
-#	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -L/usr/lib/libblas -llapack
-	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
+	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
+#	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
 	rm -f main.o 
 	@echo "============================================="
 	@echo "   Program Praktikum successfully compiled   "

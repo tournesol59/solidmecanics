@@ -39,8 +39,55 @@ SUBROUTINE expandhermite(pol_pts, pol_value, pol_der, pol_herm)
   type(tPolynom),intent(in)             :: pol_pts, pol_value, pol_der
   type(tPolynom),intent(inout)          :: pol_herm
 
-  pol_herm%n=2*pol_pts%n
-  
+! lokal Variables
+  type(tPolynom)            :: polsq_lagr, pol_1, pol_mul
+  real                      :: pval_1, res_1, der_1
+  integer                   :: i,j
+
+! verification
+  write(*,101) (pol_pts%coeffs(i), i=1,pol_pts%n)
+  write(*,101) (pol_value%coeffs(i), i=1,pol_value%n)
+  write(*,101) (pol_der%coeffs(i), i=1,pol_der%n)
+! initialization
+  pol_herm%n=2*pol_pts%n-1
+  do i=1,pol_herm%n+1
+     pol_herm%coeffs(i)=0.0;
+  enddo
+
+  do i=1,pol_pts%n
+     ! initialization
+     polsq_lagr%n = 2*pol_pts%n-2
+     do j=1,polsq_lagr%n
+        polsq_lagr%coeffs(j)=0.0;
+     enddo
+
+     call expandsquare(pol_pts, i, polsq_lagr)
+
+     pol_mul%n=polsq_lagr%n
+     do j=1,pol_mul%n
+        pol_mul%coeffs(j) = polsq_lagr%coeffs(j)  ! copy values from square of ith Lagrange polynom
+     enddo
+     call evaluation(polsq_lagr, pol_pts%coeffs(i), res_1)
+     call calcderivative(polsq_lagr, pol_pts%coeffs(i), der_1)
+     pval_1=der_1*pol_value%coeffs(i) - res_1*pol_der%coeffs(i)
+   write(*,101) (pval_1)
+     pol_1%n=2
+     pol_1%coeffs(1)=-pval_1
+     pol_1%coeffs(2)=(-pval_1)*(-pol_pts%coeffs(i)) + pol_value%coeffs(i)
+     call expand2nom(pol_1, pol_mul)   ! Result ist im pol_mul ueberschrieben
+
+    ! Kopie der ith polynom im sum
+!     polsq_herm%n = 2*pol_pts%n-1
+     do j=1,polsq_lagr%n+2
+        pol_herm%coeffs(j)= pol_herm%coeffs(j)+pol_mul%coeffs(j);
+     enddo  
+
+  enddo
+
+!  Verifikation
+  write(*,101) (pol_herm%coeffs(i), i=1,pol_herm%n+1)
+  write(*,*)'------ end expand hermite -------'
+101 format (f10.5)
 END SUBROUTINE expandhermite
 
 !***********************************************!

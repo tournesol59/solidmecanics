@@ -44,8 +44,8 @@ MODULE Hermite2d_mod
     ! lokal 
     integer                       :: i,j
     real                          :: powx,powy,term,derx,dery
-    real,dimension(2)              :: x_1=/(-1,1/)
-    real,dimension(2)              :: y_1=/(-1,1/)
+    real,dimension(2)              :: x_1=(/-1,1/)
+    real,dimension(2)              :: y_1=(/-1,1/)
   !  if (n.eq.3)  then    ! only order 3 is supported
        ! Hier Identity Matrix zumm Start musst aktualisiert werden !
      do i=0,9
@@ -56,164 +56,36 @@ MODULE Hermite2d_mod
      enddo
        
   !  first category, no algorithm here but a plenty of code!!!
-  do i=0,9
-    powx=1.0
-    term=0.0
-    derx=0.0
-    dery=0.0
-      powy=1.0
-    if i.eq.0 then
-      powx=powx*x_1(1)
-      powy=powy*y_1(1)
-    elseif (i.eq.1) then
-      powx=powx*x_1(1)
-      powy=powy*y_1(1)
-    elseif (i.eq.2) then
-      powx=powx*x_1(1)
-     powy=powy*y_1(1)
-    elseif (i.eq.3) then
-     powx=powx*x_1(2)   
-     powy=powy*y_1(2)
-    elseif (i.eq.3) then
-     powx=powx*x_1(2)
-     powy=powy*y_1(1) 
-     elseif (i.eq.4) then
-     powx=powx*x_1(1)
-     powy=powy*y_1(1)   
-    elseif (i.eq.5) then
-     powx=powx*x_1(1) 
-     powy=powy*y_1(1)
-    elseif (i.eq.6) then
-     powx=powx*x_1(1)
-     powy=powy*y_1(1) 
-    elseif (i.eq.7) then
-     powx=powx*x_1(1)
-     powy=powy*y_1(1) 
-    elseif (i.eq.8) then
-     powx=powx*x_1(2) 
-     powy=powy*y_1(1)
-    elseif (i.eq.9) then
-     powx=powx*x_1(2) 
-     powy=powy*y_1(1)
-    endif
-   enddo
+  !  erste Equation:: p(x,y)=(a0*+a1*X+a2*Y+a3*XY+a4*X2+a5*Y2+a6*X3+a7*Y3+a8*X2Y+a9*XY2) eine VanderMonde Matrix muss gefuellt werden.
+
 !--------
 !
 !Complicated
 !
 !--
-    powx=1.0
-    term=0.0
-    derx=0.0
-    dery=0.0
-    powy=1.0
-    do i=0,9
-      if (i.le.3) then
-        do j=0,9
-         if (j.eq.0) then
-          term=1.0
-          derx=0.0
-          dery=0.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.1) then
-          powx=powx
-          term=powx*1.0
-          derx=1.0
-          dery=0.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.2) then
-          powy=powy
-          term=powy*1.0
-          derx=0.0
-          dery=1.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.3) then
-          derx=2*powx
-          powx=powx*powx
-          term=powx*1.0
-          dery=0.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.4) then
-          dery=2*powy
-          powy=powy*powy
-          term=powy*1.0
-          derx=0.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.5) then
-          powx=powx
-          powy=powy
-          term=powx*powy
-          derx=powy
-          dery=powx
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.6) then
-          derx=3*powx*powx
-          powx=powx*powx*powx
-          term=powx
-          dery=0.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.7) then
-          derx=2*powx*powy
-          powx=powx*powx*powx
-          term=powx*powy
-          dery=powx
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.8) then
-          dery=2*powx*powy
-          powy=powy*powy
-          term=powx*powy
-          derx=powy
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-         elseif (j.eq.9) then
-          dery=3*powy*powy
-          powy=powy*powy*powy
-          term=powy
-          derx=0.0
-          MatrixInterp(1+i+j*10)=term
-          MatrixInterp(2+i+j*10)=derx
-          MatrixInterp(3+i+j*10)=dery
-        enddo
-    elseif
-      endif
-    enddo
+
+
 
     ! Pruefen das Resultat der Matrix am Schirm:
     do i=1,10
       write(*,201) (MatrixInterp(i+j*10), j=0,9)
     enddo
- 201  format (f10.5)
+201  format (f10.5)
     END SUBROUTINE fillhermitepol
 
 
-    SUBROUTINE calchermitepol(n, Coefficients)
+    SUBROUTINE calchermitepol
     use types
     implicit none
     ! Variables
     integer,intent(in)       :: n  !Order==3
-    real,intent(inout)       :: Coefficients(1:10,50)  ! Der Resultat, 10 Koefficients per polynoms
+    real,pointer,intent(in)          :: Coefficients(:,:)  ! Der Input: 10 Koefficients x NNodes
     ! lokalen Variablen
-    real,dimension(1)        :: MatrixInterp(100)
-    real,dimension(1)        :: solution(10)
+    real,dimension(100)      :: MatrixInterp
+    real,dimension(10)       :: solution
     integer                  :: k,i
-    integer                  :: pivot(10), ok     ! used by LAPACK FORTRAN subroutine SGESV
+    integer ,dimension(10)   :: pivot
+    integer                  :: ok     ! used by LAPACK FORTRAN subroutine SGESV
 
    k=1
       call fillhermitepol(n, .true. , MatrixInterp)  ! Fuellt die Matrixinterp aus
@@ -230,18 +102,21 @@ MODULE Hermite2d_mod
       solution(9)=0.0   ! Ninth equation, pi(ai+3)=0
       solution(10)=0.0 ! Tenth equation, dpi%dy(ai+3)=0
 
-   ! call Lapack procedure
-      call SGESV( 10, 1, MatrixInterp, 10, pivot, solution, 10, ok)
+   ! call Lapack procedure, rhs solution will be erased and filled by the result of linear
+ !     call SGESV( 10, 1, MatrixInterp, 10, pivot, solution, 10, ok)
       do i=1,10
          Coefficients(i,k)=solution(i)
       enddo 
 
     ! Pruefen das Resultat der Coeffs am Schirm:
+    write(*,*)
+    write(*,303) '    Coefficients k   =', k 
     do i=1,10
-      write(*,203) (Coefficients(i,k), k=1)
+      write(*,203) (Coefficients(i,1))
     enddo
 
- 203  format (f10.5)
+203  format (f10.5)
+303  format (a, i10)
     END SUBROUTINE calchermitepol
  
 
@@ -282,7 +157,7 @@ MODULE Hermite2d_mod
       write(*,201) (Values((j-1)*9+i), j=0,9)
       write(*,*)
     enddo
- 201  format (f10.5)
+201  format (f10.5)
   END SUBROUTINE evalhermitepol
 
 

@@ -92,6 +92,7 @@ SUBROUTINE expand2nom(pol_1, pol)
   real                        :: sumup
   integer                     :: i
 ! verification
+  write(*,*) '-------enter expand2nom:'
 !  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
 
   do i=pol%n+1,1,-1
@@ -107,14 +108,14 @@ SUBROUTINE expand2nom(pol_1, pol)
   pol%n = pol%n+1
 
 ! verification
-!  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
-  write(*,*)
+  write(*,102) (pol%coeffs(i), i=1,pol%n+1)
+!  write(*,*)
 102 format (f10.5)
 END SUBROUTINE expand2nom
 
 !**************************************************************!
 !							       !
-!  Subroutine calcderivative                                   !
+!  Subroutine calcderivative: calc the deriv VALUE at point x  !
 !                                                              !
 !**************************************************************!
 SUBROUTINE calcderivative(pol, x, der)
@@ -137,8 +138,8 @@ END SUBROUTINE calcderivative
 
 !**************************************************************!
 !							       !
-!  Subroutine  expandfromroots                                     !
-!                                                              !
+!  Subroutine  expandfromroots:given the n roots of a polynom  !
+!              determinate its coefficients and degree         !
 !**************************************************************!
 SUBROUTINE expandfromroots(pol_roots, pol_nom)
   use types
@@ -150,8 +151,9 @@ SUBROUTINE expandfromroots(pol_roots, pol_nom)
   integer                     :: i
   type(tPolynom)              :: pol_1
 ! verification
+  write(*,*) '-------enter expandfromroots:'
 !  write(*,113) pol_roots%n
-!  write(*,103) (pol_roots%coeffs(i), i=1,pol_roots%n+1) !(n+1)is not a root,but leading coeff
+  write(*,103) (pol_roots%coeffs(i), i=1,pol_roots%n+1) !(n+1)is not a root,but leading coeff
   pol_nom%n=1                          !  Initialization to a first order polynom
   pol_nom%coeffs(2)= - pol_roots%coeffs(1)  ! minus size
   pol_nom%coeffs(1)= 1.0
@@ -171,15 +173,14 @@ SUBROUTINE expandfromroots(pol_roots, pol_nom)
 
 ! verification
   write(*,103) (pol_nom%coeffs(i), i=1,pol_nom%n+1)
-  write(*,*)
 103 format (f10.5)
 113 format (i10)
 END SUBROUTINE expandfromroots
 
 !**************************************************************!
 !							       !
-!  Subroutine   expandlagrange                                   !
-!                                                              !
+!  Subroutine   expandlagrange: expand a lagrange polynom, given !
+!               the points of interp, pol value is unused here !
 !**************************************************************!
 SUBROUTINE expandlagrange(pol_pts, pol_value, pol_lagr)
   use types
@@ -238,8 +239,8 @@ END SUBROUTINE expandlagrange
 
 !**************************************************************!
 !							       !
-!  Subroutine   expandsquare                                   !
-!                                                              !
+!  Subroutine   expandsquare: as lagrange, but square of each  !
+!                base polynom (X-xi)^2 , it is used in Hermite interp !
 !**************************************************************!
 SUBROUTINE expandsquare(pol_pts, i, polsq)
   use types
@@ -252,19 +253,20 @@ SUBROUTINE expandsquare(pol_pts, i, polsq)
   integer                     :: j
   type(tPolynom)              :: pol_roots
 ! verification
+  write(*,*) '-------enter expandsquare:'
   write(*,105) (pol_pts%coeffs(j), j=1,pol_pts%n)
 
 ! Calculus of each Lagrange Polynom corresp. to a node and take the square of it
      pol_roots%n=pol_pts%n-1
      term=1.0
-     do j=1,pol_roots%n
+     do j=1,pol_pts%n
        if (j.le.(i-1)) then
-         pol_roots%coeffs(2*j-1)= - pol_pts%coeffs(j)
-         pol_roots%coeffs(2*j)= - pol_pts%coeffs(j)
+         pol_roots%coeffs(2*j-1)= pol_pts%coeffs(j)
+         pol_roots%coeffs(2*j)= pol_pts%coeffs(j)
          term=term/(pol_pts%coeffs(i)-pol_pts%coeffs(j))/(pol_pts%coeffs(i)-pol_pts%coeffs(j)) 
        elseif ((i+1).le.j) then
-         pol_roots%coeffs(2*j-3)= - pol_pts%coeffs(j)
-         pol_roots%coeffs(2*j-2)= - pol_pts%coeffs(j)
+         pol_roots%coeffs(2*j-3)= pol_pts%coeffs(j)
+         pol_roots%coeffs(2*j-2)= pol_pts%coeffs(j)
          term=term/(pol_pts%coeffs(i)-pol_pts%coeffs(j))/(pol_pts%coeffs(i)-pol_pts%coeffs(j)) 
        else
       !! nothing
@@ -275,16 +277,16 @@ SUBROUTINE expandsquare(pol_pts, i, polsq)
      ! now expand pol_root 
      call expandfromroots(pol_roots, polsq)
 ! verification
-  write(*,105) (polsq%coeffs(j), j=1,polsq%n)
-
+  write(*,105) (polsq%coeffs(j), j=1,polsq%n+1)
+  write(*,*) '-------quit expandsquare:'
 105 format (f10.5)
 END SUBROUTINE expandsquare
 
 
 !**************************************************************!
 !							       !
-!  Subroutine   squarecalcderivative                           !
-!                                                              !
+!  Subroutine   squarecalcderivative: as the previous expandsquare !
+!               but this time, only the value of the derivative!
 !**************************************************************!
 SUBROUTINE squarecalcderivative(pol_pts, pol_roots, i, der)
   use types

@@ -1,5 +1,6 @@
 module LagrangeGrad2D_mod
-
+! MODULE NOT DEVELOPPED FULLY NOR INTEGRATED 
+! should implement the sprse matrix version
 ! Use: in Gesetz(1) f_ = Sum,k-i mu,k-i*Phi,i(x,y)
 
 implicit none

@@ -30,14 +30,22 @@ module Interpol2D_mod
 !  interface lgeval
 !     module procedure lgeval
 !  end interface
- 
+
+!  interface lgeval3
+!     module procedure lgeval3
+!  end interface
+!
+!  interface lgevalderiv3
+!     module procedure lgevalderiv3
+!  end interface
+!
 !  interface trychristoffei
 !     module procedure trychristoffei
 !  end interface
 
 !------------------------------------------------------------!
  public :: fillinterpol, interpolref, basisdifferenz, christoffei &
-            , lgeval, trychristoffei  !, lgderivS, lgderivf_S
+            , lgeval, lgeval3, trychristoffei , lgevalderiv3
 !------------------------------------------------------------!
  ! Global Variablen
  !!! type(tNode),pointer  :: derivbasis(:, :)  ! 2D array von real basis Vektor-derivativen  in der naturalen x,y,z Basis Richtungen!
@@ -50,17 +58,16 @@ module Interpol2D_mod
   ! Subroutine fillinterpol                                                  !
   !                                                                          !
   !      procedure: Ausfuellt die Matrix (Array) als 2D Van der Monde Matrix !
-  !       , um die Interpolation Polynomen zwischen Real/Refnetz u bestimmen ! 
+  !      , um die Interpolation Polynomen zwischen Real/Refnetz zu bestimmen ! 
   !                                                                          !
   !**************************************************************************!
 
-  SUBROUTINE fillinterpol(n, k, x, y, MatrixInterp, Vektor)
+  SUBROUTINE fillinterpol(n, k, x, MatrixInterp, Vektor)
     use types
     implicit none
     integer,intent(in)            :: n ! Order der Interpolation
     integer,intent(in)            :: k ! Indiz des NetzElements
     real,pointer                  :: x(:)
-    real,pointer                  :: y(:)
     real,dimension(1:36),intent(out) :: MatrixInterp ! Matrix entsprechend zum Netzelement
     real,dimension(1:6)           :: Vektor
     ! lokal 
@@ -111,8 +118,8 @@ module Interpol2D_mod
     do j=1,4
      Vektor(1)=x(k-1)
      Vektor(2)=x(k)
-     Vektor(3)=y(k-1)
-     Vektor(4)=y(k)
+     Vektor(3)=x(10+ k-1)  ! Modification to be done Gitter%nraumx, nicht immer 10
+     Vektor(4)=x(10+ k)
    enddo
    Vektor(5)=0.0   ! Gleichung 1: e5=gewuenschte Value, here zero
    Vektor(6)=0.0   ! Gleichung 2: f6=0.0
@@ -128,29 +135,66 @@ module Interpol2D_mod
   !                                                                          !
   !**************************************************************************!
 
-  SUBROUTINE interpolref(n, Gitter, Coefficients)
+  SUBROUTINE interpolref(n, Gitter)
     use types
     implicit none
     integer,intent(in)            :: n ! Order der Interpolation
     type(tMesh),intent(in)        :: Gitter
-    real,dimension(1:6,1:100),intent(out)    :: Coefficients
-    !lokal
+     !lokal
     real,dimension(1:36)          :: MatrixInterp
-    real,dimension(1:6)           :: solution
+    real,dimension(1:6)           :: solutionX, solutionY
     integer                       :: i,j,k, pivot(6), ok
     
-    do k=1,100
+    do k=1,100  ! BEWARE it's only valid for our generic test case 10x10
       ! solution is the right hand side . Das wird mit der Loesung ueberschrieben
-      call fillinterpol(n, k, Gitter%x, Gitter%y, MatrixInterp, solution)
-    ! call LAPACK procedure
-    !  call SGESV( 6, 1, MatrixInterp, 6, pivot, solution, 6, ok)
+      call fillinterpol(n, k, Gitter%x, MatrixInterp, solutionX)
+      !call LAPACK procedure
+      call SGESV( 6, 1, MatrixInterp, 6, pivot, solutionX, 6, ok)
 
-    !  do i=1,6
-    !     Coefficients(i,k)=solution(i)  ! Kopie der Loesung in dem richtigen Table
-    !  enddo
+      ! temporary same procedure with array y(:) as input, works only if nx=ny
+      call fillinterpol(n, k, Gitter%y, MatrixInterp, solutionY)
+      !call LAPACK procedure
+      call SGESV( 6, 1, MatrixInterp, 6, pivot, solutionY, 6, ok)
+
+      do i=1,6
+         Gitter%Coefficients(i,2*k-1) =solutionX(i)  ! Kopie der Loesung in dem richtigen Table
+         Gitter%Coefficients(i,2*k)   = solutionY(i)  ! Kopie der Loesung in dem richtigen Table
+      enddo
     ! und geht weiter
     enddo
+ ! Pruefen am Bildschirm
+    do j=0,Gitter%nraumy-1
+      do i=0,Gitter%nraumx-1
+         k=j*Gitter%nraumx+i+1
+         write(*,312) '    Node k   =' ,k,' PolX {'
 
+          write(*,212) '      Coeff{0}      = ' , Gitter%Coefficients(1,2*k-1)
+          write(*,212) '      Coeff{x}      = ' , Gitter%Coefficients(2,2*k-1)
+          write(*,212) '      Coeff{y}      = ' , Gitter%Coefficients(3,2*k-1)
+          write(*,212) '      Coeff{xy}      = ' , Gitter%Coefficients(4,2*k-1)
+          write(*,212) '      Coeff{x2}      = ' , Gitter%Coefficients(5,2*k-1)
+          write(*,212) '      Coeff{y2}      = ' , Gitter%Coefficients(6,2*k-1)
+
+        write(*,*) '   }'
+
+         write(*,312) '    Node k   =' ,k,' PolY {'
+
+          write(*,212) '      Coeff{0}      = ' , Gitter%Coefficients(1,2*k)
+          write(*,212) '      Coeff{x}      = ' , Gitter%Coefficients(2,2*k)
+          write(*,212) '      Coeff{y}      = ' , Gitter%Coefficients(3,2*k)
+          write(*,212) '      Coeff{xy}      = ' , Gitter%Coefficients(4,2*k)
+          write(*,212) '      Coeff{x2}      = ' , Gitter%Coefficients(5,2*k)
+          write(*,212) '      Coeff{y2}      = ' , Gitter%Coefficients(6,2*k)
+
+        write(*,*) '   }'
+        write(*,*)
+
+      enddo
+    enddo
+
+ 112  format (f10.5)
+ 212  format (a,f10.5)
+ 312  format (a,i10)
   END SUBROUTINE interpolref
 
   !**************************************************************************!
@@ -170,7 +214,7 @@ module Interpol2D_mod
     real,pointer,intent(inout)               :: der_a1xx_x(:)  !=der(ax)%dx, _x Koord
     real,pointer,intent(inout)               :: der_a1xx_y(:)  !           , _y Koord
 
-    real,pointer,intent(inout)               :: der_a1xy_x(:)  !=der(ax)%dx, _x Koord
+    real,pointer,intent(inout)               :: der_a1xy_x(:)  !=der(ax)%dy, _x Koord
     real,pointer,intent(inout)               :: der_a1xy_y(:)  !           , _y Koord
 
     real,pointer,intent(inout)               :: der_a2yy_x(:)  !=der(ay)%dy, _x Koord
@@ -278,14 +322,14 @@ module Interpol2D_mod
    use types 
    implicit none
     type(tMesh),intent(in)                   :: Gitter
-    real,intent(inout)               :: chicoeff(1:8,1:100)  ! 2nd Dimension ist nraumx*nraumy
+    real,intent(inout)                       :: chicoeff(1:8,1:100)  ! 2nd Dimension ist nraumx*nraumy
     ! Ein Kristoffei coefficient K{g}{a,b} wird oft in dem Formeln benutzt
     ! der(Ua)%dxb = sum,g K{g}{a,b}*Ug,  wo die Ua,Ug sind das lokal BasisVektoren
     ! Hier die der(Ua)%dxb Koordinaten, aber planar!
     real,pointer,intent(inout)               :: der_a1xx_x(:)  !=der(ax)%dx, _x Koord
     real,pointer,intent(inout)               :: der_a1xx_y(:)  !           , _y Koord
 
-    real,pointer,intent(inout)               :: der_a1xy_x(:)  !=der(ax)%dx, _x Koord
+    real,pointer,intent(inout)               :: der_a1xy_x(:)  !=der(ax)%dy, _x Koord
     real,pointer,intent(inout)               :: der_a1xy_y(:)  !           , _y Koord
 
     real,pointer,intent(inout)               :: der_a2yy_x(:)  !=der(ay)%dy, _x Koord
@@ -304,7 +348,8 @@ module Interpol2D_mod
         enddo
       enddo
    enddo
-          ! Berechnen die lokal Basisvecktorskomponenten:
+  ! 'Berechnen die lokal Basisvecktorskomponenten:'
+
    do j=0,Gitter%nraumy-2
      do i=0,Gitter%nraumx-2
         k=j*Gitter%nraumx+i+1
@@ -356,7 +401,7 @@ module Interpol2D_mod
 
   !**************************************************************************!
   !                                                                          !
-  ! Funktion lgeval                                                          !
+  ! Funktion lgeval  (FACETS) NICHT MEHR BENUTZT                             !
   !                                                                          !
   !      Funktion: berechnet die Werten von Polynoms an dem Node (xi,yi)     !
   !     generische Lagrange 2D Polynoms fuer Interpolation der realen Loesung! 
@@ -367,9 +412,9 @@ module Interpol2D_mod
      implicit none
      integer,intent(in)           :: n   ! Order der Interpolation2D 2 = x,y,x*y,x**2, y**2
      real,intent(in)              :: x
-     real,intent(in)              :: y ! Punkt der Evaluation   
+     real,intent(in)              :: y   ! Punkt der Evaluation   
      integer,intent(in)           :: pi  ! Indiz des Facets
-     real,intent(out)             :: fxy  ! Resultat
+     real,intent(out)             :: fxy ! Resultat
      ! pi nimmt 6 differenten Forms auf einen Referenznetz von 6 facets
      ! facet a/ eqn: x  +z=1 
      ! facet b/ eqn:   y+z=1 
@@ -433,6 +478,42 @@ module Interpol2D_mod
 !     WRITE(*,*)  'Value p(',pi,') =', fxy
   END subroutine lgeval3
 
+  !**************************************************************************!
+  !                                                                          !
+  ! Funktion lgevalderiv3                                                         !
+  !                                                                          !
+  !      Funktion: berechnet die Jacobian determinant von Derivative         !
+  !       Polynoms an dem Node (xi,yi)                                       !
+  !      generische Lagrange 2D Polynoms mit zweiter Ordnung (x*y)           ! 
+  !      fuer Interpolation der realen Loesung                               !
+  !**************************************************************************!
+
+  subroutine lgevalderiv3(n,x,y,pi,Coefficients,Jac)
+     use types
+     implicit none
+     integer,intent(in)           :: n   ! Order der Interpolation2D 2 = x,y,x*y,x**2, y**2
+     real,intent(in)              :: x
+     real,intent(in)              :: y ! Punkt der Evaluation   
+     integer,intent(in)           :: pi  ! Indiz des Polynoms
+     real,dimension(6,200),intent(in) :: Coefficients  ! input
+
+     real,intent(out)             :: Jac  ! Resultat
+    !lokal
+     real                         :: dxdx, dxdy, dydx, dydy
+     integer                      :: k
+     ! berechnete Forms des Polynoms auf einen Referenznetz
+     ! a/ coeffsX=a0+a1X+a2Y+a3XY
+    k=10
+     dxdx=Coefficients(2,2*k-1)+Coefficients(4,2*k-1)*y
+     dxdy=Coefficients(3,2*k-1)+Coefficients(4,2*k-1)*x
+     dydx=Coefficients(2,2*k)+Coefficients(4,2*k)*y
+     dydy=Coefficients(3,2*k)+Coefficients(4,2*k)*x
+
+     Jac=dxdx*dydy-dxdy*dydx
+        
+     WRITE(*,303)  'Value J =', Jac
+303  format (a, f10.5)
+  END subroutine lgevalderiv3
 
   !**************************************************************************!
   !                                                                          !

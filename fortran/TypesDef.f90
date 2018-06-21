@@ -20,7 +20,7 @@ MODULE Types
      integer              :: nraumy         ! Anzahl Gitterpunkte y-Richtung  !
      real                 :: startx, starty ! Position der linken unteren Ecke!
      real                 :: endx, endy     ! Position der rechten oberen Ecke!
-     real                 :: xlen, ylen     ! Längen des Rechengebiets in x/y !
+     real                 :: xlen, ylen     ! Laengen des Rechengebiets in x/y !
      real                 :: dx             ! Gitterschrittweite (Delta x)    !
      real                 :: dy             ! Gitterschrittweite (Delta y)    !
      real                 :: dxq            ! Kehrwert ( 1/ Delta x )         !
@@ -31,6 +31,7 @@ MODULE Types
      real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
      real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
 					    ! Anzahl: (nraumx)*(nraumy)       !
+     real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation!   
   end type tMesh
 
   type tNumeric
@@ -98,8 +99,8 @@ MODULE Types
   end type tLogicals
 
   type tExakt
-     real,pointer         :: loesung(:,:)   ! Feld mit der exakten Lösung     !
-     integer              :: kmaxex         ! Genauigkeit der exakten Lösung  !
+     real,pointer         :: loesung(:,:)   ! Feld mit der exakten L\F6sung     !
+     integer              :: kmaxex         ! Genauigkeit der exakten L\F6sung  !
   end type tExakt
 
   type tFileIO
