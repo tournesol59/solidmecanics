@@ -28,8 +28,9 @@ program main
   !--------------------------------------------------------------------------!
   ! Variablendeklarationen                                                   !
   !--------------------------------------------------------------------------!
-  type(tMesh)                :: Gitter     ! Gitterwerte                     !
-  type(tRandbedingungen)     :: RB         ! Randbedingungen                 !
+  type(tMesh)                :: Gitter     ! Gitterwerte in matriz           !
+  type(tMeshGen)             :: Gitter2D   ! Gitterwerte in Generic inputfile!
+  type(tRandbedingungen)     :: RB         ! Randbedingungen Code            !
   type(tConstants)           :: Const      ! Konstanten                      !
   type(tFileIO)              :: FileIO     ! Ausgabesteuerung                !
   type(tExakt)               :: Exakt      ! Exakte Loesung                  !
@@ -51,18 +52,22 @@ program main
   !--------------------------------------------------------------------------!  
 !  Testen Lagrange1d/hermite1d functions
   type(tPolynom) :: pol_pts, pol_root1, pol_nom1, pol_value, pol_lagr, pol_der, pol_herm
+  type(tPolynom)                 :: pol1, pol2, pol3
   real,pointer   :: Coefficients(:,:)  ! Referenz interpolation polynoms coeffsX,Y, size=2*100
-  real           :: Jac
+  real           :: Jac, val1, val2
   integer        :: i,j,n, allocStat
 
   ! -------------------------------------------------------------< BEGIN >---!
-  ! ------------------------------------------< Eingabegroessen einlesen >---!
+  ! --------------------------< Eingabegroessen einlesen: 2 Alternativen >---!
 
   call input(Gitter,Exakt,Const,FileIO)       
+  ! OR
+  call input_file(Gitter2D,Exakt,Const,FileIO)
 
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
-  call allocatefields(Const,Gitter,RB,Uvar,rhs,Exakt,chicoeff,VarNum)  
+  call allocateFields(Const,Gitter,RB,Uvar,rhs,Exakt,chicoeff,VarNum)
+  call allocateGitter2D(Gitter2D)  
   call linlg2allocatesdns(Gitter, SkalarProdMatrixQ, SkalarProdMatrixT)
   !call linlgallocatesparse(Gitter, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal) 
 
@@ -84,6 +89,8 @@ program main
    else 
       call createMesh2(Gitter)
    endif
+  
+   call createMeshGen(Gitter2D)
   ! call trychristoffei(Gitter, chicoeff)
 
 
@@ -110,8 +117,8 @@ program main
 
   pol_der%n=3
   pol_der%coeffs=  (/ 0.5, 0.1, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
-  call expandhermite(pol_pts, pol_value, pol_der, pol_herm)
-  n=3
+ ! call expandhermite(pol_pts, pol_value, pol_der, pol_herm)
+ ! n=3
 
   ! call calchermitepol(n, Coefficients)
 
@@ -133,12 +140,24 @@ program main
 
   write(*,*) '     Christoffei Koeffizienten berechnet   '
 ! call from Interpol2d
-!  call trychristoffei(Gitter, chicoeff)
+ ! call trychristoffei(Gitter, chicoeff)
 
-
+  write(*,*) '================    Matrix ausfuellen starts now    ================ '
   !----------< Matrix fuellen :: generic name common to Lagrange // Hermite>-----------!
 
  ! call linlgfillmatrix(Gitter, Const, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
+   pol1%n=2
+   pol1%coeffs= (/ -1.0, 0.0, 1.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+ !  pol2%n=2
+ !  pol2%coeffs= (/ 1.0, 1.0, 0.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+ !  pol3%n=2
+ !  pol3%coeffs= (/ 1.0,-1.0, 0.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+     call evaluation(pol1, 0.57735, val1)
+     call evaluation(pol1, 0.57735, val2)
+     write(*,102) val1
+     write(*,102) val2
+ 102  format (f10.5)
+
  ! call linlg2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
@@ -159,7 +178,7 @@ program main
  !          STAT = allocStat);
 
  !  call deallocateFields(Gitter, RB, Exakt, Uvar, rhs, chicoeff, Const, VarNum )
-    
+    call deallocateGitter2D(Gitter2D)
    ! if (allocStat.NE.0) then
    !    print *, 'ERROR AllocateFields: Could not deallocate correctly!'
    !    STOP

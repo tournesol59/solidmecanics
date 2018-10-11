@@ -12,113 +12,131 @@ MODULE Hermite2d_mod
   implicit none
  
   private
- 
-  interface fillhermitepol
-    module procedure fillhermitepol
-  end interface
-
-  interface calchermitepol
-    module procedure calchermitepol
-  end interface
+ !********************************************************************!
+!  Variable Tabelle der innere produkt von Komposition-Gradienten    !
+!        je nach Indiz des Netzelements und der Position der         !
+!        subelement  in der Platte                                   !
+!                                                                    !
+!********************************************************************!
+! Tabelle der Gauss Points for approximation of an integral over a square region
+! used in linlg2dfillmatrixq
+  real,dimension(8)   :: GaussPoints = (/ (/ 0.57735, 0.57735 /), &
+                             (/ 0.57735, -0.57735 /), &
+                             (/ -0.57735, 0.57735 /), &
+                             (/ -0.57735, -0.57735 /) /)
 
   interface evalhermitepol
     module procedure evalhermitepol
   end interface
 
  !-----------------------------------------
-  public:: fillhermitepol, calchermitepol, evalhermitepol
+  public:: linhm2allocatesdns, computeGaussInt, linhm2dfillmatrixq, evalhermitepol
  !-----------------------------------------
   contains
+!********************************************************************!
+!  procedure linhm2allocatesdns DENSE MATRICES: n=10--> 10000 memory !
+!********************************************************************!
+ SUBROUTINE linhm2allocatesdns(Gitter, SkalarProdMatrixQ, SkalarProdMatrixT)
+ use types
+ use interpol2D_mod
+ use Lagrange1d_mod
+ implicit none
+  type(tMesh)         :: Gitter
+  integer             :: allocStat  
+  real,pointer        :: SkalarProdMatrixQ(:,:)
+  real,pointer        :: SkalarProdMatrixT(:,:,:)
+  intent(in)          :: Gitter
+  intent(inout)       :: SkalarProdMatrixQ, SkalarProdMatrixT
+  
+ allocate(SkalarProdMatrixQ(1:Gitter%nraumx*Gitter%nraumy,1:Gitter%nraumx*Gitter%nraumy), & 
+     SkalarProdMatrixT(1:Gitter%nraumx*Gitter%nraumy,1:Gitter%nraumx*Gitter%nraumy,1:4), & 
+     STAT = allocStat) 
+      !    MatrixQ : Gleichung, 1-Dim
+      !    MatrixT : Gleichung, 4-Dims
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateFields: Could not allocate all variables!'
+       STOP
+    end if
+ END SUBROUTINE linhm2allocatesdns
 
-!**************************************************************!
-!							       !
-!  Subroutine fillhermitepol                                   !
-!                             !
-!**************************************************************!
-    SUBROUTINE fillhermitepol(n, quad, MatrixInterp)
-    use types
-    implicit none
-    integer,intent(in)            :: n ! Order der Interpolation ==3
-    logical,intent(in)            :: quad ! if true Rechteck (0,1)*(0,1) als Referenz Element
-    real,dimension(1),intent(out) :: MatrixInterp(100) ! Matrix entsprechend zum Netzelement
-    ! lokal 
-    integer                       :: i,j
-    real                          :: powx,powy,term,derx,dery
-    real,dimension(2)              :: x_1=(/-1,1/)
-    real,dimension(2)              :: y_1=(/-1,1/)
-  !  if (n.eq.3)  then    ! only order 3 is supported
-       ! Hier Identity Matrix zumm Start musst aktualisiert werden !
-     do i=0,9
-       do j=0,9
-         MatrixInterp(1+i+j*10)=0.0
-       enddo
-       MatrixInterp(i+i*10+1)=1.0
-     enddo
-       
-  !  first category, no algorithm here but a plenty of code!!!
-  !  erste Equation:: p(x,y)=(a0*+a1*X+a2*Y+a3*XY+a4*X2+a5*Y2+a6*X3+a7*Y3+a8*X2Y+a9*XY2) eine VanderMonde Matrix muss gefuellt werden.
+!********************************************************************!
+!  procedure computeGaussInt   : Perform the filling of the SkalarProdMatrix   !
+!              ! tt=0: Prop*Unity, 1:Prop*DerX, 2:Prop*DerX2, 3: DerX*DerX, 4:DerX*DerX2
+!                   5: DerX2*DerX2, 6: DerX*DerX3
+!              ! ii: Art of the polynoms: position of one elemt to another
+!********************************************************************!
+ SUBROUTINE computeGaussInt(tt, ii, pol1, pol2, pol3, valend)
+ use types
+ use interpol2D_mod
+ use Lagrange1d_mod
+ implicit none
+ integer,intent(in)	     :: tt, ii
 
-!--------
-!
-!Complicated
-!
-!--
+ real,intent(out)                    :: valend
+ type(tPolynom),intent(in)           :: pol1, pol2, pol3
+ real                                :: val1, val2, val3, val4
+ real                                :: der1, der2, der3, der4
+ integer                             :: j
+ select case(tt) ! Aim of the calculus: should we have Prop*Unity...
+
+ case(0)  !Prop*Prop
+  do j=0,3 
+   select case(ii)  ! Art of polynoms in the element
+   case(0)   
+     call evaluation(pol1, GaussPoints(2*j+1), val1)
+     call evaluation(pol1, GaussPoints(2*j+2), val2)
+     !call evaluation(pol1, GaussPoints(2*j+1), val3)
+     !call evaluation(pol1, GaussPoints(2*j+2), val4)
+     valend=valend+val1*val2*val1*val2*1.0;
+   case(-1)
+     call evaluation(pol1, GaussPoints(2*j+1), val1)
+     call evaluation(pol1, GaussPoints(2*j+2), val2)
+     call evaluation(pol2, GaussPoints(2*j+1), val3)
+     call evaluation(pol2, GaussPoints(2*j+2), val4)
+     valend=valend+val1*val2*val3*val4*1.0;
+  case(+1)
+     call evaluation(pol1, GaussPoints(2*j+1), val1)
+     call evaluation(pol1, GaussPoints(2*j+2), val2)
+     call evaluation(pol3, GaussPoints(2*j+1), val3)
+     call evaluation(pol3, GaussPoints(2*j+2), val4)
+     valend=valend+val1*val2*val3*val4*1.0;
+  end select
+  enddo
+ end select
+! return valend
+ END SUBROUTINE computeGaussInt
+
+!********************************************************************!
+!  procedure linhm2dfillmatrixq:                                     !
+!    depends on computeGaussInt(tt, ii, pol1, pol2, pol3, valuex)    !
+!        , which is to be actualized to permit derivation up to fourth degree !
+!******************************************************************!
+ SUBROUTINE linhm2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
+ use types
+ use interpol2D_mod
+ use Lagrange1d_mod
+ implicit none
+ type(tMesh),intent(in)          :: Gitter
+  real,intent(inout)             :: chicoeff(1:8,1:100)  ! 2nd Dimension ist
+  type(tNumeric),intent(inout)   :: VarNum
+  real,pointer,intent(inout)     :: SkalarProdMatrixQ(:,:)
+  ! lokale Variablen
+  integer                        :: i,j,k,r, l,m,n,p
+  real                           :: K_x, K_y, costh, sinth, cosps, sinps, valuex, valuey
+  type(tPolynom)                 :: pol1, pol2, pol3
+   pol1%n=3
+   pol1%coeffs= (/ 2.0, -3.0, 0.0 , 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+   pol2%n=3
+   pol2%coeffs= (/ 1.0, -2.0, 1.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+   pol3%n=3
+   pol3%coeffs= (/ -2.0, 3.0, 0.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
+   pol3%n=3
+   pol3%coeffs= (/ 1.0, -1.0, 0.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 /)
 
 
 
-    ! Pruefen das Resultat der Matrix am Schirm:
-    do i=1,10
-      write(*,201) (MatrixInterp(i+j*10), j=0,9)
-    enddo
-201  format (f10.5)
-    END SUBROUTINE fillhermitepol
+ END SUBROUTINE linhm2dfillmatrixq
 
-
-    SUBROUTINE calchermitepol
-    use types
-    implicit none
-    ! Variables
-    integer,intent(in)       :: n  !Order==3
-    real,pointer,intent(in)          :: Coefficients(:,:)  ! Der Input: 10 Koefficients x NNodes
-    ! lokalen Variablen
-    real,dimension(100)      :: MatrixInterp
-    real,dimension(10)       :: solution
-    integer                  :: k,i
-    integer ,dimension(10)   :: pivot
-    integer                  :: ok     ! used by LAPACK FORTRAN subroutine SGESV
-
-   k=1
-      call fillhermitepol(n, .true. , MatrixInterp)  ! Fuellt die Matrixinterp aus
-                                                   !  ,um die Koeffizient per linear Inversion
-					           !  in "solution" zu berechnen
-      solution(1)=1.0   ! First equation, pi(ai)=1
-      solution(2)=-1.0  ! Second equation, dpi%dx(ai)=-1
-      solution(3)=-1.0  ! Third equation, dpi%dy(ai)=-1
-      solution(4)=0.0   ! Fourth equation, pi(ai+1)=0
-      solution(5)=0.0  ! Fifth equation, dpi%dx(ai+1)=0
-      solution(6)=0.0   ! Sixth equation, pi(ai+2)=0
-      solution(7)=-0.707  ! Seventh equation, dpi%dx(ai+2)=-0.707
-      solution(8)=-0.707  ! Eighth equation, dpi%dy(ai+2)=-0.707
-      solution(9)=0.0   ! Ninth equation, pi(ai+3)=0
-      solution(10)=0.0 ! Tenth equation, dpi%dy(ai+3)=0
-
-   ! call Lapack procedure, rhs solution will be erased and filled by the result of linear
- !     call SGESV( 10, 1, MatrixInterp, 10, pivot, solution, 10, ok)
-      do i=1,10
-         Coefficients(i,k)=solution(i)
-      enddo 
-
-    ! Pruefen das Resultat der Coeffs am Schirm:
-    write(*,*)
-    write(*,303) '    Coefficients k   =', k 
-    do i=1,10
-      write(*,203) (Coefficients(i,1))
-    enddo
-
-203  format (f10.5)
-303  format (a, i10)
-    END SUBROUTINE calchermitepol
- 
 
    SUBROUTINE evalhermitepol(n, l, Coefficients, Values)
     use types

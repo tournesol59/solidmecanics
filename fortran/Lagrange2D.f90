@@ -18,20 +18,21 @@ private
 !        subelement  in der Platte                                   !
 !                                                                    !
 !********************************************************************!
-
+! Tabelle der Gauss Points for approximation of an integral over a square region
+! used in linlg2dfillmatrixq
   real,dimension(8)   :: GaussPoints = (/ (/ 0.57735, 0.57735 /), &
                              (/ 0.57735, -0.57735 /), &
                              (/ -0.57735, 0.57735 /), &
-                             (/ -0.57735, 0.57735 /) /)
+                             (/ -0.57735, -0.57735 /) /)
 
+! DEPRECIATED: Tabelle der alle moeglichen Skalar Produkten zw. den surf. Gradienten Vektoren of piecewise linear funktion:
   real,dimension(12)   :: GradientSurf = (/ (/ 1.0, 0.0 /), &
                              (/ 0.0, 1.0 /), &
                              (/-1.0, 1.0 /), &
                              (/-1.0, 0.0 /), &
                              (/ 0.0,-1.0 /), &
                              (/ 1.0,-1.0 /) /)
-! Dann Tabelle der alle moeglichen Skalar Produkten zw. den surf. Gradienten Vektoren !
-! nur ein Teil davon wird benutzt : !
+
   real,dimension(21)    :: GradientScalarProd = &
                           (/ 1.0,  0.0, -1.0, -1.0,  0.0,  1.0, &
                                    1.0,  1.0,  0.0, -1.0, -1.0, &
@@ -61,7 +62,9 @@ contains
   
  allocate(SkalarProdMatrixQ(1:Gitter%nraumx*Gitter%nraumy,1:Gitter%nraumx*Gitter%nraumy), & 
      SkalarProdMatrixT(1:Gitter%nraumx*Gitter%nraumy,1:Gitter%nraumx*Gitter%nraumy,1:4), & 
-     STAT = allocStat)
+     STAT = allocStat) 
+      !    MatrixQ : Gleichung, 1-Dim
+      !    MatrixT : Gleichung, 4-Dims
     if (allocStat.NE.0) then
        print *, 'ERROR AllocateFields: Could not allocate all variables!'
        STOP
@@ -78,7 +81,7 @@ contains
  use interpol2D_mod
  use Lagrange1d_mod
  implicit none
- integer,intent(in)	     :: tt, ii;
+ integer,intent(in)	     :: tt, ii
 
  real,intent(out)                    :: valend
  type(tPolynom),intent(in)           :: pol1, pol2, pol3
@@ -244,10 +247,13 @@ contains
 ! return valend
  END SUBROUTINE computeGaussInt
  
+
+
 !********************************************************************!
 !  procedure linlg2dfillmatrixq:                                     !
-!     
-!********************************************************************!
+!    depends on computeGaussInt(tt, ii, pol1, pol2, pol3, valuex)    !
+!        , which is to be actualized to permit derivation up to fourth degree !
+!******************************************************************!
  SUBROUTINE linlg2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
  use types
  use interpol2D_mod
@@ -318,7 +324,8 @@ contains
           case (0)  ! Elemts superposition, calc of Four pts Gauss Integral with Prop*DerX,Y
              call computeGaussInt(1, p, pol1, pol2, pol3, valuex) 
              call computeGaussInt(1, p, pol1, pol2, pol3, valuey) 
-             SkalarProdMatrixQ(k,l)= (valuex*K_x + valuey*K_y)
+             SkalarProdMatrixQ(k,l)= (valuex + valuey)  ! test only
+            ! SkalarProdMatrixQ(k,l)= (valuex*K_x + valuey*K_y)
           case (1)
              call computeGaussInt(1, p, pol1, pol2, pol3, valuex) 
              call computeGaussInt(1, p, pol1, pol2, pol3, valuey) 

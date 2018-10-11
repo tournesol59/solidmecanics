@@ -23,11 +23,18 @@ module allocateFields_mod
   interface allocateFields
      module procedure allocateFields
   end interface
+  interface allocateGitter2D
+     module procedure allocateGitter2D
+  end interface
+
   interface deallocateFields
      module procedure deallocateFields
   end interface
+  interface deallocateGitter2D
+     module procedure deallocateGitter2D
+  end interface
   !--------------------------------------------------------------------------!
-  public  :: allocateFields, deallocateFields
+  public  :: allocateFields, allocateGitter2D, deallocateFields, deallocateGitter2D
   !--------------------------------------------------------------------------!
 
 contains
@@ -86,6 +93,38 @@ contains
     
   end subroutine allocateFields
 
+
+  subroutine allocateGitter2D(Mesh2D)
+  
+  use TYPES
+
+  implicit none    
+    !------------------------------------------------------------------------!
+    ! Variablendeklarationen                                                 !
+    !------------------------------------------------------------------------!
+    ! Liste der übergebenen Argumente                                        !
+    type(tMeshGen)         :: Mesh2D     ! Gitter Punkten und Elements (Quad)!
+    ! -----------------------------------------------------------------------!
+    integer                :: allocStat
+
+    allocate(Mesh2D%x(1:Mesh2D%nodes), &
+	 Mesh2D%y(1:Mesh2D%nodes),  &
+	 Mesh2D%z(1:Mesh2D%nodes),  &
+         Mesh2D%quad(1:4, 1:Mesh2D%elmts), &
+         Mesh2D%quadtop(1:Mesh2D%ntop), & 
+         Mesh2D%quadbottom(1:Mesh2D%nbottom), & 
+         Mesh2D%quadleft(1:Mesh2D%nleft), & 
+         Mesh2D%quadright(1:Mesh2D%nright), & 
+         STAT = allocStat )
+
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateFields: Could not allocate all variables!'
+       STOP
+    end if
+
+  end subroutine allocateGitter2D
+
+
   subroutine deallocateFields(Const,Mesh,RB,Exakt,Uvar,rhs,chicoeff,VarNum)
 
     use TYPES
@@ -132,5 +171,30 @@ contains
     write(*,*) '============= Program terminated correctly ================ '
     
   end subroutine deallocateFields
+
+
+  subroutine deallocateGitter2D(Mesh2D)
+  
+  use TYPES
+
+  implicit none    
+    !------------------------------------------------------------------------!
+    ! Variablendeklarationen                                                 !
+    !------------------------------------------------------------------------!
+    ! Liste der übergebenen Argumente                                        !
+    type(tMeshGen)         :: Mesh2D     ! Gitter Punkten und Elements (Quad)!
+    ! -----------------------------------------------------------------------!
+    integer                :: allocStat
+
+    deallocate(Mesh2D%x, Mesh2D%y, Mesh2D%z, Mesh2D%quad, &
+               Mesh2D%quadtop, Mesh2D%quadbottom, Mesh2D%quadleft, Mesh2D%quadright, & 
+         STAT = allocStat )
+
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateFields: Could not deallocate correctly!'
+       STOP
+    end if
+
+  end subroutine deallocateGitter2D
 
 end module allocateFields_mod

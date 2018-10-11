@@ -34,6 +34,21 @@ MODULE Types
      real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation!   
   end type tMesh
 
+  type tMeshGen
+     integer              :: nodes          ! Anzahl der Gitterpunkte (Nodes) !
+     real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
+     integer              :: elmts          ! Anzahl der Quadranglen          !
+     integer,pointer      :: quad(:,:)      ! Indiz der Punte fuer Quadrangle !
+     integer              :: ntop           ! Anzahl der Quadrangle an oberen Wand !
+     integer,pointer      :: quadtop(:)     ! Indiz der Quadrangle an oberen Wand  !
+     integer              :: nbottom        ! Anzahl der Quadrangle an untern Wand !
+     integer,pointer      :: quadbottom(:)  ! Indiz der Quadrangle an untern Wand  !
+     integer              :: nleft          ! Anzahl der Quadrangle an linken Wand !
+     integer,pointer      :: quadleft(:)    ! Indiz der Quadrangle an linken Wand  !
+     integer              :: nright         ! Anzahl der Quadrangle an rechten Wand!
+     integer,pointer      :: quadright(:)   ! Indiz der Quadrangle an rechten Wand !
+  end type tMeshGen 
+
   type tNumeric
     real, pointer     :: Verschiebung(:,:) ! 3 Verschiebungen in der Mitte der Platte !
     real, pointer     :: TensionTg(:,:)    ! array pointer: Spannung tengential Tensor!
@@ -137,7 +152,7 @@ MODULE Types
   end type tPolynom
 
   !---------------------------------------------------------------------------!
-  public  :: tMesh, tZeiten, tRandbedingungen, tConstants, tLogicals, &
+  public  :: tMesh, tMeshGen, tZeiten, tRandbedingungen, tConstants, tLogicals, &
              tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, tNumeric, tPolynom
   !---------------------------------------------------------------------------!
 

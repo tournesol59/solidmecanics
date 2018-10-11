@@ -16,7 +16,7 @@
 module createmesh_mod
   implicit none
 
-  public :: createMesh, createMesh2
+  public :: createMesh, createMesh2, createMeshGen
 !********************************************************************!
 !  Variable Tabelle der Biegung-Plate fuer Einlesen der (10x10)Werte !
 !********************************************************************!
@@ -175,5 +175,43 @@ module createmesh_mod
   Mesh%xlen = Mesh%endx - Mesh%startx
   Mesh%ylen = Mesh%endy - Mesh%starty
  end subroutine createMesh2
+
+
+
+  subroutine createMeshGen(Mesh2D)
+
+  use types
+
+  implicit none
+
+  !--------------------------------------------------------------------------!
+  ! Variablendeklarationen                                                   !
+  !--------------------------------------------------------------------------!
+  ! Liste der übergebenen Argumente                                          !
+  !                                                                          !
+  type(tMeshGen)             :: Mesh2D     ! Gitterwerte                     !
+  !                                                                          !
+  ! Local variable declaration                                               !
+  !    
+  !
+  integer                    :: i,j        ! Zählvariablen                   !
+  !--------------------------------------------------------------------------!
+  !!! intent(in)                 :: Const
+  intent(inout)              :: Mesh2D
+  !--------------------------------------------------------------------------!
+  
+  OPEN(UNIT=25, FILE='Untitled1.msh', ACTION='READ')
+  ! OPERATIONEN HIER ...  !
+  read (25,*)
+  CLOSE(UNIT=25)
+
+ 105  format (a20)
+ 106  format (a,a)
+ 205  format (f10.5)
+ 206  format (a,f10.5)
+ 305  format (i10)
+ 306  format (a,i10)
+
+  end subroutine createMeshGen
 
 end module createmesh_mod
