@@ -13,14 +13,9 @@ program main
 
   implicit none
 
- ! Parameter des Gitter,netz: Ebene auf eine Fläche
- ! integer      :: NRAUMX=20
- ! integer      :: NRAUMY=10
- ! real         :: STARTX=0.0
- ! real         :: ENDX=30.0
- ! real         :: STARTY=0.0
- ! real         :: ENDY=15.0
- ! Referenz Flaeche ist ein Rechteck-quadratnetz mit NRAUMX*NRAUMY Elementen
+  ! logical: 0: Ebene Flaeche, 1: mit Kurvatur Flaeche
+  logical      :: MeshPlanar
+  ! Referenz Flaeche ist ein Rechteck-quadratnetz mit NRAUMX*NRAUMY Elementen
 
   ! Parameter der Interpolation
   integer      :: ORDER=3   ! 2 before
@@ -30,6 +25,7 @@ program main
   !--------------------------------------------------------------------------!
   type(tMesh)                :: Gitter     ! Gitterwerte in matriz           !
   type(tMeshGen)             :: Gitter2D   ! Gitterwerte in Generic inputfile!
+  type(tCurv)                :: KurvVect   ! Numerische Felder fuer Kurve, Christoffei Koeffs abhangig, Rechnung !
   type(tRandbedingungen)     :: RB         ! Randbedingungen Code            !
   type(tConstants)           :: Const      ! Konstanten                      !
   type(tFileIO)              :: FileIO     ! Ausgabesteuerung                !
@@ -45,9 +41,6 @@ program main
 ! size=c.a. 500
   real,pointer   :: SparseSkalarProdCol(:) ! sparse matrix csr format: three vectors (2)
   real,pointer   :: SparseSkalarProdVal(:) ! sparse matrix csr format: three vectors (3)
-  real,pointer   :: chicoeff(:,:)          ! 8 Values fuer jedes Punktes: Christoffel Koeffizienten
-  real,pointer   :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:) &
-                        ,der_a2yx_x(:),der_a2yx_y(:),der_a2yy_x(:),der_a2yy_y(:)  
                    ! Alle Punkten der Area 2-zeit differenzierbar!
   !--------------------------------------------------------------------------!  
 !  Testen Lagrange1d/hermite1d functions
@@ -58,6 +51,8 @@ program main
   integer        :: i,j,n, allocStat
 
   ! -------------------------------------------------------------< BEGIN >---!
+  !read(5,*) MeshPlanar
+
   ! --------------------------< Eingabegroessen einlesen: 2 Alternativen >---!
 
   call input(Gitter,Exakt,Const,FileIO)       
@@ -66,22 +61,12 @@ program main
 
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
-  call allocateFields(Const,Gitter,RB,Uvar,rhs,Exakt,chicoeff,VarNum)
+  call allocateFields(Const,Gitter,RB,Uvar,rhs,Exakt)
+  call allocateFieldsCurv(Gitter,KurvVect)
+  call allocateFieldsVarNum(Gitter,VarNum)
   call allocateGitter2D(Gitter2D)  
   call linlg2allocatesdns(Gitter, SkalarProdMatrixQ, SkalarProdMatrixT)
   !call linlgallocatesparse(Gitter, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal) 
-
-  allocate(der_a1xx_x(100))
-  allocate(der_a1xx_y(100))
-
-  allocate(der_a1xy_x(100))
-  allocate(der_a1xy_y(100))
-
-  allocate(der_a2yx_x(100))
-  allocate(der_a2yx_y(100))
-
-  allocate(der_a2yy_x(100))
-  allocate(der_a2yy_y(100))
 
    ! --------------------------< Gitter festlegen >---------------------!
    if (Const%auto == 1) then
@@ -127,16 +112,16 @@ program main
   write(*,*) '================    Interpolation starts now    ================ '
   write(*,*)
 ! call from Interpol2d
-  call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
-                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+!!!  call basisdifferenz(Gitter,der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
+!!!                                ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
   
   write(*,*) '     differenz der lokalen Basis kompletiert    '
 ! call from Interpol2d
-  !call trychristoffei(Gitter, chicoeff)
+!!!  call trychristoffei(Gitter, chicoeff)
 
 ! call from Interpol2d
-  call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
-                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
+!!!  call christoffei(Gitter, chicoeff, der_a1xx_x,der_a1xx_y,der_a1xy_x,der_a1xy_y &
+!!!                                 ,der_a2yy_x, der_a2yy_y, der_a2yx_x, der_a2yx_y)
 
   write(*,*) '     Christoffei Koeffizienten berechnet   '
 ! call from Interpol2d
@@ -158,32 +143,18 @@ program main
      write(*,102) val2
  102  format (f10.5)
 
- ! call linlg2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
-  ! ------------------------------------------< Speicherplatz allokieren >---!
+!!! call linlg2dfillmatrixq(Gitter, chicoeff, VarNum, SkalarProdMatrixQ)
 
-    deallocate(der_a1xx_x)
-    deallocate(der_a1xx_y)
-
-    deallocate(der_a1xy_x)
-    deallocate(der_a1xy_y)
-
-    deallocate(der_a2yx_x)
-    deallocate(der_a2yx_y)
-
-    deallocate(der_a2yy_x)
-    deallocate(der_a2yy_y)
+  ! ------------------------------------------< Speicherplatz de-allokieren >---!
 
  !   deallocate(SkalarProdMatrixQ, SkalarProdMatrixT, STAT = allocStat )
  !   deallocate(SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal, &
  !          STAT = allocStat);
 
- !  call deallocateFields(Gitter, RB, Exakt, Uvar, rhs, chicoeff, Const, VarNum )
-    call deallocateGitter2D(Gitter2D)
-   ! if (allocStat.NE.0) then
-   !    print *, 'ERROR AllocateFields: Could not deallocate correctly!'
-   !    STOP
-   ! end if 
-
+  call deallocateFields(Const,Gitter,RB,Exakt,Uvar,rhs)
+  call deallocateFieldsCurv(KurvVect)
+  call deallocateFieldsVarNum(VarNum)
+  call deallocateGitter2D(Gitter2D)  
       
  !   if (allocStat.NE.0) then
  !      print *, 'ERROR AllocateSparseMatrix: Could not deallocate correctly!'

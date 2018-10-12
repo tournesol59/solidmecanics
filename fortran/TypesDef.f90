@@ -29,8 +29,9 @@ MODULE Types
      real                 :: dyy            ! dy^2 (Delta y * Delta y )       !
      real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
      real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
+
      real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
-					    ! Anzahl: (nraumx)*(nraumy)       !
+
      real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation!   
   end type tMesh
 
@@ -48,6 +49,12 @@ MODULE Types
      integer              :: nright         ! Anzahl der Quadrangle an rechten Wand!
      integer,pointer      :: quadright(:)   ! Indiz der Quadrangle an rechten Wand !
   end type tMeshGen 
+
+  type tCurv              ! Abhaengig type tMesh fuer (nraumx, nraumy) !
+     real,pointer         :: chicoeff(:,:)          ! 8 Values fuer jedes Punktes: Christoffel Koeffizienten
+     real,pointer         :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:), &
+                          der_a2yx_x(:),der_a2yx_y(:),der_a2yy_x(:),der_a2yy_y(:)  
+  end type tCurv
 
   type tNumeric
     real, pointer     :: Verschiebung(:,:) ! 3 Verschiebungen in der Mitte der Platte !
@@ -152,7 +159,7 @@ MODULE Types
   end type tPolynom
 
   !---------------------------------------------------------------------------!
-  public  :: tMesh, tMeshGen, tZeiten, tRandbedingungen, tConstants, tLogicals, &
+  public  :: tMesh, tMeshGen, tCurv, tZeiten, tRandbedingungen, tConstants, tLogicals, &
              tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, tNumeric, tPolynom
   !---------------------------------------------------------------------------!
 
