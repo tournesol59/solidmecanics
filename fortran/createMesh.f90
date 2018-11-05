@@ -16,7 +16,8 @@
 module createmesh_mod
   implicit none
 
-  public :: createMesh, createMesh2, createMeshGen
+  public :: createMesh, createMesh2, createMeshGen, createMeshGen2
+
 !********************************************************************!
 !  Variable Tabelle der Biegung-Plate fuer Einlesen der (10x10)Werte !
 !********************************************************************!
@@ -196,7 +197,6 @@ module createmesh_mod
   !
   integer                    :: i,j        ! Zählvariablen                   !
   !--------------------------------------------------------------------------!
-  !!! intent(in)                 :: Const
   intent(inout)              :: Mesh2D
   !--------------------------------------------------------------------------!
   
@@ -213,5 +213,87 @@ module createmesh_mod
  306  format (a,i10)
 
   end subroutine createMeshGen
+
+
+  subroutine createMeshGen2(Mesh2D)
+
+  use types
+
+  implicit none
+
+  !--------------------------------------------------------------------------!
+  ! Variablendeklarationen                                                   !
+  !--------------------------------------------------------------------------!
+  ! Liste der übergebenen Argumente                                          !
+  !                                                                          !
+  type(tMeshGen)             :: Mesh2D     ! Gitterwerte                     !
+  !                                                                          !
+  ! Local variable declaration                                               !
+  !    
+  !
+  integer                    :: i,j,k,n,el ! Zählvariablen                   !
+  !--------------------------------------------------------------------------!
+  intent(inout)              :: Mesh2D
+  !--------------------------------------------------------------------------!
+   
+  n=0
+  do i= 0,9 
+    do j= 0,9
+     Mesh2D%x(j*10+i+1)   = X1(i+1)
+     Mesh2D%z(j*10+i+1)   = Z1(i+1)
+     Mesh2D%y(j*10+i+1)   = 0.0 + j*1.11111
+     n=n+1
+    enddo
+  enddo 
+!  Mesh2D%nodes = n
+
+  el=0
+  do i= 0,8
+    do j= 0,8
+      k = j*10+i+1
+      Mesh2D%quad(1, j*9+i+1)   = k
+      Mesh2D%quad(2, j*9+i+1)   = k+1
+      Mesh2D%quad(3, j*9+i+1)   = k+10+1
+      Mesh2D%quad(4, j*9+i+1)   = k+10
+      el=el+1
+    enddo
+  enddo
+!  Mesh2D%elmts = el
+
+  n=0
+  do i= 0,8
+    k = 8*9+i+1
+    Mesh2D%quadtop(i+1)   = k
+    n=n+1
+  enddo
+!  Mesh2D%ntop = n
+
+  n=0
+  do i= 0,8
+    k = i+1
+    Mesh2D%quadbottom(i+1)   = k
+    n=n+1
+  enddo
+!  Mesh2D%nbottom = n
+
+  n=0
+  do j= 0,8
+    k = j*9+9+1
+    Mesh2D%quadright(j+1)   = k
+    n=n+1
+  enddo
+!  Mesh2D%nright = n
+
+  n=0
+  do j= 0,8
+    k = j*9+1
+    Mesh2D%quadleft(j+1)   = k
+    n=n+1
+  enddo
+!  Mesh2D%nleft = n
+
+
+  end subroutine createMeshGen2
+
 
 end module createmesh_mod

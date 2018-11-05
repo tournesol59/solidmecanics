@@ -74,10 +74,20 @@ program main
    else 
       call createMesh2(Gitter)
    endif
-  
-   call createMeshGen(Gitter2D)
-  ! call trychristoffei(Gitter, chicoeff)
 
+   if (Const%auto == 1) then  
+     call createMeshGen(Gitter2D)
+   else 
+      Gitter2D%nodes=100
+      Gitter2D%elmts=81
+      Gitter2D%ntop = 9
+      Gitter2D%nbottom = 9
+      Gitter2D%nright = 9
+      Gitter2D%nleft = 9
+      call createMeshGen2(Gitter2D)
+   endif
+
+  ! call trychristoffei(Gitter, chicoeff)
 
   ! --------------------------< check Referenz Netz interpolieren >---------------------!
  !  call interpolref(2, Gitter);
