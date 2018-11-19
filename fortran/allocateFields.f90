@@ -187,7 +187,7 @@ contains
     allocate(Mesh2D%x(1:Mesh2D%nodes), &
 	 Mesh2D%y(1:Mesh2D%nodes),  &
 	 Mesh2D%z(1:Mesh2D%nodes),  &
-         Mesh2D%quad(1:4, 1:Mesh2D%elmts), &
+         Mesh2D%quad(1:8, 1:Mesh2D%elmts), &
          Mesh2D%quadtop(1:Mesh2D%ntop), & 
          Mesh2D%quadbottom(1:Mesh2D%nbottom), & 
          Mesh2D%quadleft(1:Mesh2D%nleft), & 

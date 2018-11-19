@@ -10,6 +10,7 @@ program main
   use Lagrange1d_mod
   use hermite1d_mod
   use hermite2d_mod
+  use verifyquad2d_mod
 
   implicit none
 
@@ -58,7 +59,12 @@ program main
   call input(Gitter,Exakt,Const,FileIO)       
   ! OR
   call input_file(Gitter2D,Exakt,Const,FileIO)
-
+  Gitter2D%nodes=361
+  Gitter2D%elmts=81
+  Gitter2D%ntop = 9
+  Gitter2D%nbottom = 9
+  Gitter2D%nright = 9
+  Gitter2D%nleft = 9
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
   call allocateFields(Const,Gitter,RB,Uvar,rhs,Exakt)
@@ -78,12 +84,6 @@ program main
    if (Const%auto == 1) then  
      call createMeshGen(Gitter2D)
    else 
-      Gitter2D%nodes=100
-      Gitter2D%elmts=81
-      Gitter2D%ntop = 9
-      Gitter2D%nbottom = 9
-      Gitter2D%nright = 9
-      Gitter2D%nleft = 9
       call createMeshGen2(Gitter2D)
    endif
 
@@ -116,6 +116,10 @@ program main
  ! n=3
 
   ! call calchermitepol(n, Coefficients)
+
+  write(*,*) '================    Verifikation Kondnrg starts now    ================ '
+  !----------< Alle Element Geometrie verifizieren :: wenn nur eins ausfaellt, dann krasht es >-----------!
+  call  checkalledgesofelmts(Gitter2D)
 
   ! -----------< Calculation of curvature, possibility of interpolation after>-----!
 

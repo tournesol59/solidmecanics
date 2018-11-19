@@ -50,7 +50,8 @@ LINUX_FLAGS = \
         LAGRANGE2D="LAGRANGE2D_mod.mod" \
         HERMITE1D="HERMITE1D_mod.mod" \
         HERMITE2D="HERMITE2D_mod.mod" \
-        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod"
+        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod" \
+        VERIFYQUAD2D="VERIFYQUAD2D_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
@@ -65,7 +66,8 @@ LINUX_FLAGS = \
         LAGRANGE2D="Lagrange2d_mod.mod" \
         HERMITE1D="hermite1d_mod.mod" \
         HERMITE2D="hermite2d_mod.mod" \
-        LAGRANGEGRAD2D="Lagrangegrad2d_mod.mod"
+        LAGRANGEGRAD2D="Lagrangegrad2d_mod.mod" \
+        VERIFYQUAD2D="verifyquad2d_mod.mod"
 endif
 
 ####################################################################
@@ -90,6 +92,7 @@ ${CREATEMESH}: createmesh.o
 {HERMITE1D}: hermite1d.o
 {HERMITE2D}: hermite2d.o
 {LAGRANGEGRAD2D}: Lagrangegrad2d.o 
+{VERIFYQUAD2D}: verifyquad2d.o 
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -117,7 +120,8 @@ library: $(LIB)(typesdef.o) \
 	 $(LIB)(Lagrange2d.o) \
 	 $(LIB)(hermite1d.o) \
 	 $(LIB)(hermite2d.o) \
-	 $(LIB)(Lagrangegrad2d.o)
+	 $(LIB)(Lagrangegrad2d.o) \
+	 $(LIB)(verifyquad2d.o)
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
@@ -157,9 +161,10 @@ $(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D)
 $(LIB)(hermite1d.o): $(TYPES)
 $(LIB)(hermite2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D) $(HERMITE1D) 
 $(LIB)(Lagrangegrad2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE2D)
+$(LIB)(verifyquad2d.o): $(TYPES)
 main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
          $(LAGRANGE1D) $(HERMITE1D) $(LAGRANGE2D)  $(LAGRANGEGRAD2D) \
-         $(HERMITE2D)
+         $(HERMITE2D) $(VERIFYQUAD2D)
 
 	@echo "make cleanall completed..."
 

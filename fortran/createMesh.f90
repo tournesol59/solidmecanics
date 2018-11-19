@@ -21,10 +21,10 @@ module createmesh_mod
 !********************************************************************!
 !  Variable Tabelle der Biegung-Plate fuer Einlesen der (10x10)Werte !
 !********************************************************************!
-  real,dimension(10)        :: X1 = (/ -0.8000, -0.6337, -0.4589, -0.2778, &
-            -0.0930, 0.0930, 0.2778, 0.4589, 0.6337, 0.8000 /) 
-  real,dimension(10)        :: Z1 = (/ -0.2144, -0.1309, -0.0672, -0.0243, &
-            -0.0027, -0.0027, -0.0243, -0.0672, -0.1309, -0.2144 /) 
+  real,dimension(19)        :: X1 = (/ -0.8000, -0.715, -0.6337, -0.545, -0.4589, -0.370, -0.2778, &
+            -0.180, -0.0930, 0.0, 0.0930, 0.180, 0.2778, 0.370, 0.4589, 0.545, 0.6337, 0.715, 0.8000 /) 
+  real,dimension(19)        :: Z1 = (/ -0.2144, -0.1725, -0.1309, -0.0910, -0.0672, -0.0455, -0.0243, &
+            -0.0125, -0.0027, -0.0, -0.0027, -0.0125, -0.0243, -0.0455, -0.0672, -0.0910, -0.1309, -0.1725, -0.2144 /) 
 
   contains
 
@@ -215,6 +215,13 @@ module createmesh_mod
   end subroutine createMeshGen
 
 
+  !**************************************************************************!
+  !  subroutine  createMeshGen2:                                           !
+  !                                                                          !
+  !  Berechnet die Gitter2D Punkten (Punkten-Element Format)                 !
+  ! funktioniert nur aber, wenn 400 Punkten und 81 Elementen                 !
+  ! (8-Punkt-Elementen) vorhanden sind.                                      !
+  !**************************************************************************!
   subroutine createMeshGen2(Mesh2D)
 
   use types
@@ -237,12 +244,12 @@ module createmesh_mod
   !--------------------------------------------------------------------------!
    
   n=0
-  do i= 0,9 
-    do j= 0,9
-     Mesh2D%x(j*10+i+1)   = X1(i+1)
-     Mesh2D%z(j*10+i+1)   = Z1(i+1)
-     Mesh2D%y(j*10+i+1)   = 0.0 + j*1.11111
-     n=n+1
+  do i= 0,18 ! Fuellt 361 Punkten aus aber 81 davon werden nicht benutzt
+    do j= 0,18
+      Mesh2D%x(j*19+i+1)   = X1(i+1)  ! Index min ist 1, max ist 361 OK 
+      Mesh2D%z(j*19+i+1)   = Z1(i+1)
+      Mesh2D%y(j*19+i+1)   = -1.0 + real(j,8)*0.11111
+      n=n+1
     enddo
   enddo 
 !  Mesh2D%nodes = n
@@ -250,11 +257,16 @@ module createmesh_mod
   el=0
   do i= 0,8
     do j= 0,8
-      k = j*10+i+1
+      k = 2*j*19+2*i+1    ! min ist 1, max ist 321
       Mesh2D%quad(1, j*9+i+1)   = k
+      Mesh2D%quad(3, j*9+i+1)   = k+2
+      Mesh2D%quad(5, j*9+i+1)   = k+40    ! Index min ist 41, max ist 361=19*19 OK
+      Mesh2D%quad(7, j*9+i+1)   = k+38
+
       Mesh2D%quad(2, j*9+i+1)   = k+1
-      Mesh2D%quad(3, j*9+i+1)   = k+10+1
-      Mesh2D%quad(4, j*9+i+1)   = k+10
+      Mesh2D%quad(4, j*9+i+1)   = k+21
+      Mesh2D%quad(6, j*9+i+1)   = k+39
+      Mesh2D%quad(8, j*9+i+1)   = k+19
       el=el+1
     enddo
   enddo
