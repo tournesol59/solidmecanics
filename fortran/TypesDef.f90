@@ -23,31 +23,42 @@ MODULE Types
      real                 :: xlen, ylen     ! Laengen des Rechengebiets in x/y !
      real                 :: dx             ! Gitterschrittweite (Delta x)    !
      real                 :: dy             ! Gitterschrittweite (Delta y)    !
-     real                 :: dxq            ! Kehrwert ( 1/ Delta x )         !
-     real                 :: dyq            ! Kehrwert ( 1/ Delta y )         !
-     real                 :: dxx            ! dx^2 (Delta x * Delta x)        !
-     real                 :: dyy            ! dy^2 (Delta y * Delta y )       !
-     real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
-     real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
+!     real                 :: dxq            ! Kehrwert ( 1/ Delta x )         !
+!     real                 :: dyq            ! Kehrwert ( 1/ Delta y )         !
+!     real                 :: dxx            ! dx^2 (Delta x * Delta x)        !
+!     real                 :: dyy            ! dy^2 (Delta y * Delta y )       !
+!     real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
+!     real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
 
      real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
 
      real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation!   
   end type tMesh
 
-  type tMeshGen
+  type tMeshGen  ! Hypothesis Nmax=5 different Randbedingungen
+     character(6)         :: elmttype       ! Typ der Elementen, hier Dreiecke "BE3***" !
      integer              :: nodes          ! Anzahl der Gitterpunkte (Nodes) !
      real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
-     integer              :: elmts          ! Anzahl der Quadranglen          !
-     integer,pointer      :: quad(:,:)      ! Indiz der Punte fuer Quadrangle !
-     integer              :: ntop           ! Anzahl der Quadrangle an oberen Wand !
-     integer,pointer      :: quadtop(:)     ! Indiz der Quadrangle an oberen Wand  !
-     integer              :: nbottom        ! Anzahl der Quadrangle an untern Wand !
-     integer,pointer      :: quadbottom(:)  ! Indiz der Quadrangle an untern Wand  !
-     integer              :: nleft          ! Anzahl der Quadrangle an linken Wand !
-     integer,pointer      :: quadleft(:)    ! Indiz der Quadrangle an linken Wand  !
-     integer              :: nright         ! Anzahl der Quadrangle an rechten Wand!
-     integer,pointer      :: quadright(:)   ! Indiz der Quadrangle an rechten Wand !
+     integer              :: elmts          ! Anzahl der Elemente             !
+     integer,pointer      :: allelmt(:,:)   ! Indiz der Punten fuer Dreiecken (3,:) !
+     integer, pointer     :: neighbours(:,:) ! Indiz der Nachbarn-Elementen fuer Elmt i !
+                                             ! Max Anzahl von Nachbarn ist hier 10 !
+     integer, pointer     :: frontelmt(:,:) ! Indiz des Elements an dem i-ten (1:5,:) Wand !
+                                      ! (ein max. Anzahl von 5 Waende ist hier vorgesehen) !
+     integer,pointer      :: frontvert(:,:,:) ! Indiz der 2xPunkten an dem i-ten Wand 
+                                              ! (1:5,1:2,:) !
+     integer,dimension(2,5) :: fronttype    ! Typ der Randbedingungen und Anzahl der Elmt !
+                                            ! an dem i-ten (1:5) Wand !
+                             ! frontype(1,i) = RB Typ(1-4, 1=Moment gesetzt, 2=Force gesetzt!
+                             ! , 3=Biegung gesetzt, 4=Displacement gesetzt, 5=eine Kombination !
+                             ! von Moment u . Force, 6=eine Kombination von Biegung u. ! 
+                             ! Displacement sind vorgesehen, in dem Fall werden
+                             !  die Biegung (resp. Moment) Werten in frontvalue(i,3)   !
+                             ! (resp. frontvalue(i,1)) und die Displacement (resp. Force) !
+                             ! Werten in frontvalue(i,4) (resp. frontvalue(i,2)) gespeichert. !
+                             ! fronttype(2,i) = Anzahl von Elementen, die an dem Wand/Rand i sind!
+     real,pointer         :: frontvalue(:,:,:)  
+                             ! Randwerten, je nach Typ der RB in fronttype (1:5,1:6,:) !
   end type tMeshGen 
 
   type tCurv              ! Abhaengig type tMesh fuer (nraumx, nraumy) !

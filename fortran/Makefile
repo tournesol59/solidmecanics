@@ -44,14 +44,11 @@ LINUX_FLAGS = \
 	TYPES="TYPES.mod" \
 	INPUT_MOD="Input_mod.mod" \
 	ALLOCATEFIELDS="ALLOCATEFIELDS_mod.mod" \
+        ACCESSORIES="ACCESSORIES_mod.mod" \
 	CREATEMESH="CREATEMESH_mod.mod" \
 	INTERPOL2D="INTERPOL2D_mod.mod" \
-        LAGRANGE1D="LAGRANGE1D_mod.mod" \
-        LAGRANGE2D="LAGRANGE2D_mod.mod" \
-        HERMITE1D="HERMITE1D_mod.mod" \
-        HERMITE2D="HERMITE2D_mod.mod" \
-        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod" \
-        VERIFYQUAD2D="VERIFYQUAD2D_mod.mod"
+        USEDTRIANGLE2D="USEDTRIANGLE2D_mod.mod" \
+        FLEXIONGRAD2D="FLEXIONGRAD2D_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
@@ -60,14 +57,11 @@ LINUX_FLAGS = \
 	TYPES="types.mod" \
 	INPUT_MOD="Input_mod.mod" \
 	ALLOCATEFIELDS="allocatefields_mod.mod" \
+        ACCESSORIES="accessories_mod.mod" \
 	CREATEMESH="createmesh_mod.mod" \
 	INTERPOL2D="interpol2d_mod.mod" \
-        LAGRANGE1D="Lagrange1d_mod.mod" \
-        LAGRANGE2D="Lagrange2d_mod.mod" \
-        HERMITE1D="hermite1d_mod.mod" \
-        HERMITE2D="hermite2d_mod.mod" \
-        LAGRANGEGRAD2D="Lagrangegrad2d_mod.mod" \
-        VERIFYQUAD2D="verifyquad2d_mod.mod"
+        USEDTRIANGLE2D="usedtriangled2D_mod.mod" \
+        FLEXIONGRAD2D="flexiongrad2d_mod.mod"
 endif
 
 ####################################################################
@@ -85,14 +79,11 @@ endif
 $(TYPES): typesdef.o
 ${INPUT_MOD}: input_mod.o
 $(ALLOCATEFIELDS): allocatefields.o
+$(ACCESSORIES): accessories.o
 ${CREATEMESH}: createmesh.o
 {INTERPOL2D}: interpol2d.o
-{LAGRANGE1D}: Lagrange1d.o
-{LAGRANGE2D}: Lagrange2d.o
-{HERMITE1D}: hermite1d.o
-{HERMITE2D}: hermite2d.o
-{LAGRANGEGRAD2D}: Lagrangegrad2d.o 
-{VERIFYQUAD2D}: verifyquad2d.o 
+{USEDTRIANGLE2D}: usedtriangled2d.o
+{FLEXIONGRAD2D}: flexiongrad2d.o 
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -114,14 +105,11 @@ sgi:
 library: $(LIB)(typesdef.o) \
 	 $(LIB)(input_mod.o) \
 	 $(LIB)(allocatefields.o) \
+         $(LIB)(accessories.o) \
 	 $(LIB)(createmesh.o) \
 	 $(LIB)(interpol2d.o) \
-	 $(LIB)(Lagrange1d.o) \
-	 $(LIB)(Lagrange2d.o) \
-	 $(LIB)(hermite1d.o) \
-	 $(LIB)(hermite2d.o) \
-	 $(LIB)(Lagrangegrad2d.o) \
-	 $(LIB)(verifyquad2d.o)
+	 $(LIB)(usedtriangle2d.o) \
+	 $(LIB)(flexiongrad2d.o) \
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
@@ -154,17 +142,13 @@ cleanall:
 $(LIB)(Input_mod.o): $(TYPES)
 $(LIB)(createMesh.o): $(TYPES)
 $(LIB)(allocateFields.o): $(TYPES)
+$(LIB)(accessories.o): $(TYPES)
 $(LIB)(interpol2D.o): $(TYPES)
 $(LIB)(createMesh.o): $(TYPES)
-$(LIB)(Lagrange1d.o): $(TYPES)
-$(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D)
-$(LIB)(hermite1d.o): $(TYPES)
-$(LIB)(hermite2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D) $(HERMITE1D) 
-$(LIB)(Lagrangegrad2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE2D)
-$(LIB)(verifyquad2d.o): $(TYPES)
-main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
-         $(LAGRANGE1D) $(HERMITE1D) $(LAGRANGE2D)  $(LAGRANGEGRAD2D) \
-         $(HERMITE2D) $(VERIFYQUAD2D)
+$(LIB)(usedtriangle2d.o): $(TYPES)
+$(LIB)(flexiongrad2d.o): $(TYPES)
+main.o: $(TYPES) $(ALLOCATEFIELDS) $(ACCESSORIES) $(CREATEMESH) $(INTERPOL2D) \
+         $(USEDTRIANGLE2D) $(FLEXIONQUAD2D)
 
 	@echo "make cleanall completed..."
 

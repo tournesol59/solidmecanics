@@ -16,7 +16,7 @@
 module createmesh_mod
   implicit none
 
-  public :: createMesh, createMesh2, createMeshGen, createMeshGen2
+  public :: createMesh, createMesh2, createMeshGen     !, createMeshGen2
 
 !********************************************************************!
 !  Variable Tabelle der Biegung-Plate fuer Einlesen der (10x10)Werte !
@@ -56,9 +56,9 @@ module createmesh_mod
   !---<  nraumx+1 = anzahl der inneren zellen                 >-----------
 
   Mesh%dx     = (Mesh%endx-Mesh%startx)/(Mesh%nraumx-1)
-  Mesh%dxq    = 1./Mesh%dx
-  Mesh%dxx    = Mesh%dx*Mesh%dx
-  Mesh%dxxq   = Mesh%dxq*Mesh%dxq
+!  Mesh%dxq    = 1./Mesh%dx
+!  Mesh%dxx    = Mesh%dx*Mesh%dx
+!  Mesh%dxxq   = Mesh%dxq*Mesh%dxq
   
   !---<  x(0)             = linker  rand                      >-----------
   !---<  x(nraumx+1)      = rechter rand                      >-----------
@@ -73,9 +73,9 @@ module createmesh_mod
   !---<  nraumy+1 = anzahl der inneren zellen                 >-----------
   
   Mesh%dy     = (Mesh%endy - Mesh%starty)/(Mesh%nraumy-1)
-  Mesh%dyq    = 1./Mesh%dy
-  Mesh%dyy    = Mesh%dy*Mesh%dy
-  Mesh%dyyq   = Mesh%dyq*Mesh%dyq
+!  Mesh%dyq    = 1./Mesh%dy
+!  Mesh%dyy    = Mesh%dy*Mesh%dy
+!  Mesh%dyyq   = Mesh%dyq*Mesh%dyq
   
   !---<  y(0)             = unterer rand                      >-----------
   !---<  y(nraumy+1)      = oberer  rand                      >-----------
@@ -141,9 +141,9 @@ module createmesh_mod
   Mesh%endx = X1(10)
 
   Mesh%dx     = (Mesh%endx-Mesh%startx)/(Mesh%nraumx-1)
-  Mesh%dxq    = 1./Mesh%dx
-  Mesh%dxx    = Mesh%dx*Mesh%dx
-  Mesh%dxxq   = Mesh%dxq*Mesh%dxq
+!  Mesh%dxq    = 1./Mesh%dx
+!  Mesh%dxx    = Mesh%dx*Mesh%dx
+!  Mesh%dxxq   = Mesh%dxq*Mesh%dxq
 
   do i= 0,Mesh%nraumx-1 
     do j= 0,Mesh%nraumy-1
@@ -155,9 +155,9 @@ module createmesh_mod
   Mesh%endy = 1.0
   
   Mesh%dy     = (Mesh%endy - Mesh%starty)/(Mesh%nraumy-1)
-  Mesh%dyq    = 1./Mesh%dy
-  Mesh%dyy    = Mesh%dy*Mesh%dy
-  Mesh%dyyq   = Mesh%dyq*Mesh%dyq
+!  Mesh%dyq    = 1./Mesh%dy
+!  Mesh%dyy    = Mesh%dy*Mesh%dy
+!  Mesh%dyyq   = Mesh%dyq*Mesh%dyq
 
    do j= 0,Mesh%nraumy-1 
     do i= 0,Mesh%nraumx-1
@@ -178,7 +178,9 @@ module createmesh_mod
  end subroutine createMesh2
 
 
-
+  !**************************************************************************!
+  !Completion of the mesh data (field neighbour) after imported nodes in .inp!
+  !**************************************************************************!
   subroutine createMeshGen(Mesh2D)
 
   use types
@@ -193,119 +195,104 @@ module createmesh_mod
   type(tMeshGen)             :: Mesh2D     ! Gitterwerte                     !
   !                                                                          !
   ! Local variable declaration                                               !
-  !    
-  !
-  integer                    :: i,j        ! Zählvariablen                   !
+  !                                                                          !
+  integer                    :: node1, node2, node3                          !
+  integer                    :: i,j,k,kinc       ! Zählvariablen             !
+  logical                    :: dejavu                                       !
   !--------------------------------------------------------------------------!
   intent(inout)              :: Mesh2D
   !--------------------------------------------------------------------------!
-  
-  OPEN(UNIT=25, FILE='Untitled1.msh', ACTION='READ')
-  ! OPERATIONEN HIER ...  !
-  read (25,*)
-  CLOSE(UNIT=25)
 
- 105  format (a20)
- 106  format (a,a)
- 205  format (f10.5)
- 206  format (a,f10.5)
- 305  format (i10)
- 306  format (a,i10)
+  !** Initialisierung **!
+  do i=1,Mesh2D%elmts      
+    Mesh2D%neighbours(1,i) = -1
+    Mesh2D%neighbours(2,i) = -1
+    Mesh2D%neighbours(3,i) = -1
+    Mesh2D%neighbours(4,i) = -1
+    Mesh2D%neighbours(5,i) = -1
+    Mesh2D%neighbours(6,i) = -1
+    Mesh2D%neighbours(7,i) = -1
+    Mesh2D%neighbours(8,i) = -1
+    Mesh2D%neighbours(9,i) = -1
+    Mesh2D%neighbours(10,i) = -1
+  enddo
+  do i=1,Mesh2D%elmts
+    node1 = Mesh2D%allelmt(1,i)
+    node2 = Mesh2D%allelmt(2,i)
+    node3 = Mesh2D%allelmt(3,i)
+    kinc=1
+  !--- Loop fuer erste Indiz der Punkten auf alle Elementen except i (j=1..j-1,j+1,end)
+    do j=1,i-1
+       dejavu = .false.
+       do k=1,10
+         dejavu = (dejavu).or.( (Mesh2D%neighbours(k,i)).eq.(j) )
+       enddo
+       if ( (.not.(dejavu)).and.((Mesh2D%allelmt(1,j)).eq.(node1)).and.((kinc).le.(11)) ) then
+         Mesh2D%neighbours(kinc,i) = j
+         kinc=kinc+1
+       endif
+    enddo
+
+    do j=i+1,Mesh2D%elmts
+       dejavu = .false.
+       do k=1,10
+         dejavu = (dejavu).or.( (Mesh2D%neighbours(k,i)).eq.(j) )
+       enddo
+       if ( (.not.(dejavu)).and.((Mesh2D%allelmt(1,j)).eq.(node1)).and.((kinc).le.(11)) ) then
+         Mesh2D%neighbours(kinc,i) = j
+         kinc=kinc+1
+       endif
+    enddo
+
+  !--- Loop fuer zweite Indiz der Punkten auf alle Elementen except i (j=1..j-1,j+1,end)
+    do j=1,i-1
+       dejavu = .false.
+       do k=1,10
+         dejavu = (dejavu).or.( (Mesh2D%neighbours(k,i)).eq.(j) )
+       enddo
+       if ( (.not.(dejavu)).and.((Mesh2D%allelmt(1,j)).eq.(node2)).and.((kinc).le.(11)) ) then
+         Mesh2D%neighbours(kinc,i) = j
+         kinc=kinc+1
+       endif
+    enddo
+
+    do j=i+1,Mesh2D%elmts
+       dejavu = .false.
+       do k=1,10
+         dejavu = (dejavu).or.( (Mesh2D%neighbours(k,i)).eq.(j) )
+       enddo
+       if ( (.not.(dejavu)).and.((Mesh2D%allelmt(1,j)).eq.(node2)).and.((kinc).le.(11)) ) then
+         Mesh2D%neighbours(kinc,i) = j
+         kinc=kinc+1
+       endif
+    enddo
+
+  !--- Loop fuer dritte Indiz der Punkten auf alle Elementen except i (j=1..j-1,j+1,end)
+    do j=1,i-1
+       dejavu = .false.
+       do k=1,10
+         dejavu = (dejavu).or.( (Mesh2D%neighbours(k,i)).eq.(j) )
+       enddo
+       if ( (.not.(dejavu)).and.((Mesh2D%allelmt(1,j)).eq.(node3)).and.((kinc).le.(11)) ) then
+         Mesh2D%neighbours(kinc,i) = j
+         kinc=kinc+1
+       endif
+    enddo
+
+    do j=i+1,Mesh2D%elmts
+       dejavu = .false.
+       do k=1,10
+         dejavu = (dejavu).or.( (Mesh2D%neighbours(k,i)).eq.(j) )
+       enddo
+       if ( (.not.(dejavu)).and.((Mesh2D%allelmt(1,j)).eq.(node3)).and.((kinc).le.(11)) ) then
+         Mesh2D%neighbours(kinc,i) = j
+         kinc=kinc+1
+       endif
+    enddo
+
+  enddo  ! Element i
 
   end subroutine createMeshGen
-
-
-  !**************************************************************************!
-  !  subroutine  createMeshGen2:                                           !
-  !                                                                          !
-  !  Berechnet die Gitter2D Punkten (Punkten-Element Format)                 !
-  ! funktioniert nur aber, wenn 400 Punkten und 81 Elementen                 !
-  ! (8-Punkt-Elementen) vorhanden sind.                                      !
-  !**************************************************************************!
-  subroutine createMeshGen2(Mesh2D)
-
-  use types
-
-  implicit none
-
-  !--------------------------------------------------------------------------!
-  ! Variablendeklarationen                                                   !
-  !--------------------------------------------------------------------------!
-  ! Liste der übergebenen Argumente                                          !
-  !                                                                          !
-  type(tMeshGen)             :: Mesh2D     ! Gitterwerte                     !
-  !                                                                          !
-  ! Local variable declaration                                               !
-  !    
-  !
-  integer                    :: i,j,k,n,el ! Zählvariablen                   !
-  !--------------------------------------------------------------------------!
-  intent(inout)              :: Mesh2D
-  !--------------------------------------------------------------------------!
-   
-  n=0
-  do i= 0,18 ! Fuellt 361 Punkten aus aber 81 davon werden nicht benutzt
-    do j= 0,18
-      Mesh2D%x(j*19+i+1)   = X1(i+1)  ! Index min ist 1, max ist 361 OK 
-      Mesh2D%z(j*19+i+1)   = Z1(i+1)
-      Mesh2D%y(j*19+i+1)   = -1.0 + real(j,8)*0.11111
-      n=n+1
-    enddo
-  enddo 
-!  Mesh2D%nodes = n
-
-  el=0
-  do i= 0,8
-    do j= 0,8
-      k = 2*j*19+2*i+1    ! min ist 1, max ist 321
-      Mesh2D%quad(1, j*9+i+1)   = k
-      Mesh2D%quad(3, j*9+i+1)   = k+2
-      Mesh2D%quad(5, j*9+i+1)   = k+40    ! Index min ist 41, max ist 361=19*19 OK
-      Mesh2D%quad(7, j*9+i+1)   = k+38
-
-      Mesh2D%quad(2, j*9+i+1)   = k+1
-      Mesh2D%quad(4, j*9+i+1)   = k+21
-      Mesh2D%quad(6, j*9+i+1)   = k+39
-      Mesh2D%quad(8, j*9+i+1)   = k+19
-      el=el+1
-    enddo
-  enddo
-!  Mesh2D%elmts = el
-
-  n=0
-  do i= 0,8
-    k = 8*9+i+1
-    Mesh2D%quadtop(i+1)   = k
-    n=n+1
-  enddo
-!  Mesh2D%ntop = n
-
-  n=0
-  do i= 0,8
-    k = i+1
-    Mesh2D%quadbottom(i+1)   = k
-    n=n+1
-  enddo
-!  Mesh2D%nbottom = n
-
-  n=0
-  do j= 0,8
-    k = j*9+9+1
-    Mesh2D%quadright(j+1)   = k
-    n=n+1
-  enddo
-!  Mesh2D%nright = n
-
-  n=0
-  do j= 0,8
-    k = j*9+1
-    Mesh2D%quadleft(j+1)   = k
-    n=n+1
-  enddo
-!  Mesh2D%nleft = n
-
-
-  end subroutine createMeshGen2
 
 
 end module createmesh_mod

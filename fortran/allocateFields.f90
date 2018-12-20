@@ -1,20 +1,3 @@
-!****************************************************************************!
-!                                                                            !
-! subroutine allocateFields                                                  !
-!                                                                            !
-!      Funktion: Bereitstellen des Speicherplatzes                           !
-!                                                                            !
-!****************************************************************************!
-!                                                                            !
-!      Mesh%x,Mesh%y            Koordinaten der Gitterpunkte                 !
-!      Uvar                     Feld mit der numerischen Lösung              !
-!      Verschiebung(1:3,:) ! 3 Verschiebungen in der Mitte der Platte        !
-!      TensionTg(1:4,:)    ! array pointer: Spannung tengential              !
-!      TensionT3(1,:)    ! array pointer: Spannung normal despite that E,xz=0 !
-!      BiegMoment(1:3,:)   !array pointer: contains as last arrays above    !
-!                           the inital value of the problem and then re-calculated.!
-!****************************************************************************!
-
 module allocateFields_mod
 
   use types
@@ -35,6 +18,9 @@ module allocateFields_mod
   interface allocateGitter2D
      module procedure allocateGitter2D
   end interface
+  interface allocatesparse
+     module procedure allocatesparse
+  end interface
 
   interface deallocateFields
      module procedure deallocateFields
@@ -48,13 +34,28 @@ module allocateFields_mod
   interface deallocateGitter2D
      module procedure deallocateGitter2D
   end interface
+  interface deallocatesparse
+     module procedure deallocatesparse
+  end interface
+
   !--------------------------------------------------------------------------!
   public  :: allocateFields, allocateFieldsCurv, allocateFieldsVarNum, allocateGitter2D, &
-             deallocateFields, deallocateFieldsCurv, deallocateFieldsVarNum, deallocateGitter2D
+             deallocateFields, deallocateFieldsCurv, deallocateFieldsVarNum, deallocateGitter2D, &
+             allocatesparse, deallocatesparse
   !--------------------------------------------------------------------------!
 
 contains
-
+!****************************************************************************!
+!                                                                            !
+! subroutine allocateFields                                                  !
+!                                                                            !
+!      Funktion: Bereitstellen des Speicherplatzes                           !
+!                                                                            !
+!****************************************************************************!
+!                                                                            !
+!      Mesh%x,Mesh%y            Koordinaten der Gitterpunkte                 !
+!      Uvar                     Feld mit der numerischen Lösung              !
+!****************************************************************************!
   subroutine allocateFields(Const,Mesh,RB,Uvar,rhs,Exakt)
     
     use TYPES
@@ -142,7 +143,20 @@ contains
 
   end subroutine allocateFieldsCurv
 
-
+!****************************************************************************!
+!                                                                            !
+! subroutine allocateFields                                                  !
+!                                                                            !
+!      Funktion: Bereitstellen des Speicherplatzes                           !
+!                                                                            !
+!****************************************************************************!
+!                                                                            !
+!      Verschiebung(1:3,:) ! 3 Verschiebungen in der Mitte der Platte        !
+!      TensionTg(1:4,:)    ! array pointer: Spannung tengential              !
+!      TensionT3(1,:)      ! array pointer: Spannung normal despite that E,xz=0 !
+!      BiegMoment(1:3,:)   !array pointer: contains as last arrays above    !
+!                           the inital value of the problem and then re-calculated.!
+!****************************************************************************!
   subroutine allocateFieldsVarNum(Mesh,VarNum)
  
   use TYPES
@@ -181,17 +195,24 @@ contains
     !------------------------------------------------------------------------!
     ! Liste der übergebenen Argumente                                        !
     type(tMeshGen)         :: Mesh2D     ! Gitter Punkten und Elements (Quad)!
+                              ! nodes u. fronttype(:,:) array mussen schon   !
+                              ! definiert werden: Typ and Anzahl(1-5)        !
     ! -----------------------------------------------------------------------!
-    integer                :: allocStat
+    integer                :: allocStat, num  ! max Dims der Tabellen frontx,
+                                              ! muss die Dimension des laengsten Wands
+                                              ! von 5 Waenden entsprechen
+
+    num = max(max(max(max(Mesh2D%fronttype(2,1), Mesh2D%fronttype(2,2)), Mesh2D%fronttype(2,3)),  &
+                            Mesh2D%fronttype(2,4)), Mesh2D%fronttype(2,5))
 
     allocate(Mesh2D%x(1:Mesh2D%nodes), &
 	 Mesh2D%y(1:Mesh2D%nodes),  &
 	 Mesh2D%z(1:Mesh2D%nodes),  &
-         Mesh2D%quad(1:8, 1:Mesh2D%elmts), &
-         Mesh2D%quadtop(1:Mesh2D%ntop), & 
-         Mesh2D%quadbottom(1:Mesh2D%nbottom), & 
-         Mesh2D%quadleft(1:Mesh2D%nleft), & 
-         Mesh2D%quadright(1:Mesh2D%nright), & 
+         Mesh2D%allelmt(1:3, 1:Mesh2D%elmts), &
+         Mesh2D%neighbours(1:10, 1:Mesh2D%elmts), &
+         Mesh2D%frontelmt(1:5,1:num ), & 
+         Mesh2D%frontvert(1:5,1:2,1:num ), & 
+         Mesh2D%frontvalue(1:5,1:6,1:num ), & 
          STAT = allocStat )
 
     if (allocStat.NE.0) then
@@ -201,7 +222,37 @@ contains
 
   end subroutine allocateGitter2D
 
+  subroutine allocatesparse(Gitter2D, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
+  use TYPES
+  implicit none
+    !------------------------------------------------------------------------!
+    ! Variablendeklarationen                                                 !
+    !------------------------------------------------------------------------!
+    ! Liste der übergebenen Argumente                                        !
+    type(tMeshGen)      :: Gitter2D
 
+    real,pointer        :: SparseSkalarProdRow1(:)
+    real,pointer        :: SparseSkalarProdCol(:)
+    real,pointer        :: SparseSkalarProdVal(:)
+    intent(in)          :: Gitter2D
+    intent(inout)       :: SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal
+    ! -----------------------------------------------------------------------!
+    integer             :: allocStat  
+    integer             :: SparseBlkDim = 15
+                         ! Entspricht die Summe von Blk Dims von Steif.
+                         ! Matrix, die im Module "Transplanar2D" benutzt
+                         ! wird
+    allocate(SparseSkalarProdRow1(1:(Gitter2D%nodes*SparseBlkDim)), &
+          SparseSkalarProdCol(1:(Gitter2D%nodes*SparseBlkDim)), &
+          SparseSkalarProdVal(1:(Gitter2D%nodes*SparseBlkDim)), &
+         STAT = allocStat)
+
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateSparse: Could not allocate all variables!'
+       STOP
+    end if
+
+  end subroutine allocatesparse
 
 
 
@@ -238,7 +289,7 @@ contains
 
     
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFields: Could not deallocate correctly!'
+       print *, 'ERROR DeallocateFields: Could not deallocate correctly!'
        STOP
     end if
 
@@ -272,7 +323,7 @@ contains
                STAT=allocStat)
 
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFieldsCurv: Could not deallocate correctly!'
+       print *, 'ERROR DeallocateFieldsCurv: Could not deallocate correctly!'
        STOP
     end if
 
@@ -317,15 +368,43 @@ contains
     ! -----------------------------------------------------------------------!
     integer                :: allocStat
 
-    deallocate(Mesh2D%x, Mesh2D%y, Mesh2D%z, Mesh2D%quad, &
-               Mesh2D%quadtop, Mesh2D%quadbottom, Mesh2D%quadleft, Mesh2D%quadright, & 
+    deallocate(Mesh2D%x, Mesh2D%y, Mesh2D%z, Mesh2D%allelmt, Mesh2D%neighbours, &
+               Mesh2D%frontelmt, Mesh2D%frontvert, Mesh2D%frontvalue, & 
          STAT = allocStat )
 
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFields: Could not deallocate correctly!'
+       print *, 'ERROR DeallocateFields2D: Could not deallocate correctly!'
        STOP
     end if
 
   end subroutine deallocateGitter2D
+
+
+  subroutine deallocatesparse(Gitter2D, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal)
+  
+  use TYPES
+
+  implicit none    
+    !------------------------------------------------------------------------!
+    ! Variablendeklarationen                                                 !
+    !------------------------------------------------------------------------!
+    ! Liste der übergebenen Argumente                                        !
+    type(tMeshGen)      :: Gitter2D 
+    real,pointer        :: SparseSkalarProdRow1(:)
+    real,pointer        :: SparseSkalarProdCol(:)
+    real,pointer        :: SparseSkalarProdVal(:)
+    intent(in)          :: Gitter2D
+    intent(inout)       :: SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal
+    integer                :: allocStat
+
+    deallocate(SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal, &
+               STAT = allocStat )
+
+    if (allocStat.NE.0) then
+       print *, 'ERROR Deallocatesparse: Could not deallocate correctly!'
+       STOP
+    end if
+
+  end subroutine deallocatesparse
 
 end module allocateFields_mod

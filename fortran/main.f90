@@ -59,12 +59,12 @@ program main
   call input(Gitter,Exakt,Const,FileIO)       
   ! OR
   call input_file(Gitter2D,Exakt,Const,FileIO)
-  Gitter2D%nodes=361
-  Gitter2D%elmts=81
-  Gitter2D%ntop = 9
-  Gitter2D%nbottom = 9
-  Gitter2D%nright = 9
-  Gitter2D%nleft = 9
+  Gitter2D%elmttype = "BE3***"
+  Gitter2D%nodes=100  !* 10*10
+  Gitter2D%elmts=162  !* 2*81
+  Gitter2D%fronttype(1,:) = \(2, 1, 3, 1, -1 \)  !* wenn gar keine : (-1)
+  Gitter2D%fronttype(2,:) = \(9, 9, 9, 9, 0 \)   !* Anzahl RandElemente
+
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
   call allocateFields(Const,Gitter,RB,Uvar,rhs,Exakt)
@@ -81,11 +81,10 @@ program main
       call createMesh2(Gitter)
    endif
 
-   if (Const%auto == 1) then  
-     call createMeshGen(Gitter2D)
-   else 
-      call createMeshGen2(Gitter2D)
-   endif
+
+   createMeshGen(Gitter2D)
+
+
 
   ! call trychristoffei(Gitter, chicoeff)
 
