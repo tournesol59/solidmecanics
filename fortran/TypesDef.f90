@@ -12,27 +12,39 @@
 
 MODULE Types
   !---------------------------------------------------------------------------!
+  use ISO_C_BINDING
   implicit none
   private
   !---------------------------------------------------------------------------!
-  type tMesh
-     integer              :: nraumx         ! Anzahl Gitterpunkte x-Richtung  !
-     integer              :: nraumy         ! Anzahl Gitterpunkte y-Richtung  !
-     real                 :: startx, starty ! Position der linken unteren Ecke!
-     real                 :: endx, endy     ! Position der rechten oberen Ecke!
-     real                 :: xlen, ylen     ! Laengen des Rechengebiets in x/y !
-     real                 :: dx             ! Gitterschrittweite (Delta x)    !
-     real                 :: dy             ! Gitterschrittweite (Delta y)    !
-     real                 :: dxq            ! Kehrwert ( 1/ Delta x )         !
-     real                 :: dyq            ! Kehrwert ( 1/ Delta y )         !
-     real                 :: dxx            ! dx^2 (Delta x * Delta x)        !
-     real                 :: dyy            ! dy^2 (Delta y * Delta y )       !
-     real                 :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
-     real                 :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
 
-     real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
+  type,bind(C) :: tMeshInfo 
+     integer(c_int)      :: nraumx         ! Anzahl Gitterpunkte x-Richtung  !
+     integer(c_int)      :: nraumy         ! Anzahl Gitterpunkte y-Richtung  !
+     real(c_float)       :: startx, starty ! Position der linken unteren Ecke!
+     real(c_float)       :: endx, endy     ! Position der rechten oberen Ecke!
+  end type tMeshInfo
 
-     real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation!   
+  type,bind(C) :: tMesh
+     integer(c_int)      :: nraumx         ! Copy of tMeshInfo after standard input  !
+     integer(c_int)      :: nraumy         ! idem  !
+     real(c_float)       :: startx, starty ! idem  !
+     real(c_float)       :: endx, endy     ! idem  !
+     real(c_float)       :: xlen, ylen     ! Laengen des Rechengebiets in x/y !
+     real(c_float)       :: dx             ! Gitterschrittweite (Delta x)    !
+     real(c_float)       :: dy             ! Gitterschrittweite (Delta y)    !
+     real(c_float)       :: dxq            ! Kehrwert ( 1/ Delta x )         !
+     real(c_float)       :: dyq            ! Kehrwert ( 1/ Delta y )         !
+     real(c_float)       :: dxx            ! dx^2 (Delta x * Delta x)        !
+     real(c_float)       :: dyy            ! dy^2 (Delta y * Delta y )       !
+     real(c_float)       :: dxxq           ! Kehrwert des Quadrats (1/dxx)   !
+     real(c_float)       :: dyyq           ! Kehrwert des Quadrats (1/dyy)   !
+     ! real,pointer (c_ptr) :: x(:)        ! do NOT work
+     type(c_ptr)         :: x,y,z
+!     type(*)             :: x,y,z          ! to void* in C to Koordinaten Array derGitterpunkte Assumed type at (1) is not allowed for components   !
+     !real(c_double),pointer :: x(:),y(:),z(:)
+     type(c_ptr)         :: Coefficients   ! to void* to Koeff. des Polynoms fuer vordraengige Interpolation!
+!     real(c_double),pointer :: Coefficients(:,:) !Component ‘coefficients’ at (1) cannot have the POINTER attribute because it is a member of the BIND(C) derived type ‘tmesh’
+
   end type tMesh
 
   type tMeshGen
@@ -51,16 +63,19 @@ MODULE Types
   end type tMeshGen 
 
   type tCurv              ! Abhaengig type tMesh fuer (nraumx, nraumy) !
-     real,pointer         :: chicoeff(:,:)          ! 8 Values fuer jedes Punktes: Christoffel Koeffizienten
-     real,pointer         :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:), &
+     real(C_DOUBLE),pointer         :: chicoeff(:,:)          ! 8 Values fuer jedes Punktes: Christoffel Koeffizienten
+     real(C_DOUBLE),pointer         :: der_a1xx_x(:),der_a1xx_y(:),der_a1xy_x(:),der_a1xy_y(:), &
                           der_a2yx_x(:),der_a2yx_y(:),der_a2yy_x(:),der_a2yy_y(:)  
   end type tCurv
 
   type tNumeric
-    real, pointer     :: Verschiebung(:,:) ! 3 Verschiebungen in der Mitte der Platte !
-    real, pointer     :: TensionTg(:,:)    ! array pointer: Spannung tengential Tensor!
-    real, pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung 3  !
-    real, pointer     :: BiegMoment(:,:)   ! BiegMoment Tensor, nicht tangential    !
+    real(C_DOUBLE),pointer     :: Verschiebung(:,:) ! 3 Verschiebungen in der Mitte der Platte !
+    real(C_DOUBLE),pointer     :: TensionTg(:,:)    ! array pointer: Spannung tengential Tensor!
+    real(C_DOUBLE),pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung 3  !
+    real(C_DOUBLE),pointer     :: BiegMoment(:,:)   ! BiegMoment Tensor, nicht tangential    !
+
+     real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation! 
+
   end type tNumeric
 
   type tZeiten  ! wird nicht beutzt fuer Platten Festigkeit  !
@@ -77,42 +92,44 @@ MODULE Types
      logical              :: ende           ! Endzeitpunkt erreicht?          !
   end type tZeiten
 
-  type tRandbedingungen
-     integer              :: randltype      ! RandTyp links: 1=Fixed, 2=Momentum, 3=Freibiegung
-     real,pointer         :: randl(:)       ! Randwerte links                 !
-     integer              :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Momentum, 3=Freibiegung
-     real,pointer         :: randr(:)       ! Randwerte rechts                !
-     integer              :: randotype      ! RandTyp oben: 1=Fixed, 2=Momentum, 3=Freibiegung
-     real,pointer         :: rando(:)       ! Randwerte oben                  !
-     integer              :: randutype      ! RandTyp unten: 1=Fixed, 2=Momentum, 3=Freibiegung
-     real,pointer         :: randu(:)       ! Randwerte unten                 !
+  type,bind(C) :: tRandbedingungen
+! 'trandbedingungen' is not C interoperable --> may be add type, bind(C)
+
+     integer(c_int)          :: randltype      ! RandTyp links: 1=Fixed, 2=Momentum, 3=Freibiegung
+     type(c_ptr)             :: randl       ! Randwerte links                 !
+     integer                 :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Momentum, 3=Freibiegung
+     type(c_ptr)             :: randr       ! Randwerte rechts                !
+     integer                 :: randotype      ! RandTyp oben: 1=Fixed, 2=Momentum, 3=Freibiegung
+     type(c_ptr)             :: rando      ! Randwerte oben                  !
+     integer                 :: randutype      ! RandTyp unten: 1=Fixed, 2=Momentum, 3=Freibiegung
+     type(c_ptr)             :: randu       ! Randwerte unten                 !
   end type tRandbedingungen
   
   type tConstants  ! Original for Waermetransportsproblem geplant !
      real                 :: Pi             ! Pi                              !
      real                 :: EY             ! Young Module                    !
      real                 :: nu             ! Poisson coefficient             !
-!     real                 :: h              ! Groesse (Height), Konstant      !
-     integer              :: auto           ! Automatishes Auswahl eines vordefinierten Mesh !
+     real                 :: h             ! Groesse (Height), Konstant      !
+     integer              :: automesh       ! Automatishes Auswahl eines vordefinierten Mesh !
          ! REST WIRD NICHT BENUTZT !
-     real                 :: kappa          ! Eigenfrequenz                   !
-     real                 :: waerme         ! Waermeleitfaehigkeit            !
-     real                 :: eps            ! Genauigkeit                     !
-     real                 :: omega          ! Winkelgeschwindigkeit           !
-     real                 :: r              ! Radius                          !
-     real                 :: u0             !                                 !
-     real                 :: x0,y0          ! Mittelpunkt der Drehung         !
-     real                 :: x1,y1          ! Mittelpunkt des Kegels          !
-     integer              :: controlAus     ! Kontrollausgaben ein/aus        !
-     integer              :: imax           ! Maximale Anzahl Iterationen     !
-     integer              :: type           ! Welches numerische Schema       !
-     character(20)        :: scheme         ! Welches numerische Schema       !
-     character(20)        :: loeser         ! Welcher Gleichungssystemloeser  !
-     character(20)        :: Abbruch        ! Abbruchkriterium fuer elliptic  !
-     character(20)        :: RHS_Typ        ! Art der rechten Seite           !
-     character(20)        :: RB_Typ         ! Art der Randbedingungen         !
-     character(20)        :: AW_Typ         ! Art der Anfangswerte            !
-     character(20)        :: RHS_Datei      ! Datei mit Beschreibung der Quell!
+!     real                 :: kappa          ! Eigenfrequenz                   !
+!     real                 :: waerme         ! Waermeleitfaehigkeit            !
+!     real                 :: eps            ! Genauigkeit                     !
+!     real                 :: omega          ! Winkelgeschwindigkeit           !
+!     real                 :: r              ! Radius                          !
+!     real                 :: u0             !                                 !
+!     real                 :: x0,y0          ! Mittelpunkt der Drehung         !
+!     real                 :: x1,y1          ! Mittelpunkt des Kegels          !
+!     integer              :: controlAus     ! Kontrollausgaben ein/aus        !
+!     integer              :: imax           ! Maximale Anzahl Iterationen     !
+ 
+!     character(20)        :: scheme         ! Welches numerische Schema       !
+!     character(20)        :: loeser         ! Welcher Gleichungssystemloeser  !
+!     character(20)        :: Abbruch        ! Abbruchkriterium fuer elliptic  !
+!     character(20)        :: RHS_Typ        ! Art der rechten Seite           !
+!     character(20)        :: RB_Typ         ! Art der Randbedingungen         !
+!     character(20)        :: AW_Typ         ! Art der Anfangswerte            !
+!     character(20)        :: RHS_Datei      ! Datei mit Beschreibung der Quell!
 
   end type tConstants
 
@@ -120,8 +137,9 @@ MODULE Types
      logical              :: xflag          ! x-Richtung oder y-Richtung?     !
   end type tLogicals
 
-  type tExakt
-     real,pointer         :: loesung(:,:)   ! Feld mit der exakten L\F6sung     !
+  type,bind(C) :: tExakt
+!     real(c_float),pointer         :: loesung(:,:)   ! Feld mit der exakten Loesung     !
+      type(c_ptr)         :: loesung        ! loesung(*,*)
      integer              :: kmaxex         ! Genauigkeit der exakten L\F6sung  !
   end type tExakt
 

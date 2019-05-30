@@ -24,6 +24,7 @@ program main
   !--------------------------------------------------------------------------!
   ! Variablendeklarationen                                                   !
   !--------------------------------------------------------------------------!
+  type(tMeshInfo)            :: NTestGitter ! Gitterwerte in matriz           !
   type(tMesh)                :: Gitter     ! Gitterwerte in matriz           !
   type(tMeshGen)             :: Gitter2D   ! Gitterwerte in Generic inputfile!
   type(tCurv)                :: KurvVect   ! Numerische Felder fuer Kurve, Christoffei Koeffs abhangig, Rechnung !
@@ -67,9 +68,9 @@ program main
   Gitter2D%nleft = 9
   ! ------------------------------------------< Speicherplatz allokieren >---!
 
-  call allocateFields(Const,Gitter,RB,Uvar,rhs,Exakt)
-  call allocateFieldsCurv(Gitter,KurvVect)
-  call allocateFieldsVarNum(Gitter,VarNum)
+  call allocateFields(NTestGitter,Gitter,RB,Uvar,rhs,Exakt)
+  call allocateFieldsCurv(NTestGitter,KurvVect)
+  call allocateFieldsVarNum(NTestGitter,VarNum)
   call allocateGitter2D(Gitter2D)  
   call linlg2allocatesdns(Gitter, SkalarProdMatrixQ, SkalarProdMatrixT)
   !call linlgallocatesparse(Gitter, SparseSkalarProdRow1, SparseSkalarProdCol, SparseSkalarProdVal) 
