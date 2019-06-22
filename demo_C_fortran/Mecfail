@@ -1,1 +1,4 @@
-gcc demo_test.o ../fortran/libPraktikum.a -o demo_test -lgfortran
+gfortran -c demoCfortran.f90 -o demoCfortran.o
+gcc -c demo_sub.c -o demo_sub.o
+gcc demo_sub.o demoCfortran.o -o demo -lgfortran
+

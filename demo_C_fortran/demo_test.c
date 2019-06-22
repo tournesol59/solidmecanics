@@ -13,13 +13,9 @@ int main() {
      tMESH*                      Gitter;     // Gitterwerte in matriz           ! 
      tMESHGEN*                   Gitter2D;   // Gitterwerte in Generic inputfile! 
      tCURV*                      KurvVect;   // Numerische Felder fuer Kurve, Christoffei Koeffs abhangig, Rechnung ! 
-     tRANDBEDINGUNGEN*           RB;         // Randbedingungen Code            ! 
-     tCONSTANTS*                 Const;      // Konstanten                      ! 
-     tFILEIO*                    FileIO;     // Ausgabesteuerung                ! 
-     tEXACT*                     Exakt;      // Exakte Loesung                  ! 
      Number                     *Uvar;      // Feld mit der numerischen Loesung!!=Tr(spanng) ! 
-     Number                     *rhs;       // Feld für die Rechte Seite       ! 
-     tNUMERIC*                   VarNum;     // Numerische Felder mit Loesungen ! 
+     Number                     *rhs;       // Feld fuer die Rechte Seite       ! 
+//     tNUMERIC*                   VarNum;     // Numerische Felder mit Loesungen ! 
      //!--------------------------------------------------------------------------!    
 //     Number                     **SkalarProdMatrixQ;   // full dense Matrix fuer Erfassung des 2. Sys. Gleichung, 1-Dim 
 //     Number                     ***SkalarProdMatrixT;  // full dense Matrix fuer Erfassung des 1. Sys. Gleichung, 4-Dims 

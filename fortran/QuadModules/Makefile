@@ -41,27 +41,33 @@ LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES=""\
-	TYPESROUND="TYPESROUND.mod" \
+	TYPES="TYPES.mod" \
 	INPUT_MOD="Input_mod.mod" \
-	ALLOCATEFIELDSROUND="ALLOCATEFIELDSROUND_mod.mod" \
-	CREATEROUNDMESH="CREATEROUNDMESH_mod.mod" \
-        LAGRANGEROUND1D="LAGRANGEROUND1D_mod.mod" \
-        LAGRANGEROUND2D="LAGRANGEROUND2D_mod.mod" \
-        HERMITEROUND2D="HERMITEROUND2D_mod.mod" \
-        VERIFYROUND2D="VERIFYROUND2D_mod.mod"
+	ALLOCATEFIELDS="ALLOCATEFIELDS_mod.mod" \
+	CREATEMESH="CREATEMESH_mod.mod" \
+	INTERPOL2D="INTERPOL2D_mod.mod" \
+        LAGRANGE1D="LAGRANGE1D_mod.mod" \
+        LAGRANGE2D="LAGRANGE2D_mod.mod" \
+        HERMITE1D="HERMITE1D_mod.mod" \
+        HERMITE2D="HERMITE2D_mod.mod" \
+        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod" \
+        VERIFYQUAD2D="VERIFYQUAD2D_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES="" \
-	TYPESROUND="typesround.mod" \
+	TYPES="types.mod" \
 	INPUT_MOD="Input_mod.mod" \
-	ALLOCATEFIELDSROUND="allocatefieldsround_mod.mod" \
-	CREATEROUNDMESH="createroundmesh_mod.mod" \
-        LAGRANGEROUND1D="Lagrangeround1d_mod.mod" \
-        LAGRANGEROUND2D="Lagrangeround2d_mod.mod" \
-        HERMITEROUND2D="hermiteround2D_mod.mod" \
-        VERIFYROUND2D="verifyround2D_mod.mod"
+	ALLOCATEFIELDS="allocatefields_mod.mod" \
+	CREATEMESH="createmesh_mod.mod" \
+	INTERPOL2D="interpol2d_mod.mod" \
+        LAGRANGE1D="Lagrange1d_mod.mod" \
+        LAGRANGE2D="Lagrange2d_mod.mod" \
+        HERMITE1D="hermite1d_mod.mod" \
+        HERMITE2D="hermite2d_mod.mod" \
+        LAGRANGEGRAD2D="Lagrangegrad2d_mod.mod" \
+        VERIFYQUAD2D="verifyquad2d_mod.mod"
 endif
 
 ####################################################################
@@ -76,14 +82,17 @@ endif
 #	rm -f $<
 
 #Regeln fuer Module
-$(TYPESROUND): typesrounddef.o
+$(TYPES): typesdef.o
 ${INPUT_MOD}: input_mod.o
-$(ALLOCATEFIELDSROUND): allocatefieldsround.o
-${CREATEROUNDMESH}: createroundmesh.o
-{LAGRANGEROUND1D}: Lagrangeround1d.o
-{LAGRANGEROUND2D}: Lagrangeround2d.o
-{HERMITEROUND2D}: hermiteround2d.o
-{VERIFYROUND2D}: verifyround2d.o 
+$(ALLOCATEFIELDS): allocatefields.o
+${CREATEMESH}: createmesh.o
+{INTERPOL2D}: interpol2d.o
+{LAGRANGE1D}: Lagrange1d.o
+{LAGRANGE2D}: Lagrange2d.o
+{HERMITE1D}: hermite1d.o
+{HERMITE2D}: hermite2d.o
+{LAGRANGEGRAD2D}: Lagrangegrad2d.o 
+{VERIFYQUAD2D}: verifyquad2d.o 
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -102,14 +111,17 @@ sgi:
 ######################################################
 # Targets, die letztendlich das Programm Herstellen
 #
-library: $(LIB)(typesdefround.o) \
+library: $(LIB)(typesdef.o) \
 	 $(LIB)(input_mod.o) \
-	 $(LIB)(allocatefieldsround.o) \
-	 $(LIB)(createroundmesh.o) \
-	 $(LIB)(Lagrangeround1d.o) \
-	 $(LIB)(Lagrangeround2d.o \
-	 $(LIB)(hermiteround2d.o) \
-	 $(LIB)(verifyround2d.o)
+	 $(LIB)(allocatefields.o) \
+	 $(LIB)(createmesh.o) \
+	 $(LIB)(interpol2d.o) \
+	 $(LIB)(Lagrange1d.o) \
+	 $(LIB)(Lagrange2d.o) \
+	 $(LIB)(hermite1d.o) \
+	 $(LIB)(hermite2d.o) \
+	 $(LIB)(Lagrangegrad2d.o) \
+	 $(LIB)(verifyquad2d.o)
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
@@ -139,19 +151,20 @@ cleanall:
 ######################################################
 # Abhaengigkeiten
 #
-$(LIB)(Input_mod.o): $(TYPESROUND)
-$(LIB)(createMeshRound.o): $(TYPESROUND)
-$(LIB)(allocateFieldsRound.o): $(TYPESROUND)
-$(LIB)(interpolRound2D.o): $(TYPESROUND)
-$(LIB)(Lagrangeround1d.o): $(TYPESROUND)
-$(LIB)(Lagrange2d.o): $(TYPESROUND) $(LAGRANGEROUND1D)
-$(LIB)(hermite1d.o): $(TYPESROUND)
-$(LIB)(hermite2d.o): $(TYPESROUND) $(LAGRANGEROUND1D)  
-$(LIB)(Lagrangegrad2d.o): $(TYPESROUND) $(LAGRANGEROUND2D)
-$(LIB)(verifyquad2d.o): $(TYPESROUND)
-main.o: $(TYPESROUND) $(ALLOCATEFIELDSROUND) $(CREATEROUNDMESH) \
-         $(LAGRANGEROUND1D) $(LAGRANGEROUND2D) \
-         $(HERMITEROUDN2D) $(VERIFYROUND2D)
+$(LIB)(Input_mod.o): $(TYPES)
+$(LIB)(createMesh.o): $(TYPES)
+$(LIB)(allocateFields.o): $(TYPES)
+$(LIB)(interpol2D.o): $(TYPES)
+$(LIB)(createMesh.o): $(TYPES)
+$(LIB)(Lagrange1d.o): $(TYPES)
+$(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D)
+$(LIB)(hermite1d.o): $(TYPES)
+$(LIB)(hermite2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D) $(HERMITE1D) 
+$(LIB)(Lagrangegrad2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE2D)
+$(LIB)(verifyquad2d.o): $(TYPES)
+main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
+         $(LAGRANGE1D) $(HERMITE1D) $(LAGRANGE2D)  $(LAGRANGEGRAD2D) \
+         $(HERMITE2D) $(VERIFYQUAD2D)
 
 	@echo "make cleanall completed..."
 
