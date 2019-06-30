@@ -42,33 +42,25 @@ LINUX_FLAGS = \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES=""\
 	TYPESROUND="TYPESROUND.mod" \
-	INPUT_MOD="Input_mod.mod" \
 	ALLOCATEFIELDSROUND="ALLOCATEFIELDSROUND_mod.mod" \
-	CREATEROUNDMESH="CREATEROUNDMESH_mod.mod" \
-        LAGRANGEROUND1D="LAGRANGEROUND1D_mod.mod" \
-        LAGRANGEROUND2D="LAGRANGEROUND2D_mod.mod" \
-        HERMITEROUND2D="HERMITEROUND2D_mod.mod" \
-        VERIFYROUND2D="VERIFYROUND2D_mod.mod"
+	CREATEMESHROUND="CREATEMESHROUND_mod.mod" \
+        LAGRANGEGRAD2DROUND="LAGRANGEGRAD2DROUND_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES="" \
 	TYPESROUND="typesround.mod" \
-	INPUT_MOD="Input_mod.mod" \
 	ALLOCATEFIELDSROUND="allocatefieldsround_mod.mod" \
-	CREATEROUNDMESH="createroundmesh_mod.mod" \
-        LAGRANGEROUND1D="Lagrangeround1d_mod.mod" \
-        LAGRANGEROUND2D="Lagrangeround2d_mod.mod" \
-        HERMITEROUND2D="hermiteround2D_mod.mod" \
-        VERIFYROUND2D="verifyround2D_mod.mod"
+	CREATEMESHROUND="createmeshround_mod.mod" \
+        LAGRANGEGRAD2DROUND="Lagrangegrad2dround_mod.mod"
 endif
 
 ####################################################################
 # Regeln zum Uebersetzen 
 #
 %.o : %.f90
-	$(F90) -c $(F90_CFLAGS) $<
+	$(F90) -c $(F90_CFLAGS) $<mv
 
 %.a : %.o
 	/usr/bin/ar rcv $@ $<
@@ -77,13 +69,9 @@ endif
 
 #Regeln fuer Module
 $(TYPESROUND): typesrounddef.o
-${INPUT_MOD}: input_mod.o
 $(ALLOCATEFIELDSROUND): allocatefieldsround.o
-${CREATEROUNDMESH}: createroundmesh.o
-{LAGRANGEROUND1D}: Lagrangeround1d.o
-{LAGRANGEROUND2D}: Lagrangeround2d.o
-{HERMITEROUND2D}: hermiteround2d.o
-{VERIFYROUND2D}: verifyround2d.o 
+${CREATEMESHROUND}: createmeshround.o
+{LAGRANGEGRAD2DROUND}: Lagrangegrad2dround.o
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -102,19 +90,15 @@ sgi:
 ######################################################
 # Targets, die letztendlich das Programm Herstellen
 #
-library: $(LIB)(typesdefround.o) \
-	 $(LIB)(input_mod.o) \
+library: $(LIB)(typesrounddef.o) \
 	 $(LIB)(allocatefieldsround.o) \
-	 $(LIB)(createroundmesh.o) \
-	 $(LIB)(Lagrangeround1d.o) \
-	 $(LIB)(Lagrangeround2d.o \
-	 $(LIB)(hermiteround2d.o) \
-	 $(LIB)(verifyround2d.o)
+	 $(LIB)(createmeshround.o) \
+	 $(LIB)(Lagrangegrad2dround.o) 
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
-	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
-#	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
+	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
+#	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
 	rm -f main.o 
 	@echo "============================================="
 	@echo "   Program Praktikum successfully compiled   "
@@ -139,19 +123,11 @@ cleanall:
 ######################################################
 # Abhaengigkeiten
 #
-$(LIB)(Input_mod.o): $(TYPESROUND)
-$(LIB)(createMeshRound.o): $(TYPESROUND)
-$(LIB)(allocateFieldsRound.o): $(TYPESROUND)
-$(LIB)(interpolRound2D.o): $(TYPESROUND)
-$(LIB)(Lagrangeround1d.o): $(TYPESROUND)
-$(LIB)(Lagrange2d.o): $(TYPESROUND) $(LAGRANGEROUND1D)
-$(LIB)(hermite1d.o): $(TYPESROUND)
-$(LIB)(hermite2d.o): $(TYPESROUND) $(LAGRANGEROUND1D)  
-$(LIB)(Lagrangegrad2d.o): $(TYPESROUND) $(LAGRANGEROUND2D)
-$(LIB)(verifyquad2d.o): $(TYPESROUND)
+$(LIB)(createmeshround.o): $(TYPESROUND)
+$(LIB)(allocatefieldsround.o): $(TYPESROUND)
+$(LIB)(Lagrangegrad2dround.o): $(TYPESROUND)
 main.o: $(TYPESROUND) $(ALLOCATEFIELDSROUND) $(CREATEROUNDMESH) \
-         $(LAGRANGEROUND1D) $(LAGRANGEROUND2D) \
-         $(HERMITEROUDN2D) $(VERIFYROUND2D)
+        $(LAGRANGEGRAD2DROUND) 
 
 	@echo "make cleanall completed..."
 

@@ -6,27 +6,29 @@ module TypesRound
   private
   !---------------------------------------------------------------------------!
   type tNode
-     real             :: vect_x, vect_y, vect_z
+!     real,dimension(3)             :: vects
+      real,dimension(:),allocatable   :: vects(:)   ! previewed for dim=3
   end type tNode
 
   type tTrigElem
 !     integer           :: hasBoundary      !  not useful, see field neighbours on next data !
-     integer       :: numero
-!     type(tNode)        :: node_1, node_2, node_3  ! not useful, two refs data struct instead !
-     integer       :: node_1, node_2, node_3
+!     integer,dimension(4)      :: numeros ! Triangle elmt numero, node_1, node_2, node_3  ! 
+!     integer       :: numero, node_1, node_2, node_3
+      integer,dimension(:),allocatable  :: numeros(:)  ! previewed for dim=4 ^
   end type tTrigElem
 
   type tRoundMeshInfo
      integer            :: nNode         ! Number of Nodes !
      integer            :: nElem         ! Number of Elements, equal to num. neighbours data !
+     integer            :: nxmx, nymx    ! Max Bound for Seiten Index of Vertex (Boundary Condition)
   end type tRoundMeshInfo
 
   type tRoundMesh        
-     type(tNode), pointer       :: nodes(:)   ! Coordinates of Nodes listed !
+!     type(tNode), pointer       :: nodes(:)   ! Coordinates of Nodes listed !
 ! Alternative
-!    type(tNode),dimension(:),allocatable   :: nodes
-     type(tTrigElem), pointer   :: elems(:)      ! Nodes index Elements listed   !
-     type(tTrigElem), pointer   :: neighbours(:) ! Re-use of structure type tTrigElem !
+     type(tNode),dimension(:),allocatable   :: nodes(:)  ! Same coordinates but can be allocated, nNodes x3 values
+     type(tTrigElem),dimension(:),allocatable   :: elems(:)      ! Nodes index Elements listed   !
+     type(tTrigElem),dimension(:),allocatable   :: neighbours(:) ! Re-use of structure type tTrigElem !
                                                  ! to store neighbours, -1 = has boundary
   end type tRoundMesh
 
