@@ -183,6 +183,35 @@ contains
 
   end subroutine allocateFieldsVarRound
 
+!******************************************************
+  subroutine allocateFieldsCoeffRound(NTestMeshR,MeshCoeffR) 
+! bind (C, name="allocateFieldsCoeffRound")
+!    use ISO_C_BINDING, only: c_char 
+  use TypesRound
+
+  implicit none
+  ! Variable Deklaration  ---------------------------------------------------!
+    type(tRoundMeshInfo)   :: NTestMeshR  ! Dimensions                       !
+    type(tRoundCoeff)      :: MeshCoeffR     ! Numerische Felder mit Loesungen  !
+    !------------------------------------------------------------------------!
+    integer                 :: allocStat,ne,nn                               !
+    !------------------------------------------------------------------------!
+    intent(inout)           :: MeshCoeffR                                       !
+    intent(in)              :: NTestMeshR                                    !
+    !------------------------------------------------------------------------!
+
+    nn = NTestMeshR%nNode
+    ne = NTestMeshR%nElem ! A priori interpol order 2 => 6 coeffs per Elements
+
+    allocate(MeshCoeffR%Coefficients(1:ne*6),       &
+         STAT = allocStat )        
+ 
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateFieldsCoeffRound: Could not allocate all variables!'
+       STOP
+    end if
+
+  end subroutine allocateFieldsCoeffRound
 
 !******************************************************
   subroutine deallocateFieldsRound(NTestMeshR,MeshR,ExaktR) 
@@ -300,5 +329,31 @@ contains
 
   end subroutine deallocateFieldsVarRound
 
+!******************************************************
+  subroutine deallocateFieldsCoeffRound(MeshCoeffR) 
+! bind (C, name="deallocateFieldsVarNum")
+!    use ISO_C_BINDING, only: c_char  
+
+    use TypesRound
+    
+    implicit none
+
+  ! Variable Deklaration  ---------------------------------------------------!
+    type(tRoundCoeff)       :: MeshCoeffR     ! Numerische Felder Interpol Coeff  !
+    !------------------------------------------------------------------------!
+    integer                 :: allocStat                                     !
+    !------------------------------------------------------------------------!
+    intent(inout)           :: MeshCoeffR                                    !
+    !------------------------------------------------------------------------!
+
+    deallocate(MeshCoeffR%Coefficients, &
+               STAT=allocStat)
+
+    if (allocStat.NE.0) then
+       print *, 'ERROR AllocateFieldsCoeffRound: Could not deallocate correctly!'
+       STOP
+    end if
+
+  end subroutine deallocateFieldsCoeffRound
 
 end module allocateFieldsRound_mod

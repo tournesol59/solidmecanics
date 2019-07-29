@@ -46,14 +46,19 @@ module TypesRound
      real,pointer         :: randMoment(:)          ! entsprechende Randwerte   !  
   end type tRoundRandS
 
+  type tPolynom
+    integer               :: n              ! degree =>  dimension n+1        !
+    real,dimension(11)    :: coeffs(1:11)      ! Koeffizienten  order<10         !
+  end type tPolynom
+
   type tXYPolynom ! definiert in TypesDef
 !    integer               :: n              ! degree, angenommen 2 hier       !
     real,dimension(10)    :: coeffs(1:10)      ! Koeffizienten order 1,x,y,x2,xy,y2! 
                                               ! besetzt       !
   end type tXYPolynom
 
-  type tRoundCoeff        ! Nicht recht benutztbar
-     type(tXYPolynom),pointer     :: Coefficients(:) ! des Polynoms fuer vordraengige !
+  type tRoundCoeff        ! benutzbar aber muss allokiert werden
+     real,pointer     :: Coefficients(:) ! des Polynoms fuer vordraengige !
                                                      ! Interpolation, 1 fuer jedes Elements! 
 !     real,pointer                 :: Jacobian(:)    ! 2x2 real, nur diesen Test vorgesehen !
 !     logical,pointer              :: Test(:)        ! Resultat des Tests an dem Element !
@@ -75,7 +80,7 @@ module TypesRound
 
   !---------------------------------------------------------------------------!
   public  :: tNode, tTrigElem, tRoundMeshInfo, tRoundMesh, tRoundRandU, tRoundRandS, &
-             tRoundNumeric, tRoundCoeff, tRoundExakt, tXYPolynom
+             tRoundNumeric, tRoundCoeff, tRoundExakt, tPolynom, tXYPolynom
   !---------------------------------------------------------------------------!
 
 end module TypesRound

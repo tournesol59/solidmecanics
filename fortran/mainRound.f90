@@ -9,10 +9,11 @@ program main
   ! Variablendeklarationen                                                   !
   !--------------------------------------------------------------------------!
   type(tRoundMeshInfo)            :: NTestGitterR ! Gitterwerte in matriz           !
-  type(tRoundMesh)                :: GitterR     ! Gitterwerte in matriz           !
-  type(tRoundNumeric)             :: VarFelderR     ! Numerische Felder mit Loesungen !
+  type(tRoundMesh)                :: GitterR      ! Gitterwerte in matriz           !
+  type(tRoundNumeric)             :: VarFelderR   ! Numerische Felder mit Loesungen !
   type(tRoundExakt)               :: ExaktLR      ! Exakte Loesung                  !
-!  type(tRoundFileIO)              :: FileIOR     ! Ausgabesteuerung                !
+!  type(tRoundFileIO)              :: FileIOR      ! Ausgabesteuerung                !
+  type(tRoundCoeff)               :: GitterCoeffR ! Interpolation
   type(tRoundRandU)               :: RBU          ! Randbedingungen Biegung
   type(tRoundRandS)               :: RBS          ! Randbedingungen Force
   !--------------------------------------------------------------------------!  
@@ -29,6 +30,7 @@ program main
   call allocateFieldsRound(NTestGitterR,GitterR,ExaktLR)
   call allocateFieldsBCSRound(NTestGitterR,RBU,RBS)
   call allocateFieldsVarRound(NTestGitterR,VarFelderR)
+  call allocateFieldsCoeffRound(NTestGitterR,GitterCoeffR) 
 
    ! --------------------------< Gitter festlegen >---------------------!
   call createRoundMesh2(NTestGitterR,GitterR)    
@@ -38,6 +40,7 @@ program main
   call deallocateFieldsRound(NTestGitterR,GitterR,ExaktLR) 
   call deallocateFieldsBCSRound(NTestGitterR,RBU,RBS) 
   call deallocateFieldsVarRound(VarFelderR)
+  call deallocateFieldsCoeffound(GitterCoeffR)
 
     write(*,*) 
     write(*,*) '============= Program terminated correctly ================ '
