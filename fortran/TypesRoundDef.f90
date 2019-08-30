@@ -57,6 +57,10 @@ module TypesRound
                                               ! besetzt       !
   end type tXYPolynom
 
+  type tPassageMatrix            ! dient als passage matrix
+    real,dimension(9)     :: mat(1:9)
+  end type tPassageMatrix
+
   type tRoundCoeff        ! benutzbar aber muss allokiert werden
      real,pointer     :: Coefficients(:) ! des Polynoms fuer vordraengige !
                                                      ! Interpolation, 1 fuer jedes Elements! 
@@ -80,7 +84,7 @@ module TypesRound
 
   !---------------------------------------------------------------------------!
   public  :: tNode, tTrigElem, tRoundMeshInfo, tRoundMesh, tRoundRandU, tRoundRandS, &
-             tRoundNumeric, tRoundCoeff, tRoundExakt, tPolynom, tXYPolynom
+             tRoundNumeric, tRoundCoeff, tRoundExakt, tPolynom, tXYPolynom, tPassageMatrix
   !---------------------------------------------------------------------------!
 
 end module TypesRound

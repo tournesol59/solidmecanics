@@ -14,7 +14,7 @@
 #
 LIB = libPraktikum.a
 AR = ar
-ARFLAGS = -cr
+ARFLAGS = -crU
 
 #Compiler Wahl fuer Linux:
 #FCOMP="/opt/intel/compiler70/ia32/bin/ifc"

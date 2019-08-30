@@ -41,6 +41,9 @@ module allocateFieldsRound_mod
   interface allocateFieldsVarRound
      module procedure allocateFieldsVarRound
   end interface
+  interface allocateFieldsCoeffRound
+     module procedure allocateFieldsCoeffRound
+  end interface
 
   interface deallocateFieldsRound
      module procedure deallocateFieldsRound
@@ -54,10 +57,13 @@ module allocateFieldsRound_mod
   interface deallocateFieldsVarRound
      module procedure deallocateFieldsVarRound
   end interface
-
+  interface deallocateFieldsCoeffRound
+     module procedure deallocateFieldsCoeffRound
+  end interface
   !--------------------------------------------------------------------------!
-  public  :: allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, &
-             deallocateFieldsRound, deallocateFieldsVarRound, deallocateFieldsBCSRound
+  public  :: allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, allocateFieldsCoeffRound,&
+             deallocateFieldsRound, deallocateFieldsVarRound, deallocateFieldsBCSRound, &
+             deallocateFieldsCoeffRound
   !--------------------------------------------------------------------------!
 
 contains
@@ -331,7 +337,7 @@ contains
 
 !******************************************************
   subroutine deallocateFieldsCoeffRound(MeshCoeffR) 
-! bind (C, name="deallocateFieldsVarNum")
+! bind (C, name="deallocateFieldCoeffRound")
 !    use ISO_C_BINDING, only: c_char  
 
     use TypesRound

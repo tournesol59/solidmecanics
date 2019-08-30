@@ -4,6 +4,8 @@ program main
 !  use inputround_mod
   use allocatefieldsround_mod
   use createmeshround_mod
+  use verifymeshround_mod
+  use spacegeometry_mod
 
   !--------------------------------------------------------------------------!
   ! Variablendeklarationen                                                   !
@@ -16,6 +18,9 @@ program main
   type(tRoundCoeff)               :: GitterCoeffR ! Interpolation
   type(tRoundRandU)               :: RBU          ! Randbedingungen Biegung
   type(tRoundRandS)               :: RBS          ! Randbedingungen Force
+  type(tPassageMatrix)            :: axref_xyz, axout_xyz    ! a 3x3 Matrix contains local axes 
+                                                  ! vs global axes coordinates!
+  type(tNode),dimension(1:3)      :: vects        ! contains 3x 3 Vectors
   !--------------------------------------------------------------------------!  
    integer        :: i,j,n, allocStat
 
@@ -35,12 +40,17 @@ program main
    ! --------------------------< Gitter festlegen >---------------------!
   call createRoundMesh2(NTestGitterR,GitterR)    
   print *, 'Terminated createRoundMesh2: OK'
+
+   ! --------------------< functional test of verifymesh module subroutines >-!
+  call trigrotationxcheck(1, GitterR, axref_xyz, axout_xyz, vects)
+  print *, 'Terminated test verifymesh: OK'
+
   ! ------------------------------------------< Speicherplatz de-allokieren >---!
 
   call deallocateFieldsRound(NTestGitterR,GitterR,ExaktLR) 
   call deallocateFieldsBCSRound(NTestGitterR,RBU,RBS) 
   call deallocateFieldsVarRound(VarFelderR)
-  call deallocateFieldsCoeffound(GitterCoeffR)
+  call deallocateFieldsCoeffRound(GitterCoeffR)
 
     write(*,*) 
     write(*,*) '============= Program terminated correctly ================ '
