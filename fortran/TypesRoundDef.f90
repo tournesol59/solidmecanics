@@ -61,6 +61,16 @@ module TypesRound
     real,dimension(9)     :: mat(1:9)
   end type tPassageMatrix
 
+  type tRoundlocal
+    integer,dimension(3)   :: permute  ! setzt aus der Punkten (j,k,l), 
+                                       ! was Punkt 1, Punkt 2 oder Punkt 3 ist
+    real,dimension(3)      :: triplet  !  x2,x3,y3 Werten
+    real,dimension(3)      :: dist     ! dist(1) ist der Laenge des Segments ggseitig zum nodes 1
+    real,dimension(3)      :: angleEuler ! welche benoetigt werden, um Passage aus lokal
+                                         ! zu global Basis zu machen
+    type(tPassageMatrix)   :: axes_xyz 
+  end type tRoundlocal
+
   type tRoundCoeff        ! benutzbar aber muss allokiert werden
      real,pointer     :: Coefficients(:) ! des Polynoms fuer vordraengige !
                                                      ! Interpolation, 1 fuer jedes Elements! 
@@ -84,7 +94,8 @@ module TypesRound
 
   !---------------------------------------------------------------------------!
   public  :: tNode, tTrigElem, tRoundMeshInfo, tRoundMesh, tRoundRandU, tRoundRandS, &
-             tRoundNumeric, tRoundCoeff, tRoundExakt, tPolynom, tXYPolynom, tPassageMatrix
+             tRoundNumeric, tRoundCoeff, tRoundExakt, tPolynom, tXYPolynom, &
+             tRoundlocal, tPassageMatrix
   !---------------------------------------------------------------------------!
 
 end module TypesRound

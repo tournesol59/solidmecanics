@@ -89,7 +89,7 @@ contains
                                           !=Tr(spanng)                       
     ! Local variable declaration                                             !
     !                                                                        !
-    integer                 :: nn,ne,i,allocStat      !
+    integer                 :: nn,ne,i,allocStat,allocStatnn,allocStatne     !
     !------------------------------------------------------------------------!
     intent(inout)           :: MeshR,ExaktR                                  !
     intent(in)              :: NTestMeshR                                    !
@@ -101,19 +101,26 @@ contains
     allocate(MeshR%nodes(1:nn), MeshR%elems(1:nn), MeshR%neighbours(1:nn), &            
          ExaktR%loesung(1:nn,1:NumberofDisp),       &
          STAT = allocStat )        
-! Below may not be used with simple const dimensions, or declare allocatable
-    do i=1,nn
-       allocate(MeshR%nodes(i)%vects(1:3))
-    enddo 
-    do i=1,ne
-       allocate(MeshR%elems(i)%numeros(1:4))
-       allocate(MeshR%neighbours(i)%numeros(1:4))
-   enddo 
     if (allocStat.NE.0) then
        print *, 'ERROR AllocateFieldsRound: Could not allocate all variables!'
        STOP
     end if
-
+! Below may not be used with simple const dimensions, or declare allocatable
+    do i=1,nn
+       allocate(MeshR%nodes(i)%vects(1:3), STAT=allocStatnn)
+       if (allocStatnn.NE.0) then
+          print *, 'ERROR AllocateFieldsRound: Could not allocate all component of node!'
+          STOP
+       end if
+    enddo 
+    do i=1,ne
+       allocate(MeshR%elems(i)%numeros(1:4), STAT=allocStatne)
+       allocate(MeshR%neighbours(i)%numeros(1:4), STAT=allocStatne)
+       if (allocStatne.NE.0) then
+          print *, 'ERROR AllocateFieldsRound: Could not allocate all component of elem!'
+          STOP
+       end if
+   enddo 
   
   end subroutine allocateFieldsRound
 
@@ -143,7 +150,7 @@ contains
 
     nxmx = NTestMeshR%nxmx
     nymx = NTestMeshR%nymx
-
+! why shall be only nxmx taken care?
     allocate(BCU%randFixedIndex(1:nxmx),BCU%randFixed(1:nxmx), &            
             BCU%randDisplaceIndex(1:nxmx),BCU%randDisplace(1:nxmx), &
             BCS%randForceIndex(1:nxmx),BCS%randForce(1:nxmx), &            
@@ -237,7 +244,7 @@ contains
     type(tRoundExakt)       :: ExaktR      ! Exakte Loesung Triangle //Round !
     !                                                                        !
     ! Local variable declaration                                             !
-    integer                 :: nn,ne,i,allocStat,allocStati                  !
+    integer                 :: nn,ne,i,allocStat,allocStatnn,allocStatne     !
     !------------------------------------------------------------------------!
     intent(inout)           :: MeshR,ExaktR                                  !
     intent(in)              :: NTestMeshR                                    !
@@ -247,18 +254,26 @@ contains
     ne = NTestMeshR%nElem
 ! Below cannot be not used if simple const dimensions
     do i=1,nn
-       deallocate(MeshR%nodes(i)%vects)
+       deallocate(MeshR%nodes(i)%vects,STAT=allocStatnn)
+       if (allocStatnn.NE.0) then
+          print *, 'ERROR DellocateFieldsRound: Could not deallocate node correctly!'
+          STOP
+       endif
     enddo 
     do i=1,ne
-       deallocate(MeshR%elems(i)%numeros)
-       deallocate(MeshR%neighbours(i)%numeros)
+       deallocate(MeshR%elems(i)%numeros,STAT=allocStatne)
+       deallocate(MeshR%neighbours(i)%numeros,STAT=allocStatne)
+       if (allocStatne.NE.0) then
+          print *, 'ERROR DellocateFieldsRound: Could not deallocate elem correctly!'
+          STOP
+       endif
    enddo 
     deallocate(MeshR%nodes, MeshR%elems, MeshR%neighbours, &
               ExaktR%loesung, &
                STAT=allocStat)
     
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFieldsRound: Could not deallocate correctly!'
+       print *, 'ERROR DellocateFieldsRound: Could not deallocate correctly!'
        STOP
     else
        print *, 'Terminated AllocateFieldsRound: OK'
@@ -299,7 +314,7 @@ contains
             BCS%randMomentIndex,BCS%randMoment, &
          STAT = allocStat ) 
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFieldsBCSRound: Could not deallocate all variables!'
+       print *, 'ERROR DeallocateFieldsBCSRound: Could not deallocate all variables!'
        STOP
     end if
   
@@ -327,7 +342,7 @@ contains
                STAT=allocStat)
 
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFieldsVarRound: Could not deallocate correctly!'
+       print *, 'ERROR DeallocateFieldsVarRound: Could not deallocate correctly!'
        STOP
     else
        print *, 'Terminated AllocateFieldsVARRound: OK'
@@ -356,7 +371,7 @@ contains
                STAT=allocStat)
 
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFieldsCoeffRound: Could not deallocate correctly!'
+       print *, 'ERROR DeallocateFieldsCoeffRound: Could not deallocate correctly!'
        STOP
     end if
 
