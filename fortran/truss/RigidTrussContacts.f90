@@ -25,16 +25,16 @@ module RigidTrussContacts
 !   creates and fills the matrix from 6 ddl to 6 force components!
 !**************************************************************!
 
-SUBROUTINE Matrice_Ke_H_local(MeshT, VarT, Keii, Keij, Kejj, connect)
+SUBROUTINE Matrice_Ke_H_local(MeshT, VarT, Keii, Keij, Kejj)
   use typesbalken
   implicit none
 
   type(tMeshElmt), intent(in)  :: MeshT
   type(tVarElmt), intent(in)   :: VarT
   type(tRigidMat), intent(inout) :: Keii, Keij, Kejj
-  integer, dimension(6)         :: connect
+!  integer, dimension(6)         :: connect
 ! lokalen Variablen
-   real                        :: EIsL, EIsL2, EIsL3, ESsL
+  real                        :: EIsL, EIsL2, EIsL3, ESsL
   integer                     :: i,j
 
 02 format (f10.5)
@@ -43,70 +43,38 @@ END SUBROUTINE Matrice_Ke_H_local
 !**************************************************************!
 !							       !
 !  Subroutine Matrice_Ke_H_Truss                               !
-!   creates a global matrix of 6 elements Balken with boundary conds!
+!   shall be called in the main Program as there are elements  !
 !**************************************************************!
-SUBROUTINE Matrice_Ke_H_Truss(MeshT1,VarT1,VarT2,VarT3,VarT4,VarT5,VarT6, Ke_H, connect6)
+
+SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, j,k, n, ne, connectelmt, Dunknowns, Dimposed, Fmovemt, Fapplied)
   use typesbalken
   implicit none
 
-  type(tMeshElmt), intent(in)  :: MeshT1
-  type(tVarElmt), intent(in)   :: VarT1, VarT2,VarT3,VarT4,VarT5,VarT6
-  real,pointer,intent(inout) :: Ke_H(:) ! 24*24, intent(inout) ::
+  type(tMeshElmt), intent(in)  :: MeshT1  ! One bar or bulk element
+  type(tVarElmt), intent(in)   :: VarT1   ! Unknown variables (not used in this subroutine)
+                                          ! and applied forces (used)
+  real,pointer,intent(inout)   :: Ke_H(:,:)   ! Whole global rigidity matrix,
+  integer,intent(in)           :: n, ne   ! Max number of nodes, max number of deg freedom (3 or 6)
+  integer,intent(in)           :: j,k       ! index of connected nodes to be assemblied in Ke_H
+  integer,pointer,intent(in)   :: connectelmt(:,:)  ! These indexes (j,k) are also found if connectelmt(j,k)=1
+  integer,pointer,intent(in)   :: Dunknowns(:,:)    ! Dunkowns(i,j)=1 means j-th of 4 deg of 
+                                                    ! freedom of i-th of n nodes is unknown, 0 by default
+  real,pointer,intent(in)      :: Dimposed(:,:)  ! imponierte Bewegungen at move elsewhere Dunknowns(i,j)=1
+  integer,pointer,intent(in)   :: Fmovemt(:,:)      ! Fmovemt(i,j)=1 means there one Force to calculate at move j at node i
+  real,pointer,intent(in)      :: Fapplied(:,:)  ! Force applied at move j at node i (provided Fmovemt(i,j)=0)
 
-  integer, dimension(6,6),intent(in)   :: connect6
 ! lokalen Variablen
-  integer, dimension(6)         :: connect
-  integer                       :: i,j,k ,allocStat
+
+  integer                       :: i,l,p,allocStat
   type(tRigidMat)               :: Keii, Keij, Kejj
-  integer, dimension(6)         ::  nodeone= (/ 0, 2, 0, 0, 0, 0 /) !! Assume only one has connect >0
-  integer, dimension(6)         :: nodead= (/ 0, 0, 0, 4, 0, 6 /)
-  integer                       :: node_1, node_2
 
-  real                          :: smallEIsL = (270000*0.001/0.5)*1e-4
-  real                          :: smallEIsL2 = (270000*0.001/0.25)*1e-4
-  real                          :: smallEIsL3 = (270000*0.001/0.125)*1e-4
-
-  allocate(Ke_H(1:24*24), STAT = allocStat)
-  if (allocStat.ne.0) then
-    print *," Errro Allocation global matrix !"
-  endif
-  !1 let us find a mean to exploit better the conectitivity info of connect6
-  ! remind connect(i2)=1 means 'nodes i is connected by articulation of axis 2, if 0 by fixed (closet)
-    
-  i=1
-
-  do j=1,6
-    connect(j)=connect6((i-1),j)
-  enddo
-  call Matrice_Ke_H_local(MeshT1, VarT1, Keii, Keij, Kejj, connect)
-!**************************************************************************************
-!! let an example: articulation at node 1 in y, one otation %vector ez => [2,4],  [4,4]
-!!         u v w ph,th,ps
+ ! real                          :: smallEIsL = (270000*0.001/0.5)*1e-4
+ ! real                          :: smallEIsL2 = (270000*0.001/0.25)*1e-4
+ ! real                          :: smallEIsL3 = (270000*0.001/0.125)*1e-4
 
 
-  do while(i<=6)
-    !!! 1. check connectivity single Element  
-    i=0
-    node_1=0
-    do while ((node_1.eq.(0)).and.(i.le.6))
-         i=i+1
-         node_1=nodeone(i)
-    enddo
-! node1(i) has non zero element
-    j=0
-    node_2=0
-    do while ((node_2.eq.(0)).and.(j.le.6))
-         j=j+1
-         node_2=nodead(j)      
-    enddo
-  if(.not.((node_1.le.0).or.(node_2.le.0)) ) then
-    if ( abs( Keij%Ke(node_1,node_2) ).le.(smallEIsL3) ) then
-		!do nothing korrrekt
-    else 
-      print *,"ERROR lacks free Articulation mechanism"
-    endif
-  endif   
- enddo
+
+  call Matrice_Ke_H_local(MeshT1, VarT1, Keii, Keij, Kejj)
 
 END SUBROUTINE Matrice_Ke_H_Truss
 
