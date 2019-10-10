@@ -70,8 +70,7 @@ implicit none
    end subroutine SUBTEST
    
 !-------------------------------------------------
-!  SUBCOPY is the contrary: it calls C sub
-routine
+!  SUBCOPY is the contrary: it calls C subroutine
 !  thus, SUBCOPY is part of a PROGRAM (see main.f90)
 !  which fills in a (**double) to begin, then tInfo
 !  and SUBCOPY copy it to a local array,dimension(10,2) 
