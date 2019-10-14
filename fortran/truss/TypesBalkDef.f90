@@ -45,13 +45,26 @@ MODULE TypesBalken
   end type tMeshElmt
 
   type tVarElmt
-     real,dimension(6)         :: UeIi, UeJi
-     real,dimension(6)         :: FeIi,FeJi
+     real,dimension(3)         :: UeIi, UeJi
+     real,dimension(3)         :: FeIi,FeJi
   end type tVarElmt
 
   type tRigidMat
-     real,dimension(6,6)       :: Ke
+!     real,dimension(3,3)       :: Ke
+!      real,dimension(:,:),allocatable  :: Ke
+      real,pointer                       :: Ke(:,:)
   end type tRigidMat
+
+  type tVarFull
+     real,pointer              :: Ue(:)
+     real,pointer              :: Fe(:) 
+  end type tVarFull
+
+  type tRigidFullMat
+     integer                          :: nn,ne
+     real,dimension(:,:),allocatable    :: Ke
+!     real,pointer                       :: Ke(:,:)
+  end type tRigidFullMat
 
   type tPolynom
     integer              :: n              ! degree =>  dimension n+1        !
@@ -63,7 +76,7 @@ MODULE TypesBalken
                                           ! tab(2),tab(3)=0 tab(5) tab(6)=0 in eine Fest eingeklammerte Abbildung
   end type tConnectBalk
   !---------------------------------------------------------------------------!
-  public  :: tMeshElmt, tVarElmt, tRigidMat, tPolynom
+  public  :: tMeshElmt, tVarElmt, tRigidMat, tPolynom, tRigidFullMat, tVarFull
   !---------------------------------------------------------------------------!
 
 ! contains

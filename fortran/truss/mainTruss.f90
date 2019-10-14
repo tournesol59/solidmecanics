@@ -1,26 +1,42 @@
 program mainTruss
   use typesbalken
-  use RigidTrussContacts
+  use RigidTrussContacts_mod
+  use printabstractstruct_mod
+
   implicit none
 
   integer               :: ne=3 ! Freiheitsgraden Anzahl
   integer               :: n=3  ! Nodes Anzahl
+  real                  :: anglescalar
   type(tMeshElmt)       :: MeshT1, MeshT2 ! Elementen 1-2 und 1-3
   type(tVarElmt)        :: VarT1, VarT2   ! entsprechenden Werten (U,F) in Elementen 1-2, 1-3
   integer,pointer       :: elmtabbdung(:,:) 
-  real,pointer          :: Ke_H(:,:)   ! Whole global rigidity matrix
-  real,pointer          :: A_H(:,:), B_H(:,:)  ! Sub matrices from Ke_H (f=A.U,unknown + B.U,applied)
+  real,pointer          :: M_rot(:)
+  type(tRigidFullMat)   :: Ke_H   ! Whole global rigidity matrix
+  type(tRigidFullMat)   :: A_H, B_H  ! Sub matrices from Ke_H (f=A.U,unknown + B.U,applied)
+  type(tVarFull)        :: Var_H  ! grouped solution in Ue,Fe vectors
   integer,pointer       :: Dunbekannt(:,:)  ! Unbekannte Bewegungen zu berechnen
   real,pointer          :: Dimponiert(:,:)  ! imponierte Bewegungen
   integer,pointer       :: Kraftbewgg(:,:)  ! Result of Calc: unbekannte Kraefte in bewegungsfrei Lenkung
   real,pointer          :: Kraftimponiert(:,:)  ! Bekannte imponiert Kraefte
 
-  integer               :: i,j,k,l,p,allocStat
+  integer               :: i,j,k,l,p,allocStat,nullstat
 
+  integer,pointer       :: inull(:)
+  character(len=30)     :: SubName="mainTruss                     "
+
+  allocate(inull(1), STAT=nullstat)
+  if (nullstat.ne.0) then
+    print *,"mainTruss: error allocate null"
+  endif
+  allocate(M_rot(9), STAT=nullstat)
+  if (nullstat.ne.0) then
+    print *,"mainTruss: error allocate M_rot"
+  endif
 
 ! ****************************** Definitions der Elementen ***********************************
-  MeshT1%typ = 2
-  MeshT1%nraumx = 2        ! subdivsion, default=2
+  MeshT1%typ = 2           ! beam
+  MeshT1%nraumx = 2        ! subdivision, default=2
   MeshT1%startx = 1.0        ! node 1 x-koord  !
   MeshT1%endx = 0.0          ! node 2 x-koord  !
   MeshT1%starty = 0.0        ! node 1 y-koord  !
@@ -28,7 +44,7 @@ program mainTruss
   MeshT1%startz = 0.0        ! node 2 z-koord  !
   MeshT1%endz = 0.0          ! node 2 z-koord  !
 
-!  MeshT1%dlen = sqrt((MeshT1%endx - MeshT1%startx)**2+(MeshT1%endy - MeshT1%starty)**2+(MeshT1%endz - MeshT1%startz)**2)           ! Laengen des Rechengebiets (Balk) in x/y !
+  MeshT1%dlen = 1.0 !! sqrt((MeshT1%endx - MeshT1%startx)**2+(MeshT1%endy - MeshT1%starty)**2+(MeshT1%endz - MeshT1%startz)**2)           ! Laengen des Rechengebiets (Balk) in x/y !
   MeshT1%SArea = 0.0004         ! Section area
   MeshT1%EY = 210000000            ! YOUNG Modulus
   MeshT1%vu = 0.3            ! Poisson Coeff
@@ -43,9 +59,8 @@ program mainTruss
      print *," Error allocation polynoms elmt 1 !"
   endif  
 
-
-  MeshT2%typ = 1
-  MeshT2%nraumx = 2        ! subdivsion, default=2
+  MeshT2%typ = 1           ! bar
+  MeshT2%nraumx = 2        ! subdivision, default=2
   MeshT2%startx = 1.0        ! node 1 x-koord  !
   MeshT2%endx = 0.0          ! node 2 x-koord  !
   MeshT2%starty = 0.0        ! node 1 y-koord  !
@@ -53,7 +68,7 @@ program mainTruss
   MeshT2%startz = 0.0        ! node 2 z-koord  !
   MeshT2%endz = 0.0          ! node 2 z-koord  !
 
-!  MeshT2%dlen = sqrt((MeshT1%endx - MeshT1%startx)**2+(MeshT1%endy - MeshT1%starty)**2+(MeshT1%endz - MeshT1%startz)**2)           ! Laengen des Rechengebiets (Balk) in x/y !
+ MeshT2%dlen = 1.2 !! sqrt((MeshT1%endx - MeshT1%startx)**2+(MeshT1%endy - MeshT1%starty)**2+(MeshT1%endz - MeshT1%startz)**2)           ! Laengen des Rechengebiets (Balk) in x/y !
   MeshT2%SArea = 0.0004         ! Section area
   MeshT2%EY = 210000000            ! YOUNG Modulus
   MeshT2%vu = 0.3            ! Poisson Coeff
@@ -68,15 +83,17 @@ program mainTruss
      print *," Error allocation polynoms elmt 2 !"
   endif
 
-! ***************************** allocate in the main program *********************************
-  allocate(Ke_H(1:ne*n, 1:ne*n), STAT = allocStat)
+! ***************************** allocate definition arrays in the main program *********************************
+  allocate(Ke_H%Ke(1:ne*n,1:ne*n), Var_H%Ue(1:ne*n), Var_H%Fe(1:ne*n), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation global matrix !"
   endif  
   do i=1,ne*n       ! initialisierung
     do j=1,ne*n
-       Ke_H(i,j)=0.0
+       Ke_H%Ke(i,j)=0.0
     enddo
+    Var_H%Ue(i)=0.0
+    Var_H%Fe(i)=0.0   
   enddo
 
   allocate(elmtabbdung(1:n,1:n), STAT = allocStat)
@@ -99,7 +116,7 @@ program mainTruss
   endif 
   do i=1,n       ! initialisierung
     do j=1,ne
-       Dunbekannt(i,j)=1 ! 1=unbekannt, 0=nicht unbekannt
+       Dunbekannt(i,j)=1 !  0=nicht unbekannt, 1=unbekannt fest eigespannnt, 2=unbekannt translation aber freie rot
     enddo
   enddo
   Dunbekannt(1,1)=1
@@ -157,14 +174,16 @@ program mainTruss
 
 
 ! <-------------------- DO SOMETHING --------------------->
-!  call Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, 1,2, n, ne, elmtabbdung, Dunbekannt, Dimponiert, Kraftbewgg, Kraftimponiert)
+  call Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, 1,2, n, ne, &
+                          elmtabbdung, &
+                          Dunbekannt, Dimponiert, &
+                          Kraftbewgg, Kraftimponiert)
 
 !****************** DEALLOCATE ******************
-  deallocate(Ke_H, elmtabbdung, STAT = allocStat)
+  deallocate(Ke_H%Ke, Var_H%Ue, Var_H%Fe, elmtabbdung, STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error deallocation Matrizen !"
   endif  
-  deallocate(Ke_H, STAT = allocStat)
   deallocate(Dunbekannt, Dimponiert, STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error deallocation Bewegungs definitionsmatrizen !"
@@ -173,7 +192,18 @@ program mainTruss
   if (allocStat.ne.0) then
      print *," Error deallocation Matrizen zur berechnenden Bewegungskraefte matrix !"
   endif 
-
+  deallocate(inull, M_rot, STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error deallocation Matrizen inull... !"
+  endif 
+  deallocate(  MeshT1%CoeffsH1,  MeshT1%CoeffsH2,  MeshT1%CoeffsH3,  MeshT1%CoeffsH4, STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error deallocation Element MeshT1 !"
+  endif 
+  deallocate(  MeshT2%CoeffsH1,  MeshT2%CoeffsH2,  MeshT2%CoeffsH3,  MeshT2%CoeffsH4, STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error deallocation Element MeshT2 !"
+  endif
 
   print *,"========== PROGRAM TERMINATED CORRECTLY =========="
 end program mainTruss
