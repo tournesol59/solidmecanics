@@ -49,7 +49,7 @@ SUBROUTINE MatrixRotMultiply(Krigid, Rortho, n)
   use typesbalken
   implicit none
 
-  type(tRigidMat), intent(inout)  :: Krigid
+  type(tRigidMat), intent(inout)  :: Krigid !!assumed 3x3
   real,dimension(9),intent(in)    :: Rortho
   integer,intent(in)              :: n
   
@@ -70,7 +70,8 @@ SUBROUTINE MatrixRotMultiply(Krigid, Rortho, n)
     do col=1,n      
       Krigid%Ke(row,col)=0.0
       do k=1,n
-        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho(3*(row-1)+k)*Kcopy(3*(col-1)+k)
+!!        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho(3*(row-1)+k)*Kcopy(3*(col-1)+k) !! error in first ver
+        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho(3*(k-1)+row)*Kcopy(3*(col-1)+k) ! multiply left by transpose of Rortho
       enddo
     enddo
   enddo
@@ -132,7 +133,7 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
       M_rot(3*(i-1)+j)=0.
     enddo
   enddo
-
+  print *, MeshT%typ
   ! ausfuellen
   if ((MeshT%typ).eq.TYP_BAR) then ! elmt is a bar, no flexion
     Keii%Ke(1,1) = ESsL    
@@ -148,7 +149,7 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
       Keij%Ke(1,1) = -ESsL
       Keij%Ke(2,2) = -12*EIsL3
       Keij%Ke(2,3) = 6*EIsL2
-      Keij%Ke(3,2) = 6*EIsL2
+      Keij%Ke(3,2) = -6*EIsL2  !! is negative
       Keij%Ke(3,3) = 2*EIsL
 
       Kejj%Ke(1,1) = ESsL
@@ -169,9 +170,13 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
   M_rot(9)=1.0
   
   call prntsimplearray(9, 2, inull, M_rot, SubName)
-!  call prntsimplestruct(3,3,Keii,SubName)
-!  call prntsimplestruct(3,3,Keij,SubName)
-!  call prntsimplestruct(3,3,Kejj,SubName)
+
+  call prntsimplestruct(3,3,Keii,SubName)
+
+  call prntsimplestruct(3,3,Keij,SubName)
+
+  call prntsimplestruct(3,3,Kejj,SubName)
+
 
   call MatrixRotMultiply(Keii, M_rot, 3)
   call prntsimplestruct(3,3,Keii,SubName)
@@ -263,9 +268,6 @@ SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
  
   call Matrice_Ke_H_local_dfix(MeshT1, VarT1, Keii, Keij, Kejj)  
   call Matrice_Ke_K_assembly(Ke_H,Keii,Keij,Kejj,jj,kk,n,ne)
-!  call prntsimplestruct(3,3,Keii,SubName)
-!  call prntsimplestruct(3,3,Keij,SubName)
-!  call prntsimplestruct(3,3,Kejj,SubName)
 
   deallocate(Keii%Ke, Keij%Ke, Kejj%Ke, STAT = allocstat)
   if (allocstat.ne.0) then

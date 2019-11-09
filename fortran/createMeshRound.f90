@@ -201,7 +201,8 @@ module createmeshround_mod
     BCS%randMoment(i)=0.1 ! Newton.m
   enddo
 
-   print *,""
+   print *,"--------- Randbedingungen"
+   print *," Typ--Seite(Axis)     Ind(i/j)   Ind     values"
   do i= 0,NTest2(1)-1
     j=i*(NTest2(2))+1
     write(*, 217) " BCU--x1-y1-3 ", j, ": ",     BCU%randFixedIndex(j), ": ", BCU%randFixed(j) 

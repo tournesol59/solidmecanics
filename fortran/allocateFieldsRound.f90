@@ -5,7 +5,7 @@
 !      Funktion: Bereitstellen des Speicherplatzes                           !
 !                                                                            !
 !****************************************************************************!
-!                                                                            !
+!      Z.Bsp                                                                 !
 !      Mesh%nodes,Mesh%elems,Mesh%neighbours:Koordinaten der Punkten und Ind.!
 !      Uvar:                Feld mit u.a. der numerischen Lösung an Elems i  !
 !        Displacement(1:12,:) 3 Verschiebungen in der Mitte der Platte       !

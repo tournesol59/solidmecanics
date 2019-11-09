@@ -1,79 +1,52 @@
+! Interpolation means the calculation of displacements and rotations
+! through the Element. It can be have a support of 6 nodes triangles
+! (membrane effect with 3 integration points) or 3 nodes triangle 
+! (D0 with Kirchhoff approx however if membrane is quadratic, 
+! flexion is quadratic but limited to parabolic [ax^2+by, cy^2, dxy]).
+!  
+! The methods of this module shall be called in combination with a
+! structure 'InterpolData' which contains two main things
+!   a linked list of names of generic subroutines (differentiate
+!     , sum, product of different matrix, evaluation results), that
+!     have been already called or are to be called. Accessed via macros
+!     this is not OOP but need to be organized.
+!   a sparse matrix (see Module sparse CSR) that shall be filled 
+!
 ! Use: interpolate with a0+a1*X+a2*Y+a3*X*Y
 module LagrangeRound2D_mod
 !---
 implicit none
 private
-  interface interpol3PSolve
-     module procedure interpol3PSolve
-  end interface
-  interface interpol3PCoord
-     module procedure interpol3PCoord
+  interface interpolD0Curving
+     module procedure interpolD0Curving
   end interface
 
-public :: interpol3PSolve, interpol3PCoord  
-! , interpol3PEvalDerivX, interpol3PEvalDerivY
+public :: interpolD0Curving, interpolD0Membrane, interpolD0Shearing  
+! , interpol3PMemEvalDerX, interpol3PMemEvalDerY, interpol3PProdMat,
+! , interpol3PMemEvalPolXY, interpol3PCurvEvalPolXY, interpol3PShEvalKt
+!, interpol3PShEvalKws
 
 contains 
 !********************************************************************!
-!  procedure interpol3PSolve !
+!  add in functions /procedures used by interpolD0Curving !
 !********************************************************************!
- SUBROUTINE interpol3PSolve(p1, p2, p3, coef)
- use typesround
- implicit none
-  ! Argumenten
-  type(tNode)         :: p1, p2 , p3
-  real,dimension(6)   :: coef
-  intent(in)          :: p1, p2, p3
-  intent(inout)       :: coef
-  !-----------------------------------------------------
-  ! lokales Vars
-  integer             :: k 
- 
-  coef(5)=0.0
-  coef(6)=0.0
-
- END SUBROUTINE interpol3PSolve
 !********************************************************************!
-!  procedure interpol3PCoord !
+!  procedure interpolD0Curving !
 !********************************************************************!
- SUBROUTINE interpol3PCoord( NTestMeshR, MeshR, MeshCoeffR)
- use typesround
- implicit none
-  ! Argumenten
-  type(tRoundMeshInfo):: NTestMeshR
-  type(tRoundMesh)    :: MeshR
-  type(tRoundCoeff)   :: MeshCoeffR
-  intent(in)          :: NTestMeshR, MeshR
-  intent(inout)       :: MeshCoeffR
-  !-----------------------------------------------------
-  ! lokales Vars
-  integer             :: nn, ne, k ,l, allocStat
-  integer             :: n1, n2, n3
-  type(tNode)         :: p1, p2 ,p3, p4
-  real,dimension(:),allocatable     :: coef
-!  real                :: a1, a2, a3, a4 
+  subroutine interpolD0Curving(llNodes, llFunctions, lokale)
+    use TypesRound
+    implicit none
 
-  ne = NTestMeshR%nElem
-  do k=1,ne 
-     n1 = MeshR%elems(k)%numeros(1)
-     n2 = MeshR%elems(k)%numeros(2)
-     n3 = MeshR%elems(k)%numeros(3)
-     do l=1,3
-       p1%vects(l) = MeshR%nodes(n1)%vects(l)
-       p2%vects(l) = MeshR%nodes(n2)%vects(l)
-       p3%vects(l) = MeshR%nodes(n3)%vects(l)
-     enddo
-     allocate(coef(1:6),       &
-         STAT = allocStat )
-     call interpol3PSolve(p1,p2,p3, coef) 
-     ! save result
-     do l=1,6
-       MeshCoeffR%Coefficients(k*6+l)=coef(l)
-     ! next iteration
-     enddo
-  enddo
 
-END SUBROUTINE interpol3PCoord 
+
+  end subroutine interpolD0Curving
+!********************************************************************!
+!  procedure interpolD0Membrane !
+!********************************************************************!
+  
+!********************************************************************!
+!  procedure interpolD0Shearing !
+!********************************************************************!
 
 end module LagrangeRound2D_mod
 

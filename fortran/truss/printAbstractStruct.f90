@@ -17,7 +17,7 @@ module printabstractstruct_mod
  !    module procedure prntmultisimplearray
  !  end interface
 
-   public::  prntsimplearray, prntsimplestruct
+   public::  prntsimplearray, prntsimplestruct, prntadjuststruct
 
   contains
 
@@ -72,7 +72,40 @@ module printabstractstruct_mod
   end subroutine prntsimplearray
 
 !*******************************************************************
-! subroutine prntsimplestructure: needs two functions
+! subroutine prntsimplestruct: a line per s%array values
+
+  subroutine prntsimplestruct(n1, n2, Ms, SubName)
+  use typesbalken
+  implicit none
+  ! args
+  integer                         :: n1, n2
+  type(tRigidMat)                 :: Ms
+  character(len=30)               :: SubName
+  ! Vorhabe
+  intent(in)                      :: n1,n2,Ms,Subname
+  ! lokale vars
+  integer                         :: i,j,q,r
+  real                            :: scalar
+
+  write(*,301) "----- ", adjustl(SubName)
+
+    do i=1,n1
+      write(*,304) "      ", i
+      do j=1,n2 
+        scalar = Ms%Ke(i,j)
+        write(*,303) i,j,scalar
+      enddo
+    enddo
+!  endif
+
+ 301  format (a,a)
+ 302  format (i10)
+ 303  format (i10,i10,f10.1)
+ 304  format (a,i10)
+  end subroutine prntsimplestruct
+
+!*******************************************************************
+! subroutine prntadjuststruct : needs two functions
   integer function indexIJ(j,n2)
   implicit none
   integer, intent(in)   :: j,n2
@@ -90,37 +123,34 @@ module printabstractstruct_mod
   indexJJ= jj
   end function indexJJ
 
-  subroutine prntsimplestruct(n1, n2, Ms, SubName)
+  subroutine prntadjuststruct(n1, n2, FMs, SubName)
   use typesbalken
   implicit none
   ! args
   integer                         :: n1, n2
-  type(tRigidMat)                 :: Ms
+  type(tRigidFullMat)             :: FMs
   character(len=30)               :: SubName
   ! Vorhabe
-  intent(in)                      :: n1,n2,Ms,Subname
+  intent(in)                      :: n1,n2,FMs,Subname
   ! lokale vars
-  integer                         :: i,j,q,r
+  integer                         :: i,j,q,r,l
 
-  write(*,301) "----- ", adjustl(SubName)
-!  nlen = n1*n2
-!  if (nlen<=7) then
-!     write(*,303) (Ms%Ke( indexIJ(j,n2),indexJJ(j,n2) ), j=1,nlen)
-!  elseif (nlen>=8) then
+  write(*,501) "----- ", adjustl(SubName)
 
-    do i=1,n1
-      write(*,304) "      ", i
-      do j=1,n2 
-        write(*,303) (Ms%Ke(i,j))
-      enddo
+  q=n2/7
+  r=n2-q*7
+  do i=1,n1
+  write(*,504) "      ", i
+    do l=1,q
+      write(*,507) (FMs%Ke(i,(l-1)*7+j), j=1,7)
     enddo
-!  endif
+    write(*,507) (FMs%Ke(i,q*7+j), j=1,r)
+  enddo
 
- 301  format (a,a)
- 302  format (i10)
- 303  format (f10.5)
- 304  format (a,i10)
-  end subroutine prntsimplestruct
+ 501  format (a,a)
+ 504  format (a,i10)
+ 507  format (7f12.1)
+  end subroutine prntadjuststruct
 
 end module printabstractstruct_mod
 

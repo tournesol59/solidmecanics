@@ -16,6 +16,9 @@ MODULE TypesBalken
   implicit none
   private
   !---------------------------------------------------------------------------!
+  type tMeshCoord
+     real,pointer   :: x(:),y(:),z(:)        ! Nodes Coord
+  end type tMeshCoord
 
   type tMeshElmt
      integer     :: typ            ! 1=Bar, 2=Balken
@@ -38,10 +41,10 @@ MODULE TypesBalken
      ! real,pointer (c_ptr) :: x(:)        ! do NOT work
      !real,dimension(2)         :: x,y,z
 
-     real,dimension(:),allocatable         :: CoeffsH1(:)  ! Coefficients des Hermites Polynoms H1 (H1(0)=1, H1'(0)=0
-     real,dimension(:),allocatable         :: CoeffsH2(:)  ! Coefficients des Hermites Polynoms H2 (H2(0)=0, H2'(0)=1
-     real,dimension(:),allocatable         :: CoeffsH3(:)  ! Coefficients des Hermites Polynoms H3 (H3(0)=1, H3'(0)=0
-     real,dimension(:),allocatable         :: CoeffsH4(:)  ! Coefficients des Hermites Polynoms H4 (H4(0)=0, H4'(0)=1
+     real,pointer         :: CoeffsH1(:)  ! Coefficients des Hermites Polynoms H1 (H1(0)=1, H1'(0)=0
+     real,pointer         :: CoeffsH2(:)  ! Coefficients des Hermites Polynoms H2 (H2(0)=0, H2'(0)=1
+     real,pointer         :: CoeffsH3(:)  ! Coefficients des Hermites Polynoms H3 (H3(0)=1, H3'(0)=0
+     real,pointer         :: CoeffsH4(:)  ! Coefficients des Hermites Polynoms H4 (H4(0)=0, H4'(0)=1
   end type tMeshElmt
 
   type tVarElmt
@@ -62,9 +65,14 @@ MODULE TypesBalken
 
   type tRigidFullMat
      integer                          :: nn,ne
-     real,dimension(:,:),allocatable    :: Ke
-!     real,pointer                       :: Ke(:,:)
+!     real,dimension(:,:),allocatable    :: Ke
+     real,pointer                       :: Ke(:,:)
   end type tRigidFullMat
+
+  type tExakt
+    real,pointer             :: Ux(:)
+    real,pointer             :: Fx(:)
+  end type tExakt
 
   type tPolynom
     integer              :: n              ! degree =>  dimension n+1        !
@@ -76,7 +84,8 @@ MODULE TypesBalken
                                           ! tab(2),tab(3)=0 tab(5) tab(6)=0 in eine Fest eingeklammerte Abbildung
   end type tConnectBalk
   !---------------------------------------------------------------------------!
-  public  :: tMeshElmt, tVarElmt, tRigidMat, tPolynom, tRigidFullMat, tVarFull
+  public  :: tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, tRigidFullMat, & 
+             tVarFull, tExakt, tPolynom
   !---------------------------------------------------------------------------!
 
 ! contains

@@ -34,18 +34,16 @@ program main
   NTestGitterR%nNode = 9
   NTestGitterR%nElem = 8
   NTestGitterR%nxmx = 9 ! frontier length should be optimized in the future ..
-  NTestGitterR%nymx = 9 
-  allocate(vx%vects(3), STAT=allocStat)
-  allocate(vy%vects(3), STAT=allocStat)
-  allocate(vz%vects(3), STAT=allocStat) 
+  NTestGitterR%nymx = 9  ! but essential in the present. If not: seg. fault!
+  allocate(vx%vects(3), vy%vects(3), vz%vects(3), STAT=allocStat) 
   if (allocStat.NE.0) then
      print *, 'ERROR Allocate vx vy vz: Could not allocate all variables!'
      STOP
   end if
   call allocateFieldsRound(NTestGitterR,GitterR,ExaktLR)
   call allocateFieldsBCSRound(NTestGitterR,RBU,RBS)
- ! call allocateFieldsVarRound(NTestGitterR,VarFelderR)
- ! call allocateFieldsCoeffRound(NTestGitterR,GitterCoeffR) 
+  call allocateFieldsVarRound(NTestGitterR,VarFelderR)
+  call allocateFieldsCoeffRound(NTestGitterR,GitterCoeffR) 
 
    ! --------------------------< Gitter festlegen >---------------------!
    call createRoundMesh2(NTestGitterR,GitterR)    
@@ -54,43 +52,43 @@ program main
 
    ! --------------------< functional test of verifymesh module subroutines >-!
    ne=3
-   j=GitterR%elems(ne)%numeros(2)
-   k=GitterR%elems(ne)%numeros(3)
-   l=GitterR%elems(ne)%numeros(4) 
 
  ! copy Nodes coordinates in three vectors ux,uy,uz, ith-component owns ith-node 
    do i=1,3
      select case (i)
-       case (1)
-         vx%vects(1)= GitterR%nodes(j)%vects(1)
-         vx%vects(2)= GitterR%nodes(k)%vects(1)
-         vx%vects(3)= GitterR%nodes(l)%vects(1)
+        case (1)
+         vx%vects(1)= 0.0
+         vx%vects(2)= 0.9659
+         vx%vects(3)= 0.25882
        case (2)
-         vy%vects(1)= GitterR%nodes(j)%vects(2)
-         vy%vects(2)= GitterR%nodes(k)%vects(2)
-         vy%vects(3)= GitterR%nodes(l)%vects(2)
+         vy%vects(1)= 0.0
+         vy%vects(2)= -0.19827
+         vy%vects(3)= 0.7400
        case (3)
-         vz%vects(1)= GitterR%nodes(j)%vects(3)
-         vz%vects(2)= GitterR%nodes(k)%vects(3)
-         vz%vects(3)= GitterR%nodes(l)%vects(3)
-
+         vz%vects(1)= 0.0
+         vz%vects(2)= 0.16637
+         vz%vects(3)= 0.62089
     end select
   enddo
-   write(*, 403) "  initial value in vx: ", ne, j, vx%vects(1), k, vx%vects(2), l, vx%vects(3)
-   print *, 'Terminated test verifymesh part 1: OK'
 
+  call trigorientation(vx,vy,vz,axout_xyz)
+  print *, 'Terminated test trigorientation: OK'
   call trigcharacteristics(vx,vy,vz, dist, angle, triplet, area)
-  print *, 'Terminated test verifymesh part 2: OK'
-
+  print *, 'Terminated test trigcharacteristics: OK'
+  deallocate(vx%vects, vy%vects, vz%vects, STAT=allocStat) 
+  if (allocStat.NE.0) then
+     print *, 'ERROR Deallocate vx vy vz !'
+     STOP
+  end if
   ! ------------------------------------------< Speicherplatz de-allokieren >---!
 
   call deallocateFieldsRound(NTestGitterR,GitterR,ExaktLR) 
   print *, 'Deallocate Gitter: OK'
   call deallocateFieldsBCSRound(NTestGitterR,RBU,RBS) 
   print *, 'Deallocate Randbedingungen: OK'
- ! call deallocateFieldsVarRound(VarFelderR)
+  call deallocateFieldsVarRound(VarFelderR)
   print *, 'Deallocate Numeric Variables: OK'
- ! call deallocateFieldsCoeffRound(GitterCoeffR)
+  call deallocateFieldsCoeffRound(GitterCoeffR)
   print *, 'Deallocate Coefficients: OK'
 
     write(*,*) 

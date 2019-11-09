@@ -1,5 +1,6 @@
 module TypesRound
-
+! This module is the center of definition of all data types used by the program
+! from mesh definition, to solution fields to be exported
   !---------------------------------------------------------------------------!
 !  use ISO_C_BINDING
   implicit none
@@ -53,7 +54,7 @@ module TypesRound
 
   type tXYPolynom ! definiert in TypesDef
 !    integer               :: n              ! degree, angenommen 2 hier       !
-    real,dimension(10)    :: coeffs(1:10)      ! Koeffizienten order 1,x,y,x2,xy,y2! 
+    real,dimension(10)    :: coeffs(1:10)     ! Koeffizienten order 1,x,y,x2,xy,y2! 
                                               ! besetzt       !
   end type tXYPolynom
 
@@ -71,9 +72,9 @@ module TypesRound
     type(tPassageMatrix)   :: axes_xyz 
   end type tRoundlocal
 
-  type tRoundCoeff        ! benutzbar aber muss allokiert werden
-     real,pointer     :: Coefficients(:) ! des Polynoms fuer vordraengige !
-                                                     ! Interpolation, 1 fuer jedes Elements! 
+  type tRoundCoeff        ! benutzbar aber muss allokiert werden und a priori 
+                          ! interpol order 2 => 1:6 coeffs per Elements
+     real,pointer     :: Coefficients(:) ! des Polynoms fuer Interpolation, 1 fuer jedes Elements! 
 !     real,pointer                 :: Jacobian(:)    ! 2x2 real, nur diesen Test vorgesehen !
 !     logical,pointer              :: Test(:)        ! Resultat des Tests an dem Element !
   end type tRoundCoeff
