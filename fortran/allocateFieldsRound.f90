@@ -41,8 +41,11 @@ module allocateFieldsRound_mod
   interface allocateFieldsVarRound
      module procedure allocateFieldsVarRound
   end interface
-  interface allocateFieldsCoeffRound
-     module procedure allocateFieldsCoeffRound
+!  interface allocateFieldsCoeffRound
+!     module procedure allocateFieldsCoeffRound
+!  end interface
+  interface allocateSparseRound
+     module procedure allocateSparseRound
   end interface
 
   interface deallocateFieldsRound
@@ -57,13 +60,18 @@ module allocateFieldsRound_mod
   interface deallocateFieldsVarRound
      module procedure deallocateFieldsVarRound
   end interface
-  interface deallocateFieldsCoeffRound
-     module procedure deallocateFieldsCoeffRound
+!  interface deallocateFieldsCoeffRound
+!     module procedure deallocateFieldsCoeffRound
+!  end interface
+  interface deallocateSparseRound
+     module procedure deallocateSparseRound
   end interface
+
   !--------------------------------------------------------------------------!
-  public  :: allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, allocateFieldsCoeffRound,&
-             deallocateFieldsRound, deallocateFieldsVarRound, deallocateFieldsBCSRound, &
-             deallocateFieldsCoeffRound
+  public  :: allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, & ! allocateFieldsCoeffRound,&
+             allocateSparseRound, &
+             deallocateFieldsRound, deallocateFieldsVarRound, deallocateFieldsBCSRound, & ! deallocateFieldsCoeffRound,
+             deallocateSparseRound
   !--------------------------------------------------------------------------!
 
 contains
@@ -197,34 +205,74 @@ contains
   end subroutine allocateFieldsVarRound
 
 !******************************************************
-  subroutine allocateFieldsCoeffRound(NTestMeshR,MeshCoeffR) 
+!  subroutine allocateFieldsCoeffRound(NTestMeshR,MeshCoeffR) 
 ! bind (C, name="allocateFieldsCoeffRound")
 !    use ISO_C_BINDING, only: c_char 
+!  use TypesRound
+
+!  implicit none
+!  ! Variable Deklaration  ---------------------------------------------------!
+!    type(tRoundMeshInfo)   :: NTestMeshR  ! Dimensions                       !
+!    type(tRoundCoeff)      :: MeshCoeffR     ! Numerische Felder mit Loesungen  !
+!    !------------------------------------------------------------------------!
+!    integer                 :: allocStat,ne,nn                               !
+!    !------------------------------------------------------------------------!
+!    intent(inout)           :: MeshCoeffR                                       !
+!    intent(in)              :: NTestMeshR                                    !
+!    !------------------------------------------------------------------------!!!
+!
+!    nn = NTestMeshR%nNode
+!    ne = NTestMeshR%nElem ! A priori interpol order 2 => 6 coeffs per Elements!
+!
+!    allocate(MeshCoeffR%Coefficients(1:ne*6),       &
+!         STAT = allocStat )        
+! 
+!    if (allocStat.NE.0) then
+!       print *, 'ERROR AllocateFieldsCoeffRound: Could not allocate all variables!'
+!       STOP
+!    end if!
+!
+!  end subroutine allocateFieldsCoeffRound
+
+!*****************************************************
+  subroutine allocateSparseRound(NTestMeshR, RigidYMat)
   use TypesRound
 
   implicit none
-  ! Variable Deklaration  ---------------------------------------------------!
-    type(tRoundMeshInfo)   :: NTestMeshR  ! Dimensions                       !
-    type(tRoundCoeff)      :: MeshCoeffR     ! Numerische Felder mit Loesungen  !
+  
+    !-----------------------------------------------------------------------!
+    ! Variabledeklarationen
+    !-----------------------------------------------------------------------!
+    ! Liste der uebergebenen Argumente                                      !
+    !                                                                       !
+    type(tRoundMeshInfo)   :: NTestMeshR
+    type(tSparseYMat)      :: RigidYMat
+    !                                                                        !
+    ! Local variable declaration                                             !
+    integer                 :: nn,ne,i,allocStat,allocStatnn,allocStatne     !
     !------------------------------------------------------------------------!
-    integer                 :: allocStat,ne,nn                               !
-    !------------------------------------------------------------------------!
-    intent(inout)           :: MeshCoeffR                                       !
+    intent(inout)           :: RigidYMat                                  !
     intent(in)              :: NTestMeshR                                    !
+    !                                                                        !
+    ! Local variable declaration                                             !
+    integer                 :: nn,allocStat
     !------------------------------------------------------------------------!
 
     nn = NTestMeshR%nNode
-    ne = NTestMeshR%nElem ! A priori interpol order 2 => 6 coeffs per Elements
-
-    allocate(MeshCoeffR%Coefficients(1:ne*6),       &
+    allocate(RigidYMat%a(1:ne*6*15), RigidMat%ia(1:ne*6*15), RigidMat%ja(1:ne*6*15),      &
          STAT = allocStat )        
  
     if (allocStat.NE.0) then
-       print *, 'ERROR AllocateFieldsCoeffRound: Could not allocate all variables!'
+       print *, 'ERROR AllocateSparseRound: Could not allocate all variables!'
        STOP
     end if
 
-  end subroutine allocateFieldsCoeffRound
+  end subroutine allocateSparseRound
+
+
+
+
+
 
 !******************************************************
   subroutine deallocateFieldsRound(NTestMeshR,MeshR,ExaktR) 
@@ -351,30 +399,58 @@ contains
   end subroutine deallocateFieldsVarRound
 
 !******************************************************
-  subroutine deallocateFieldsCoeffRound(MeshCoeffR) 
+!  subroutine deallocateFieldsCoeffRound(MeshCoeffR) 
 ! bind (C, name="deallocateFieldCoeffRound")
 !    use ISO_C_BINDING, only: c_char  
 
-    use TypesRound
+!    use TypesRound
     
-    implicit none
+!    implicit none
 
-  ! Variable Deklaration  ---------------------------------------------------!
-    type(tRoundCoeff)       :: MeshCoeffR     ! Numerische Felder Interpol Coeff  !
-    !------------------------------------------------------------------------!
-    integer                 :: allocStat                                     !
-    !------------------------------------------------------------------------!
-    intent(inout)           :: MeshCoeffR                                    !
+!  ! Variable Deklaration  ---------------------------------------------------!
+!    type(tRoundCoeff)       :: MeshCoeffR     ! Numerische Felder Interpol Coeff  !
+!    !------------------------------------------------------------------------!
+!    integer                 :: allocStat                                     !
+!    !------------------------------------------------------------------------!
+!    intent(inout)           :: MeshCoeffR                                    !
+!    !------------------------------------------------------------------------!!
+!
+!    deallocate(MeshCoeffR%Coefficients, &
+!               STAT=allocStat)
+!
+!    if (allocStat.NE.0) then
+!       print *, 'ERROR DeallocateFieldsCoeffRound: Could not deallocate correctly!'
+!       STOP
+!    end if
+!
+!  end subroutine deallocateFieldsCoeffRound
+
+!*****************************************************
+  subroutine deallocateSparseRound(RigidYMat)
+  use TypesRound
+
+  implicit none
+  
+    !-----------------------------------------------------------------------!
+    ! Variabledeklarationen
+    !-----------------------------------------------------------------------!
+    ! Liste der uebergebenen Argumente                                      !
+    !                                                                       !
+    type(tSparseYMat)      :: RigidYMat
+    !                                                                        !
+    intent(inout)           :: RigidYMat                                  !
+    !                                                                        !
+    ! Local variable declaration                                             !
+    integer                 :: nn,allocStat
     !------------------------------------------------------------------------!
 
-    deallocate(MeshCoeffR%Coefficients, &
-               STAT=allocStat)
-
+    deallocate(RigidYMat%a, RigidMat%ia, RigidMat%ja,      &
+         STAT = allocStat )        
+ 
     if (allocStat.NE.0) then
-       print *, 'ERROR DeallocateFieldsCoeffRound: Could not deallocate correctly!'
+       print *, 'ERROR DeallocateSparseRound: Could not deallocate all variables!'
        STOP
     end if
 
-  end subroutine deallocateFieldsCoeffRound
-
+  end subroutine allocateSparseRound
 end module allocateFieldsRound_mod

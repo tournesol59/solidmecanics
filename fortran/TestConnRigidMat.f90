@@ -94,7 +94,7 @@ module TestConnAppelC
 end module TestConnAppelC
 
 !****************************************************
-module TestConnRigidMat
+module TestConnRigidMat_mod
   use ISO_C_BINDING, only : C_CHAR, C_INT, C_DOUBLE, C_PTR
   use typesround
  ! use TestConnAppelC
@@ -297,21 +297,28 @@ end subroutine frontnodesConnLL
 ! subroutine create_ll_connectivity
 subroutine create_ll_connectivity(NTestMeshR, MeshR, infoconnect)
   use ISO_C_BINDING, only : C_CHAR, C_INT, C_DOUBLE, C_PTR 
-  use typesround  ! in particular tMeshRound
+  use TypesRound  ! in particular tMeshRound
 !  use TestConnAppelC
-  implicit none
 
-! uebergegebene args
+  implicit none
+  !--------------------------------------------------------------------------!
+  ! Variablendeklarationen                                                   !
+  !--------------------------------------------------------------------------!
+  ! Liste der übergebenen Argumente                                          !
   type(tRoundMeshInfo)             :: NTestMeshR
-  type(tRoundMesh)                 :: MeshR
+  type(tRoundMesh)                 :: MeshR                                  !
 #ifndef _FORTRAN03_
-  integer(kind=8)                  :: infoconnect
+  integer(kind=8)                  :: infoconnect                            !
 #else
-  type(C_PTR)                      :: infoconnect
+  type(C_PTR)                      :: infoconnect                            !
 #endif
-  intent(in)                       :: NTestMeshR, MeshR
-  intent(out)                      :: infoconnect
-! lokale vars
+  !                                                                          !                                              !
+  ! Intents                                                                  !
+  intent(in)                       :: NTestMeshR, MeshR                      !
+  intent(out)                      :: infoconnect                            !
+  !                                                                          !
+  ! Local variable declaration                                               !
+  !                                                                          !
 #ifndef _FORTRAN03_
   integer(kind=8)                  :: cell , create_edge  ! remark C-functions address in f90
 #else
@@ -325,7 +332,8 @@ subroutine create_ll_connectivity(NTestMeshR, MeshR, infoconnect)
 
   ne=NTestMeshR%nElem
 !  allocate(node_1%vects(3),node_2%vects(3),node_3%vects(3),node_4%vects(3), &
-!           node_5%vects(3), node_6%vects(3), visited_el(ne), STAT=allocinfo)
+!           node_5%vects(3), node_6%vects(3), visited_el(ne), STAT=allocinfo)        ! only for remind that references are used instead of copies
+
   allocate(visited_el(ne), STAT=allocinfo)
   if (allocinfo.ne.0) then
      STOP
@@ -415,4 +423,4 @@ subroutine create_ll_connectivity(NTestMeshR, MeshR, infoconnect)
   endif
 end subroutine  create_ll_connectivity
 
-end module TestConnRigidMat
+end module TestConnRigidMat_mod

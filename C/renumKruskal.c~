@@ -35,39 +35,20 @@
 *******************************************************/
 
 #include "solidmecanicsC.h"
-#include <malloc.h>
+
 /*
  * Definition of linked list edge
  */
 ptr_EDGE create_edge(Index nd1, Index nd2, Number we) {
 
-  struct edge* element=(ptr_EDGE) malloc(sizeof(struct edge));
+  struct edge element;
+  ptr_EDGE res;
 
-  (*element).node1=nd1;
-  (*element).node2=nd2;
-  (*element).weight=we;
-  (*element).next = NULL;
-
-  return element;
-}
-
-
-int removeheap_list(ptr_EDGE cell) {  // cannot do else a
-  int i, leng, res;
-  ptr_EDGE iterator;
-
-  leng = length_edge(cell);
-  if (leng != 0) {
-    for (i=0; i<leng; i++) {
-       iterator=cell;
-       res=remove_end_edge(iterator);
-       if (res!=0) {
-         printf("Error removeheap_list\n");
-         exit(1);
-       }
-    }
-//    free( cell );  // already done
-  } //endif
+  element.node1=nd1;
+  element.node2=nd2;
+  element.weight=we;
+  element.next = NULL;
+  res = &element;
   return res;
 }
 
@@ -116,7 +97,6 @@ void cp_edge_nodes(ptr_EDGE element, ptr_EDGE copie) {
   if (element !=NULL) {
     (*copie).node1=(*element).node1;
     (*copie).node2=(*element).node2;
-    //(*copie).weight=(*element).weight;
   }
 
 }
@@ -159,102 +139,6 @@ int length_edge(ptr_EDGE list) {
   return count;
 }
 
-ptr_EDGE reverse_list(ptr_EDGE list) {
-  ptr_EDGE reverse=NULL;
-  ptr_EDGE iterator, el=NULL;
-  Index count, k;
-
-  count = length_edge(list);
-  iterator = list;
-
-  for (k=0; k<count; k++) {
-    el=create_edge(1, 2, 1.0);
-    cp_edge_nodes(iterator, el);
-    (*el).next=reverse;
-    iterator=(*iterator).next;
-  }
-  free(iterator);
-  free(el);
-  return reverse; 
-}
-
-/* find_edge */
-int find_edge(ptr_EDGE list, int i, int j, Number weight) {
-  ptr_EDGE iterator;
-  int ic,jc,count=0;
- 
-  iterator=list;
-  if (iterator!=NULL) {
-    count=count+1;
-    while ((*iterator) != NULL) {
-      ic=(*iterator).node1;
-      jc=(*iterator).node2;
-      if ((jc==j) && (ic==i)) {
-         weight=(*iterator).weight;
-         return 1;
-      }
-      if (*(iterator).next!=NULL) {
-        iterator = (*iterator).next;
-        count=count+1;
-      }
-    }
-  }
-  if ((jc!=j) || (ic!=i)) {
-    return 0;
-  }
-}
-
-/* sorting */
-
-void sort_elmtedge_byweight(ptr_EDGE list) {
-// iterative sort O(N*(N-1))
-  Index k,j,len;
-  Number we, wemin;
-  ptr_EDGE iterator, edgemin, copy;
-
-  len = length_edge(list);
-  edgemin = list;
-  iterator = list;
-  copy = create_edge(1,2,1.0);
-//initial:
-  for (k=1; k<(len+1); k++) {
-    printf("i:%d, w:%f   ",k,get_weight(iterator) );
-    iterator=get_next_edge(iterator);  
-  }
-  iterator = list;
-
-  for (k=1; k<(len+1); k++) { // only len-1
-     wemin=get_weight(edgemin);
-     iterator = get_next_edge(edgemin);
-     for (j=k+1; j<(length_edge(edgemin)+k); j++) { // up to len
-        we=get_weight(iterator);
-        if (we<wemin) {
-           cp_edge_nodes(iterator, copy);  // affect only nodes records, nor weight nor next cell
-           (*copy).weight = (*iterator).weight;//new wemin
-           cp_edge_nodes(edgemin, iterator);
-           (*iterator).weight = (*edgemin).weight;
-           cp_edge_nodes(copy, edgemin);
-           (*edgemin).weight = (*copy).weight; // new wemin
-           wemin=we;
-        }
-        iterator=get_next_edge(iterator);
-     }
-     edgemin=get_next_edge(edgemin);
-    // if (edgemin != NULL) { // not useful
-     iterator=get_next_edge(edgemin);
-    // }
-  }
-  // verify:
-  iterator = list;
-  for (k=1; k<(len+1); k++) {
-    printf("i:%d, w:%f   ",k,get_weight(iterator) );
-    iterator=get_next_edge(iterator);  
-  }
-
-
-  return;
-}
-
 /*
  * Definition of linked list tree
  */
@@ -291,7 +175,7 @@ void add_end_tree(ptr_TREE element, ptr_TREE list) {
 int remove_end_tree(ptr_TREE element) {
   
   ptr_TREE iterator, el;
-  Index res;
+  int res;
 
   el=element;
   iterator=element;

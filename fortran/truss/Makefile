@@ -41,6 +41,7 @@ LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES=""\
+	INPUTTRUSS="INPUTTRUSS_mod.mod" \
 	TYPESBALKEN="TYPESBALKEN.mod" \
 	PRINTABSTRACTSTRUCT="PRINTABSTRACTSTRUCT_mod.mod" \
 	RIGIDTRUSSCONTACTS="RIGIDTRUSSCONTACTS_mod.mod" 
@@ -49,6 +50,7 @@ LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES="" \
+	INPUTTRUSS="inputtruss_mod.mod" \
 	TYPESBALKEN="typesbalken.mod" \
 	PRINTABSTRACTSTRUCT="printabstractstruct_mod.mod" \
 	RIGIDTRUSSCONTACTS="rigidtrusscontacts_mod.mod"
@@ -67,6 +69,7 @@ endif
 
 #Regeln fuer Module
 $(TYPESBALKEN): typesbalken.o
+$(INPUTTRUSS): inputtruss.o
 $(PRINTABSTRACTSTRUCT): printabstractstruct.o
 ${RIGIDTRUSSCONTACTS}: rigidtrusscontacts.o
 
@@ -88,6 +91,7 @@ sgi:
 # Targets, die letztendlich das Programm Herstellen
 #
 library: $(LIB)(typesbalken.o) \
+         $(LIB)(inputtruss.o) \
 	 $(LIB)(printabstractstruct.o) \
 	 $(LIB)(rigidtrusscontacts.o)
 
@@ -121,9 +125,9 @@ cleanall:
 # Abhaengigkeiten
 #
 $(LIB)(printabstractstruct.o): $(TYPESBALKEN)
-$(LIB)(rigidtrussstruct.o):$(PRINTABSTRACTSTRUCT) $(TYPESBALKEN)
+$(LIB)(rigidtrussstruct.o):$(PRINTABSTRACTSTRUCT) $(TYPESBALKEN) $(INPUTTRUSS)
 
-main.o: $(TYPESBALKEN) $(PRINTABTRACTSTRUCT) $(RIGIDTRUSSCONTACTS) 
+main.o: $(TYPESBALKEN) $(PRINTABTRACTSTRUCT) $(RIGIDTRUSSCONTACTS) $(INPUTTRUSS)
 
 	@echo "make cleanall completed..."
 

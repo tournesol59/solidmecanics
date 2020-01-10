@@ -46,7 +46,8 @@ LINUX_FLAGS = \
 	CREATEMESHROUND="CREATEMESHROUND_mod.mod" \
         LAGRANGEGRAD2DROUND="LAGRANGEGRAD2DROUND_mod.mod" \
         VERIFYMESHROUND="VERIFYMESHROUND_mod.mod" \
-        SPACEGEOMETRY="SPACEGEOMETRY_mod.mod"
+        SPACEGEOMETRY="SPACEGEOMETRY_mod.mod" \
+        TESTCONNRIGIDMAT="TESTCONNRIGIDMAT_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
@@ -57,7 +58,8 @@ LINUX_FLAGS = \
 	CREATEMESHROUND="createmeshround_mod.mod" \
         LAGRANGEGRAD2DROUND="Lagrangegrad2dround_mod.mod" \
         VERIFYMESHROUND="verifymeshround_mod.mod" \
-        SPACEGEOMETRY="spacegeometry_mod.mod"
+        SPACEGEOMETRY="spacegeometry_mod.mod" \
+        TESTCONNRIGIDMAT="testconnrigidmat_mod.mod"
 endif
 
 ####################################################################
@@ -78,6 +80,7 @@ ${CREATEMESHROUND}: createmeshround.o
 {LAGRANGEGRAD2DROUND}: Lagrangegrad2dround.o
 {VERIFYMESHROUND}:verifymeshround.o 
 {SPACEGEOMETRY}:spacegeometry.o
+{TESTCONNRIGIDMAT}:testconnrigidmat.o
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -101,7 +104,8 @@ library: $(LIB)(typesrounddef.o) \
 	 $(LIB)(createmeshround.o) \
 	 $(LIB)(Lagrangegrad2dround.o) \
          $(LIB)(verifymeshround.o) \
-         $(LIB)(spacegeometry.o)
+         $(LIB)(spacegeometry.o) \
+         $(LIB)(testconnrigidmat.o)
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
@@ -136,9 +140,10 @@ $(LIB)(allocatefieldsround.o): $(TYPESROUND)
 $(LIB)(Lagrangegrad2dround.o): $(TYPESROUND)
 $(LIB)(spacegeometry.o): $(TYPESROUND)
 $(LIB)(verifymeshround.o):$(SPACEGEOMETRY) $(TYPESROUND)
+$(LIB)(testconnrigidmat.o):$(TYPESROUND)
 
 main.o: $(TYPESROUND) $(ALLOCATEFIELDSROUND) $(CREATEROUNDMESH) \
-        $(LAGRANGEGRAD2DROUND) 
+        $(LAGRANGEGRAD2DROUND) $(TESTCONNRIGIDMAT)
 
 	@echo "make cleanall completed..."
 

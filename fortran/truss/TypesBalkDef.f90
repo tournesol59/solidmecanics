@@ -16,8 +16,13 @@ MODULE TypesBalken
   implicit none
   private
   !---------------------------------------------------------------------------!
+  type tMeshInfo
+     integer        :: nn,ne               ! Anzahl Nodes and Element
+  end type tMeshInfo
+
   type tMeshCoord
      real,pointer   :: x(:),y(:),z(:)        ! Nodes Coord
+     integer,pointer :: elmts(:,:)   ! 3 numeros since indiz und 1D elemts
   end type tMeshCoord
 
   type tMeshElmt
@@ -79,13 +84,13 @@ MODULE TypesBalken
     real,dimension(7)    :: coeffs(1:7)      ! Koeffizienten  order<10         !
   end type tPolynom
 
-  type tConnectBalk
-    integer,dimension(1:12)  :: tab       ! tab(2),tab(3)=0 tab(5),tab(6)=1 in eine Momentfreie Bewegung
-                                          ! tab(2),tab(3)=0 tab(5) tab(6)=0 in eine Fest eingeklammerte Abbildung
-  end type tConnectBalk
+!  type tConnectBalk
+!    integer,dimension(1:12)  :: tab       ! tab(2),tab(3)=0 tab(5),tab(6)=1 in eine Momentfreie Bewegung
+!                                          ! tab(2),tab(3)=0 tab(5) tab(6)=0 in eine Fest eingeklammerte Abbildung
+!  end type tConnectBalk
   !---------------------------------------------------------------------------!
-  public  :: tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, tRigidFullMat, & 
-             tVarFull, tExakt, tPolynom
+  public  :: tMeshInfo, tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, &
+             tRigidFullMat, tVarFull, tExakt, tPolynom
   !---------------------------------------------------------------------------!
 
 ! contains

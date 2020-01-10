@@ -21,7 +21,9 @@ module TypesRound
   type tRoundMeshInfo
      integer            :: nNode         ! Number of Nodes !
      integer            :: nElem         ! Number of Elements, equal to num. neighbours data !
+     integer            :: nBound        ! number of frontiers that may be boundary conditions
      integer            :: nxmx, nymx    ! Max Bound for Seiten Index of Vertex (Boundary Condition)
+     integer,dimension(4) :: BoundVert   ! Number of elements faces for 4 vertex (previewed for square mesh, but can be used also for round mesh)
   end type tRoundMeshInfo
 
   type tRoundMesh        
@@ -33,7 +35,7 @@ module TypesRound
                                                  ! to store neighbours, -1 = has boundary
   end type tRoundMesh
 
-  type tRoundRandU
+   type tRoundRandU
      integer, pointer     :: randFixedIndex(:)      ! RandTyp=feste Biegung/Kurve !
      real,pointer         :: randFixed(:)           ! entsprechende Randwerte   !
      integer, pointer     :: randDisplaceIndex(:)   ! RandTyp=frei/gewuenschte Biegung !
@@ -65,7 +67,7 @@ module TypesRound
   type tRoundlocal
     integer,dimension(3)   :: permute  ! setzt aus der Punkten (j,k,l), 
                                        ! was Punkt 1, Punkt 2 oder Punkt 3 ist
-    real,dimension(3)      :: triplet  !  x2,x3,y3 Werten
+    real,dimension(4)      :: triplet  !  x2,x3,y3 Werten
     real,dimension(3)      :: dist     ! dist(1) ist der Laenge des Segments ggseitig zum nodes 1
     real,dimension(3)      :: angleEuler ! welche benoetigt werden, um Passage aus lokal
                                          ! zu global Basis zu machen
@@ -74,7 +76,7 @@ module TypesRound
 
   type tRoundCoeff        ! benutzbar aber muss allokiert werden und a priori 
                           ! interpol order 2 => 1:6 coeffs per Elements
-     real,pointer     :: Coefficients(:) ! des Polynoms fuer Interpolation, 1 fuer jedes Elements! 
+     real,pointer     :: Coefficients(:,:) ! des Polynoms fuer Interpolation, 1 fuer jedes Elements! 
 !     real,pointer                 :: Jacobian(:)    ! 2x2 real, nur diesen Test vorgesehen !
 !     logical,pointer              :: Test(:)        ! Resultat des Tests an dem Element !
   end type tRoundCoeff
@@ -93,10 +95,31 @@ module TypesRound
      integer              :: kmaxex         ! Genauigkeit der exakten Loesung  !
   end type tRoundExakt
 
+  type tSparseYMat
+     integer                        :: nnz, rows, lband
+     real,dimension(:),allocatable  :: a(:)
+     integer,dimension(:),allocatable :: ia(:)
+     integer,dimension(:),allocatable :: ja(:)
+  end type tSparseYMat
+
+!************** Mixed Fortran-C programming data exchange are based on fixed size array here
+!              (no pointer solution found)    
+!*******************************************************************************************
+! input to C:
+! Array items for block passed to C (50 passed items to "c_testconnrigidmatrix" each to form a LL)
+
+! output from C:
+  type tLLSparseMat                ! Linked List from C-procedure transformed in a Array of 50 items tLLSparseMat
+    integer             :: nEdgeNr   ! nEdgeNew new number if sparse renumerotation algorithms were used
+    integer             :: node_1, node_2
+    integer             :: IndexI1                !index i+1 or -1 if branch of the tree is ended
+    integer             :: nextb1, nextb2         !Index nextb1, nextb2 (max two) of possible two other connections
+  end type tLLSparseMat
+
   !---------------------------------------------------------------------------!
   public  :: tNode, tTrigElem, tRoundMeshInfo, tRoundMesh, tRoundRandU, tRoundRandS, &
              tRoundNumeric, tRoundCoeff, tRoundExakt, tPolynom, tXYPolynom, &
-             tRoundlocal, tPassageMatrix
+             tRoundlocal, tPassageMatrix, tSparseYMat, tLLSparseMat
   !---------------------------------------------------------------------------!
 
 end module TypesRound

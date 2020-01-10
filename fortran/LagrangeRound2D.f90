@@ -21,7 +21,7 @@ private
      module procedure interpolD0Curving
   end interface
 
-public :: interpolD0Curving, interpolD0Membrane, interpolD0Shearing  
+public :: interpolD0Curving !, interpolD0Membrane, interpolD0Shearing  
 ! , interpol3PMemEvalDerX, interpol3PMemEvalDerY, interpol3PProdMat,
 ! , interpol3PMemEvalPolXY, interpol3PCurvEvalPolXY, interpol3PShEvalKt
 !, interpol3PShEvalKws
@@ -33,9 +33,14 @@ contains
 !********************************************************************!
 !  procedure interpolD0Curving !
 !********************************************************************!
-  subroutine interpolD0Curving(llNodes, llFunctions, lokale)
+  subroutine interpolD0Curving(llNode, lokale_xyz, Rigidelem, llFunction)
     use TypesRound
     implicit none
+    type(tTrigElem),pointer                       :: llNode(:)
+    ! basis Element to compute RigidMatrix! after that a LL would be needed to store
+    type(tPassageMatrix)                          :: lokale_xyz
+    real,dimension(:),allocatable                 :: Rigidelem(:)
+    integer,dimension(10)                         :: llFunction ! attempt to organize subroutine by Number
 
 
 

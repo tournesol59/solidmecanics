@@ -1,0 +1,3 @@
+gcc -c renumKruskal.c -o renumKruskal.o -g
+gcc -c addrLLtoArray.c -o addrLLtoArray.o -g
+gcc addrLLtoArray.o renumKruskal.o -o addrtest -g

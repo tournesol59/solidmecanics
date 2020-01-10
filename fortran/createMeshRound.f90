@@ -5,23 +5,16 @@
 !      Funktion: Festlegen der Gitterdaten                                 !
 !                                                                          !
 !**************************************************************************!
-!                                                                          !
-!      x,y        Koordinaten der Gitterpunkte                             !
-!      dx,  dy    Gitterschrittweite (delta x, delta y)                    !
-!      dxq, dyq   Kehrwert (1/delta x, 1/delta y)                          !
-!      dxx, dyy   Quadrat  (delta x * delta x, delta y * delta y)          !
-!      dxxq,dyyq  Kehrwerte der Quadrate (1/dxx, 1/dyy)                    !
-!                                                                          !
-!**************************************************************************!
+
 module createmeshround_mod
   use TypesRound
 
   implicit none
 
   private
-!********************************************************************!
-!  Variable Tabelle der Test-Plate fur die Koordinaten der 9 Punkten !
-!********************************************************************!
+!**************************************************************************!
+!  Variable Tabelle der Patch Test-Plate fur die Koordinaten der 9 Punkten !
+!**************************************************************************!
  integer,dimension(2) :: NTest2 = (/ 3, 3/)
  real,dimension(9)  ::  X2 = (/ 0.0, 0.05, 0.1, 0.0, 0.05, 0.1, 0.0, 0.05, 0.1 /)
 
@@ -243,20 +236,59 @@ module createmeshround_mod
   !                                                                          !
   ! Local variable declaration                                               !
   !                                                                          !
-  integer                    :: ne,nn,i,j        ! Zählvariablen             !
+  character(LEN=36)          :: Rawtext
+  integer                    :: no,el,elmn,elmx,i,j        ! Zählvariablen             !
   !--------------------------------------------------------------------------!
   intent(inout)              :: NTestMeshR, MeshR                            !
   !--------------------------------------------------------------------------!
 
 
   !-----------------------------------<  calculate constants  >-----------
-  !---<  nn   = anzahl der inneren punkte                 >-----------
-  !---<  ne = anzahl der zellen                           >-----------
+  
+  OPEN(UNIT=25, FILE='Untitled.inp', ACTION='READ')
+  ! .. couts Nodes and Elements and Boudary Element...
 
-!  NTestMeshR%nn = 9
-!  NTestMeshR%ne = 8
-!  nn = NTestMeshR%nn
-!  ne = NTestMeshR%ne
+  read (25,*)                ! *Heading
+  read (25,*)                !  /home/fredrik/Documents/gmsh/untitled3.inp
+  read (25,*)                ! 2.2 0 8
+  read (25,*)                ! *NODE
+
+  do i=1,NTestMeshR%nNode
+     read(25,207) no, MeshR%nodes(i)%vects(1), MeshR%nodes(i)%vects(2), MeshR%nodes(i)%vects(3)    ! what to do if no!=i?
+  enddo
+  if (no.ne.NTestMeshR%nNode) then
+    print *, "nodes spec in .msh is not equal to nodes lines read in .inp Input File"
+  endif
+  read (25,*)                ! ******* E L E M E N T S *************
+
+!!! crucial: search for
+! *ELEMENT, type=CPS4, ELSET=Surface1
+  do while ((Rawtext).NE.("*ELEMENT, type=T3D2, ELSET=Line1"))
+    read (25,106) 
+  end do
+
+  do j=1,NTestMeshR%nElem
+     read(25,307) MeshR%elems(j)%numeros(1), MeshR%elems(j)%numeros(2), MeshR%elems(j)%numeros(3), &
+                   MeshR%elems(j)%numeros(4)             ! Skip it, for further, go on createMesh.f90
+     if (j.eq.1) then
+       elmn=MeshR%elems(j)%numeros(1)
+     elseif (j.eq.NTestMeshR%nElem) then
+       elmx=MeshR%elems(j)%numeros(1)
+     endif
+  enddo
+  if ((elmx-elmn+1).ne.NTestMeshR%nElem) then
+    print *, "elements spec in .msh is not equal to elements lines read in .inp Input File"
+  endif  
+  
+  CLOSE(UNIT=25)
+
+ 106  format (a)
+ 205  format (f10.5)
+ 206  format (a,f10.5)
+ 207  format (i10,3f10.5)
+ 305  format (i10)
+ 306  format (a,i10)
+ 307  format (4i10)
 
   end subroutine createRoundMeshFile
 
@@ -278,12 +310,69 @@ module createmeshround_mod
   !                                                                          !
   ! Local variable declaration                                               !
   !                                                                          !
+  character(LEN=33)          :: Rawtext
   integer                    :: ne,nn,i,j        ! Zählvariablen             !
   !--------------------------------------------------------------------------!
-  intent(in)                 ::  NTestMeshR
-  intent(inout)              ::  BCU,BCS                                     !
+  intent(inout)              ::  NTestMeshR, BCU,BCS                         !
   !--------------------------------------------------------------------------!
+  
+  OPEN(UNIT=25, FILE='Untitled.inp', ACTION='READ')
+  ! .. opens a first time to count boundary nodes...
 
+  read (25,*)                ! *Heading
+  read (25,*)                !  /home/fredrik/Documents/gmsh/untitled3.inp
+  read (25,*)                ! 2.2 0 8
+  read (25,*)                ! *NODE
+
+  do i=1,NTestMeshR%nNode
+     read(25,*)
+  enddo
+  read (25,*)                ! $EndNodes
+
+!!! crucial: search for
+! *ELEMENT, type=CPS4, ELSET=Surface1
+  i=1
+  read (25,406)
+  do while ((Rawtext).NE.("*ELEMENT, type=T3D2, ELSET=Line1"))
+     i=i+1
+     read (25,406) 
+  end do
+  NTestMeshR%BoundVert(1)=i-1
+  i=1
+  read (25,406)
+  do while ((Rawtext).NE.("*ELEMENT, type=T3D2, ELSET=Line2"))
+     i=i+1
+     read (25,406) 
+  end do
+  NTestMeshR%BoundVert(2)=i-1
+  i=1
+  read (25,406)
+  do while ((Rawtext).NE.("*ELEMENT, type=T3D2, ELSET=Line3"))
+     i=i+1
+     read (25,406) 
+  end do
+  NTestMeshR%BoundVert(3)=i-1
+  i=1
+  read (25,406)
+  do while ((Rawtext).NE.("*ELEMENT, type=T3D2, ELSET=Line4"))
+     i=i+1
+     read (25,406) 
+  end do
+  NTestMeshR%BoundVert(4)=i-1
+
+  CLOSE(UNIT=25)
+
+  
+  OPEN(UNIT=25, FILE='Untitled.inp', ACTION='READ')
+  ! .. opens a second time to read boundary nodes...
+
+
+  CLOSE(UNIT=25)
+
+ 406  format (a)
+ 705  format (i10)
+ 706  format (a,i10)
+ 707  format (4i10)
 
   end subroutine createRoundRandFile
 

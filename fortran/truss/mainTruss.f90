@@ -1,5 +1,6 @@
 program mainTruss
   use typesbalken
+  use InputTruss_mod
   use RigidTrussContacts_mod
   use printabstractstruct_mod
 
@@ -8,11 +9,13 @@ program mainTruss
   integer               :: ne=3 ! Freiheitsgraden Anzahl
   integer               :: n=3  ! Nodes Anzahl
   real                  :: anglescalar
+  type(tMeshInfo)       :: MeshInfo
   type(tMeshCoord)      :: MeshPunkte
   type(tMeshElmt)       :: MeshT1, MeshT2
   type(tMeshElmt),dimension(:),allocatable  :: MeshGen(:)   ! Elementen 1-2 und 1-3
   type(tVarElmt),dimension(:),allocatable   :: VarGen(:)    ! Werten (U,F) in Elementen
   integer,pointer       :: elmtabbdung(:,:) 
+  integer,pointer       :: meshverbindg(:,:) ! Definition von Verbindungen !
   real,pointer          :: M_rot(:)
   type(tRigidFullMat)   :: Ke_H   ! Whole global rigidity matrix
   type(tRigidFullMat)   :: A_H, B_H  ! Sub matrices from Ke_H (f=A.U,unknown + B.U,applied
@@ -28,6 +31,12 @@ program mainTruss
   integer,pointer       :: inull(:)
   character(len=30)     :: SubName="mainTruss                     "
 
+! ************** read only first line of input def file, the rest is parsed by Input_file procedure
+  OPEN(UNIT=25, FILE='Untitled1.msh', ACTION='READ')
+  read(25,705) MeshInfo%nn, MeshInfo%ne
+  CLOSE(UNIT=25)
+
+! **************************** allocate Geometry Strukturen ************************
   allocate(inull(1), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate null"
@@ -60,15 +69,6 @@ program mainTruss
   endif
 
 ! ****************************** Definitions von Punkten und zwei Elementen Typen ***********************************
-  MeshPunkte%x(1)=1.0
-  MeshPunkte%y(1)=0.0
-  MeshPunkte%z(1)=0.0
-  MeshPunkte%x(2)=0.0
-  MeshPunkte%y(2)=0.0
-  MeshPunkte%z(2)=0.0
-  MeshPunkte%x(3)=0.0
-  MeshPunkte%y(3)=0.5
-  MeshPunkte%z(3)=0.0
 
   MeshT1%typ = 1           ! beam
   MeshT1%nraumx = 2        ! subdivision, default=2
@@ -138,83 +138,13 @@ program mainTruss
     Var_H%Fe(i)=0.0   
   enddo
 
-  allocate(elmtabbdung(1:n,1:n), STAT = allocStat)
+  allocate(elmtabbdung(1:n,1:n),  meshverbindg(1:n,1:n), STAT = allocStat)
   if (allocStat.ne.0) then
-     print *," Error allocation element definition matrix !"
-  endif 
-  do i=1,n       ! initialisierung
-    do j=1,n
-       elmtabbdung(i,j)=0.0
-    enddo
-  enddo
-  elmtabbdung(1,2)=2 ! 2=Balken
-  elmtabbdung(2,1)=2 ! ..Symmetric
-  elmtabbdung(1,3)=1 ! 1=Rod
-  elmtabbdung(3,1)=1 ! ..Symmetric
-
-  allocate(Dunbekannt(1:n,1:ne), STAT = allocStat)
-  if (allocStat.ne.0) then
-     print *," Error allocation unbekannt (frei rod or eingespannt) definition matrix !"
-  endif 
-  do i=1,n       ! initialisierung
-    do j=1,ne
-       Dunbekannt(i,j)=1 !  0=nicht unbekannt, 1=unbekannt fest eigespannnt,
-                         ! 2=unbekannt translation aber freie rot
-    enddo
-  enddo
-  Dunbekannt(1,1)=1
-  Dunbekannt(1,2)=1 
-  Dunbekannt(1,3)=1
-
-  allocate(Dimponiert(1:n,1:ne), STAT = allocStat)
-  if (allocStat.ne.0) then
-     print *," Error allocation imposed freiheitsgrad matrix !"
+     print *," Error allocation connection matrix !"
   endif
-  do i=1,n       ! initialisierung
-    do j=1,ne
-       Dimponiert(i,j)=1 !default
-    enddo
-  enddo
-  Dimponiert(3,1)=0.0
-  Dimponiert(3,2)=0.0
-!  Dimponiert(3,3)=0.0
-  Dimponiert(2,1)=0.0
-  Dimponiert(2,2)=0.0
-  Dimponiert(2,3)=0.0
-! and 3 Unbekannte fuer Node 1 muessen vorher im Dunbekannt matrix definiert werden
 
-  allocate(Kraftbewgg(1:n,1:ne), STAT = allocStat)
-  if (allocStat.ne.0) then
-     print *," Error allocation index zur berechnenden Bewegungskraefte matrix !"
-  endif 
-  do i=1,n       ! initialisierung
-    do j=1,ne
-       Kraftbewgg(i,j)=0    ! 1=zu bestimmen, 0=imponiert (siehe Kraftimponiert)
-    enddo
-  enddo
-  Kraftbewgg(3,1)=1
-  Kraftbewgg(3,2)=1
-  Kraftbewgg(2,1)=1 
-  Kraftbewgg(2,2)=1 
-  Kraftbewgg(2,3)=1 
-  Kraftbewgg(1,1)=1 
-
-  allocate(Kraftimponiert(1:n,1:ne), STAT = allocStat)
-  if (allocStat.ne.0) then
-     print *," Error allocation imposed forces/moments in Bewegungspunkten matrix !"
-  endif 
-  do i=1,n       ! initialisierung
-    do j=1,ne
-       Kraftimponiert(i,j)=0.0    ! default
-    enddo
-  enddo
-  Kraftimponiert(3,3)=0.0
-  Kraftimponiert(1,2)=-10.0
-  Kraftimponiert(1,3)=0.0
-! es fehlt lediglich das verteiltes Last  (negative Y-Richtg) am Element (1-2)
-! es wird in dem Struktur MeshT1 gespeichert
-
-
+! <-------------------- PARSE INPUT FILE FOR DEFINITION of points and imposed bc--------------->
+  call Input_file(MeshInfo, MeshPunkte, elmtabbdung, meshverbindg, Dunbekannt, Dimponiert, Kraftbewgg, Kraftimponiert)
 
 ! <-------------------- DO SOMETHING --------------------->
   write(*,701) "----- mainTruss"
@@ -347,5 +277,6 @@ program mainTruss
 701 format(a)
 702 format(a,i10)
 704 format(i10,f10.5)
+705 format (i10,i10)
 
 end program mainTruss

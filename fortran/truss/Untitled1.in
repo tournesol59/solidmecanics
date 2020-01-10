@@ -1,0 +1,53 @@
+#nnodes nelements
+6 6
+#coord nodes
+0.00E00 0.00E00 0.00E00 
+0.00E00 5.00E-1 0.00E00 
+0.00E00 1.00E00 0.00E00 
+0.33E00 0.00E00 0.00E00 
+0.33E00 5.00E-1 0.00E00 
+0.33E00 1.00E00 0.00E00 
+#(ne,2+1)structure pattern of elmts
+1 1 2
+2 2 3
+3 4 5
+4 5 6
+5 2 5
+6 3 6
+# (ne, 2+1) types of connection for Ux,Vx,Mz,Uy,Vy,Mz (nn,ne) 0=not 1=beam connect, 2=rod connect for each elmt
+1 1 1
+2 1 1
+3 1 1
+4 1 1
+5 2 2
+6 2 2
+#(n, 3+1) displacement/angles Ux,Vx,Az imposed typ: 0 = disp known see next struct, 1=unknown beam, 2=unknown rod disp imposed, eg (1 0 1 1): node 1 (first) is an horizontal rail disp imposed, Fy and Mz as cantilever beam equal zero
+1 0 0 0
+2 1 1 1
+3 2 2 2
+4 0 0 0
+5 1 1 1
+6 2 2 2
+#(n,3)values of known displacements or -1.0 (value to discard): correspond to struct 'Dimposed' or 'Dimponiert'
+1.00E-1 0.00E00 0.00E00
+-1.00E00 -1.00E00 -1.00E00
+-1.00E00 -1.00E00 -1.00E00 
+0.00E00 0.00E00 0.00E00
+-1.00E00 -1.00E00 -1.00E00 
+-1.00E00 -1.00E00 -1.00E00 
+#(n, 3+1) force/moment Fx,Tx,Mz: 0 = force known see next struct, 1=to solve beam, 2=to solve rod (special treatment has to be done for rod)
+1 1 1 1
+2 1 1 1
+3 0 2 2
+4 1 1 1
+5 1 1 1
+6 2 2 2
+#(n,3) values of known displacements or -1.0 (value to discard):
+-1.00E-1 -1.00E00 -1.00E00
+-1.00E00 -1.00E00 -1.00E00
+-2.00E02 -1.00E00 -1.00E00 
+-1.00E00 -1.00E00 -1.00E00
+-1.00E00 -1.00E00 -1.00E00 
+-1.00E00 -1.00E00 -1.00E00
+
+
