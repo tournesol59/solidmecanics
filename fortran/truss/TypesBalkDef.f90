@@ -17,12 +17,23 @@ MODULE TypesBalken
   private
   !---------------------------------------------------------------------------!
   type tMeshInfo
-     integer        :: nn,ne               ! Anzahl Nodes and Element
+     integer        :: nn,nt               ! Anzahl Nodes and Element
   end type tMeshInfo
 
   type tMeshCoord
      real,pointer   :: x(:),y(:),z(:)        ! Nodes Coord
-     integer,pointer :: elmts(:,:)   ! 3 numeros since indiz und 1D elemts
+     integer,pointer :: elmts(:,:)   ! 7 numeros since index und per Nodes in elements (2)
+                                     !  + types number (1 to 7) of connection at node_i
+                                     !     + 1= >o--  bar articulated
+                                     !     + 2= :>--  bar in a rail
+                                     !     + 3= //=   beam fixed
+                                     !     + 4= :/=   beam in rail
+                                     !     + 5= |o|=  beam articulated
+                                     !     + 6= ->o<- bar to bar
+                                     !     + 7= =| |= beam to beam
+                                     !  + boolean 1=displacement imposed, 0=not imposed (unknown)
+                                     !  + boolean 1=force applied known, 0= no force or local reaction 
+                                     !         to calculate (depending of types number)
   end type tMeshCoord
 
   type tMeshElmt
@@ -88,9 +99,14 @@ MODULE TypesBalken
 !    integer,dimension(1:12)  :: tab       ! tab(2),tab(3)=0 tab(5),tab(6)=1 in eine Momentfreie Bewegung
 !                                          ! tab(2),tab(3)=0 tab(5) tab(6)=0 in eine Fest eingeklammerte Abbildung
 !  end type tConnectBalk
+
+  type tFileIO
+     CHARACTER(LEN=60)    :: filename       ! Filename                        !
+  end type tFileIO
+
   !---------------------------------------------------------------------------!
   public  :: tMeshInfo, tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, &
-             tRigidFullMat, tVarFull, tExakt, tPolynom
+             tRigidFullMat, tVarFull, tExakt, tPolynom, tFileIO
   !---------------------------------------------------------------------------!
 
 ! contains

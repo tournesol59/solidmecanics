@@ -228,6 +228,7 @@ END SUBROUTINE  Matrice_Ke_K_assembly
 !							       !
 !  Subroutine Matrice_Ke_H_Truss                               !
 !   shall be called in the main Program as there are elements  !
+! not terminated
 !**************************************************************!
 
 SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
@@ -247,10 +248,10 @@ SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
   integer,pointer,intent(in)   :: connectelmt(:,:)  ! These indexes (j,k) are also found if connectelmt(j,k)=1
   integer,pointer,intent(in)   :: Dunknowns(:,:)    ! Dunkowns(i,j)=1 means j-th of 4 deg of 
                                                     ! freedom of i-th of n nodes is unknown, 0 by default
-  real,pointer,intent(in)      :: Dimposed(:,:)  ! imponierte Bewegungen at move elsewhere Dunknowns(i,j)=1
+  real,pointer,intent(in)      :: Dimposed(:,:)  ! imponierte Bewegungen at move elsewhere Dunknowns(i,j)=-1
   integer,pointer,intent(in)   :: Fmovemt(:,:)      ! Fmovemt(i,j)=1 means there one Force to calculate at move j at node i
   real,pointer,intent(in)      :: Fapplied(:,:)  ! Force applied at move j at node i (provided Fmovemt(i,j)=0)
-  character(len=30)           :: SubName="Matrice_Ke_H_Truss            "
+  character(len=30)            :: SubName="Matrice_Ke_H_Truss            "
 
 ! lokalen Variablen
 

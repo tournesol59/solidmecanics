@@ -152,5 +152,89 @@ module printabstractstruct_mod
  507  format (7f12.1)
   end subroutine prntadjuststruct
 
+!****************************************************
+! subroutine prntinputmatrices, need to print a ne*nd matrix
+!   for verification of input data coding the problem
+  subroutine prntsimplematrix(nrow,ncol, typ, ptr_int, ptr_dou, SubName)
+  use typesbalken
+  implicit none
+  ! args
+  integer                         :: nrow,ncol,typ
+  integer,pointer                 :: ptr_int(:,:)
+  real,pointer                    :: ptr_dou(:,:)
+  character(len=30)               :: SubName
+  ! Vorhabe
+  intent(in)                      :: nrow,ncol,typ,ptr_int,ptr_dou,Subname
+  ! lokale vars
+  integer                         :: i,j,k,l,q,r
+
+  write(*,601) "----- ", adjustl(SubName)
+  if (typ.eq.1) then  ! integer
+    do i=1,nrow
+       q=ncol/7
+       r=ncol-q*7
+       do k=1,q
+         write(*,602) (ptr_int(i, (7*k+l)), l=1,7)  ! j=q*7+k
+       enddo
+         write(*,602) (ptr_int(i, (7*k+l)), l=1,r) 
+   enddo
+
+  elseif (typ.eq.2) then
+    do i=1,nrow
+       q=ncol/5
+       r=ncol-q*5
+       do k=1,q
+         write(*,603) (ptr_dou(i, (5*k+l)), l=1,5)  ! j=q*7+k
+       enddo
+         write(*,603) (ptr_dou(i, (5*k+l)), l=1,r) 
+   enddo
+
+  endif
+ 601  format (a,a)
+ 602  format (i10)
+ 603  format (f10.5)
+ 604  format (a,i10)
+ 605  format (7i10)
+ 606  format (5f10.5)
+ end subroutine prntsimplematrix
+
+
+ subroutine prntinputmatrices(ne, connectelmt, &
+                              Dunknowns, Dimposed, &
+                              Fmovemt, Fapplied)
+
+  use typesbalken
+  implicit none
+
+  integer,intent(in)           :: ne
+  integer,pointer,intent(in)   :: connectelmt(:,:)  ! These indexes (j,k) are also found if connectelmt(j,k)=1
+  integer,pointer,intent(in)   :: Dunknowns(:,:)    ! Dunkowns(i,j)=1 means j-th of 4 deg of 
+                                                    ! freedom of i-th of n nodes is unknown, 0 by default
+  real,pointer,intent(in)      :: Dimposed(:,:)  ! imponierte Bewegungen at move elsewhere Dunknowns(i,j)=-1
+  integer,pointer,intent(in)   :: Fmovemt(:,:)      ! Fmovemt(i,j)=1 means there one Force to calculate at move j at node i
+  real,pointer,intent(in)      :: Fapplied(:,:)  ! Force applied at move j at node i (provided Fmovemt(i,j)=0)
+  ! lokale Variables
+  integer, pointer             :: inull(:,:)
+  real, pointer                :: fnull(:,:)
+  integer                      :: allocstat
+  character(len=30)            :: SubName="Input_Truss                   "
+
+  allocate(inull(1,1), STAT=allocstat)
+  if (allocstat.ne.0) then
+    print *,"Input_Truss : error allocate null"
+  endif
+  allocate(inull(1,1), STAT=allocstat)
+  if (allocstat.ne.0) then
+    print *,"Input_Truss : error allocate null"
+  endif
+ call prntsimplematrix(ne, 3, 1, connectelmt, fnull, SubName)
+ call prntsimplematrix(ne, 3, 1, Dunknowns, fnull, SubName)
+ call prntsimplematrix(ne, 3, 2, inull, Dimposed, SubName)
+ call prntsimplematrix(ne, 3, 1, Fmovemt, fnull, SubName)
+ call prntsimplematrix(ne, 3, 2, inull, Fapplied, SubName)
+
+ end subroutine prntinputmatrices
+
+
 end module printabstractstruct_mod
 

@@ -6,8 +6,7 @@ program mainTruss
 
   implicit none
 
-  integer               :: ne=3 ! Freiheitsgraden Anzahl
-  integer               :: n=3  ! Nodes Anzahl
+  integer               :: ne=3 ! dof Freiheitsgraden Anzahl
   real                  :: anglescalar
   type(tMeshInfo)       :: MeshInfo
   type(tMeshCoord)      :: MeshPunkte
@@ -32,8 +31,8 @@ program mainTruss
   character(len=30)     :: SubName="mainTruss                     "
 
 ! ************** read only first line of input def file, the rest is parsed by Input_file procedure
-  OPEN(UNIT=25, FILE='Untitled1.msh', ACTION='READ')
-  read(25,705) MeshInfo%nn, MeshInfo%ne
+  OPEN(UNIT=25, FILE='Untitled2.msh', ACTION='READ')
+  read(25,705) MeshInfo%nn, MeshInfo%nt
   CLOSE(UNIT=25)
 
 ! **************************** allocate Geometry Strukturen ************************
@@ -45,12 +44,20 @@ program mainTruss
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate M_rot"
   endif
-  allocate(MeshPunkte%x(1:n), MeshPunkte%y(1:n), MeshPunkte%z(1:n), STAT=allocStat)
+  allocate(MeshPunkte%x(1:MeshInfo%nn), MeshPukte%y(1:MeshInfo%nn), MeshPunkte%z(1:MeshInfo%nn), STAT=allocStat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate M_rot"
   endif
 
 ! ***************************** allocate Elementen Strukturen (allocatable) *****************************************
+  allocate(Dunbekannt(1:MeshInfo%nt,1:7), Dimponiert(1:MeshInfo%nn,1:3), STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error allocation Bewegungs definitionsmatrizen !"
+  endif 
+  allocate(Kraftbewgg(1:MeshInfo%nt,1:7), Kraftimponiert(1:MeshInfo%nn,1:3), STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error allocation Matrizen zur berechnenden Bewegungskraefte matrix !"
+  endif 
 
   allocate(MeshGen(1:2), STAT=allocstat)
   if (allocstat.ne.0) then
@@ -125,20 +132,20 @@ program mainTruss
   endif
 
 ! ***************************** allocate definition arrays in the main program *********************************
-  allocate(Ke_H%Ke(1:ne*n,1:ne*n), Var_H%Ue(1:ne*n), Var_H%Fe(1:ne*n), &
-           Exakt%Ux(1:ne*n), Exakt%Fx(1:ne*n), STAT = allocStat)
+  allocate(Ke_H%Ke(1:ne*MeshInfo%nn,1:ne*MeshInfo%nn), Var_H%Ue(1:ne*MeshInfo%nn), Var_H%Fe(1:ne*MeshInfo%nn), &
+           Exakt%Ux(1:ne*MeshInfo%nn), Exakt%Fx(1:ne*MeshInfo%nn), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation global matrix !"
   endif  
-  do i=1,ne*n       ! initialisierung
-    do j=1,ne*n
+  do i=1,ne*MeshInfo%nn       ! initialisierung
+    do j=1,ne*MeshInfo%nn
        Ke_H%Ke(i,j)=0.0
     enddo
     Var_H%Ue(i)=0.0
     Var_H%Fe(i)=0.0   
   enddo
 
-  allocate(elmtabbdung(1:n,1:n),  meshverbindg(1:n,1:n), STAT = allocStat)
+  allocate(elmtabbdung(1:MeshInfo%nn,1:MeshInfo%nn),  meshverbindg(1:MeshInfo%nn,1:MeshInfo%nn), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation connection matrix !"
   endif
@@ -150,8 +157,8 @@ program mainTruss
   write(*,701) "----- mainTruss"
   k=1
   km1=1
-  do jj=1,n
-    do kk=jj,n
+  do jj=1,MeshInfo%nn
+    do kk=jj,MeshInfo%nn
       if (elmtabbdung(jj,kk).eq.2) then
 !! THINK ABOUT TO GENERALIZE EXPRESSION BELOW: IT COULD HAVE ALSO A SPC condition
      MeshGen(k)%node_1 = jj
