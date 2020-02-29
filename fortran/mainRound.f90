@@ -6,7 +6,7 @@ program main
   use createmeshround_mod
   use verifymeshround_mod
   use spacegeometry_mod
-  use lagrangegrad2dround_mod
+  use lagrangeGrad2DRound_mod
 
   !--------------------------------------------------------------------------!
   ! Variablendeklarationen                                                   !
@@ -26,6 +26,7 @@ program main
   real,dimension(1:3)             :: dist, angle, triplet
   real,dimension(1:4)             :: area
   type(tRoundCoeff)               :: C_evalmembrane ! Alle K_ sind steifigkeitsmatrix, C_ sind nur Teile
+  real,pointer                    :: K_membrane(:,:)
 
  !------------------------------------------------------------------------------
  ! Variable for Mixed C (callee)-Fortran (caller) Programming
@@ -85,14 +86,15 @@ program main
  ! end if
 
   ! ------------------------------------------< Single element test calculation >---!
-  allocate(C_evalmembrane%Coefficients(1:6,1:3), STAT=allocStat) 
+  allocate(C_evalmembrane%Coefficients(1:3,1:6), STAT=allocStat) 
   if (allocStat.NE.0) then
      print *, 'ERROR Allocate K_eval: Could not allocate all variables!'
      STOP
   end if
-
+  ni=1
   call linlgcreatematrixMem(NTestGitterR,GitterR,ni,C_evalmembrane,Pmat_xyz)  ! membrane Teil Matrix Kurvature
   call linlgintegratematrixMem(K_membrane,x,y,C_evalmembrane,Pmat_xyz) ! membrane Steifigkeit Matrix
+
   call linprntmatrixMem(K_membrane) 
 
   deallocate(C_evalmembrane%Coefficients, STAT=allocStat)

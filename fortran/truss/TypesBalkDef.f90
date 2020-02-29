@@ -17,12 +17,15 @@ MODULE TypesBalken
   private
   !---------------------------------------------------------------------------!
   type tMeshInfo
-     integer        :: nn,nt               ! Anzahl Nodes and Element
+     integer        :: nn,nt          ! Anzahl Nodes and Element
+     real           :: EY             ! YOUNG Modulus
+     real           :: nu             ! Poisson Coeff
   end type tMeshInfo
 
   type tMeshCoord
      real,pointer   :: x(:),y(:),z(:)        ! Nodes Coord
-     integer,pointer :: elmts(:,:)   ! 7 numeros since index und per Nodes in elements (2)
+     integer,pointer :: elmts(:,:)   ! (1:nelmt; ie c1 d1 f1 c2 d2 f2)
+                                     ! 7 numeros per line since index und per Nodes in elements (2)
                                      !  + types number (1 to 7) of connection at node_i
                                      !     + 1= >o--  bar articulated
                                      !     + 2= :>--  bar in a rail
@@ -34,6 +37,7 @@ MODULE TypesBalken
                                      !  + boolean 1=displacement imposed, 0=not imposed (unknown)
                                      !  + boolean 1=force applied known, 0= no force or local reaction 
                                      !         to calculate (depending of types number)
+                                     !  + and similar index number for the second node: c2 d2 f2
   end type tMeshCoord
 
   type tMeshElmt
@@ -46,6 +50,7 @@ MODULE TypesBalken
      real        :: startz         ! node 2 z-koord  !
      real        :: endz           ! node 2 z-koord  !
      real        :: dlen           ! Laengen des Rechengebiets (Balk) in x/y !
+     real        :: anglez         ! Angle beim Kurve auf z-Achse in radians
      real        :: SArea          ! Section area
      real        :: EY             ! YOUNG Modulus
      real        :: vu             ! Poisson Coeff
@@ -71,7 +76,7 @@ MODULE TypesBalken
   type tRigidMat
 !     real,dimension(3,3)       :: Ke
 !      real,dimension(:,:),allocatable  :: Ke
-      real,pointer                       :: Ke(:,:)
+      real,pointer             :: Ke(:,:)
   end type tRigidMat
 
   type tVarFull
@@ -80,9 +85,9 @@ MODULE TypesBalken
   end type tVarFull
 
   type tRigidFullMat
-     integer                          :: nn,ne
+     integer                   :: nn,ne
 !     real,dimension(:,:),allocatable    :: Ke
-     real,pointer                       :: Ke(:,:)
+     real,pointer              :: Ke(:,:)
   end type tRigidFullMat
 
   type tExakt

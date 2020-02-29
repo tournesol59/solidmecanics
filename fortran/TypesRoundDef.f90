@@ -83,6 +83,11 @@ module TypesRound
 
   type tRoundNumeric ! Numerische Loesung fuer Post treatment
     real,pointer     :: displacement(:,:) ! Default 12 Verschiebungen w in der Mitte des Elements !
+                   ! IMPORTANT CORRECTION SINCE version d4cd9f5 : (not here but preview in allocatefields)
+                   ! before: 12 Verschiebungen per ELEMENT: probably (uz=w, rx,ry, rz)x3 and ux,uy somewhere else 
+                   ! after : 6 Verschiebungen per NODE:    (ux,uy,uz,rx,ry,rz) 6 Verschiebungen
+                   ! note that rz is not part of the shell theory but only associated to a fictive lower rigidity
+
     real,pointer     :: rhs(:,:)          ! rechte Seite Vektor, gleiche Dimension als Verschiebung !
     real,pointer     :: tension(:,:)    ! array pointer: Spannung tengential Tensor in Element!
 !    real,pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung normal  !

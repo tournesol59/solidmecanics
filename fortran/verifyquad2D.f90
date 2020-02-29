@@ -190,7 +190,7 @@ module verifyquad2D_mod
   !**************************************************************************!
   subroutine checkderivcoord(Mesh2D,nel,condit)
 
-  use types
+  use typesround
 
   implicit none
 
@@ -337,7 +337,7 @@ module verifyquad2D_mod
   !**************************************************************************!
   subroutine checkalledgesofelmts(Mesh2D)
 
-  use types
+  use typesround
 
   implicit none
 

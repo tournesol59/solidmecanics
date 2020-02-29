@@ -7,6 +7,8 @@ module printabstractstruct_mod
   use typesbalken
   implicit none
 
+#define FILEOUTPUT 27
+
   private
 
 !    interface prntsimplearray
@@ -114,7 +116,7 @@ module printabstractstruct_mod
    indexIJ= ij
   end function indexIJ
 
-  integer 	function indexJJ(j,n2)
+  integer function indexJJ(j,n2)
   implicit none
   integer, intent(in)   :: j,n2
   integer               :: ij,jj

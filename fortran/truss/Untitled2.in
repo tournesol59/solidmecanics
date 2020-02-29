@@ -1,13 +1,14 @@
 #nnodes nelements
-4 3
+4  3
+2.70E06 3.00E-1 
 #coord nodes (nn)
 1.00E00 0.00E00 0.00E00 
 0.00E00 0.00E-1 0.00E00 
 0.00E00 5.00E-1 0.00E00 
 #structure pattern of elmts (ne)
-1 1 2 
-2 1 3 
-# (ne, 2+1) types of connection for element (nn,ne) see code TypesBalkDef.f90 to have a description of the code, 7 is not treated yet
+1 1 2 1.00E03 2.21E03
+2 1 3 1.00E03 -1.00E00
+# (ne, 2+1) types of connection for element (nn,ne) see code TypesBalkDef.f90 to have a description of the code,
 1 3 1 0 3 0 0 
 2 3 0 0 5 0 1
 3 1 1 0 5 0 1
@@ -27,6 +28,9 @@
 -1.00E-1 -1.00E01 0.00E00
 -1.00E00 -1.00E00 -1.00E00
 -2.00E02 -1.00E00 0.00E00 
+#(nnel, values of distributed load for elmt)
+-2.50E-1 -2.50E-1
+-1.00E00 -1.00E00
 
 
 

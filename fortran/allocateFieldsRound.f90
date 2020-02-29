@@ -23,12 +23,24 @@ module allocateFieldsRound_mod
   implicit none
   private
   !--------------------------------------------------------------------------!
+  ! siehe auch Spezifikation in TypesRoundDef.f90
+  ! Diese Parameter sind nur so als <Parameter-NO> als Variabel nur einmal geschrieben in 
+  ! allocateForXXXType() sub, so dass sie als Information fuer die Algorithmus
+  ! koennen aber nicht modifiziert werden.
 
-  integer, parameter  :: NumberofDisp = 12       ! dof, so kann es geaendert werden !
-  integer, parameter  :: NumberofTension = 6       ! tang. Kraft, so kann es geaendert werden !
-  integer, parameter  :: NumberofMom = 6       ! bieg. Momentums, so kann es geaendert werden !
+  ! Dieser Parameter ist fuer Node gedacht
+  integer, parameter  :: NumberofDisp = 6       ! 6 dof per nn, so kann es geaendert werden !
+  ! Diese zwei folg. Parameter sind fuer Element gedacht (in Post treatment)
+  integer, parameter  :: NumberofTension = 6    ! 6 tang. Kraft per ne, so kann es geaendert werden !
+  integer, parameter  :: NumberofMom = 6        ! 6 bieg. Momentums per ne, so kann es geaendert werden !
 
   !--------------------------------------------------------------------------!
+  interface allocateForC0BelyuType
+     module procedure allocateForC0BelyuType
+  end interface
+!  interface allocateForDKTType
+!     module procedure allocateForDKTType
+!  end interface
   interface allocateFieldsRound
      module procedure allocateFieldsRound
   end interface
@@ -68,7 +80,8 @@ module allocateFieldsRound_mod
   end interface
 
   !--------------------------------------------------------------------------!
-  public  :: allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, & ! allocateFieldsCoeffRound,&
+  public  :: allocateForC0BelyuType, &
+             allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, & ! allocateFieldsCoeffRound,&
              allocateSparseRound, &
              deallocateFieldsRound, deallocateFieldsVarRound, deallocateFieldsBCSRound, & ! deallocateFieldsCoeffRound,
              deallocateSparseRound
@@ -76,6 +89,18 @@ module allocateFieldsRound_mod
 
 contains
 
+!******************************************************
+! Configuration for Triangle C0 (or Belyushko Element)
+  subroutine allocateForC0BelyuType()
+    use TypesRound
+    implicit none
+    !------------------------------------------------------------------------!
+    ! no input variables
+   NumberofDisp = 15     ! <u1x,u1y,u1z,r1x,r1y,u2x,u2y,u2z,r2x,r2y,u3x,u3y,u3z,r3x,r3y>
+   NumberofTension = 6   ! <F1x,F1y,F2x,F2y,F3x,F3y>
+   NumberofMom = 6       ! <M1xx,M1yy,M1xy,M2xx,M2yy,M2xy,M3xx,M3yy,M3xy>
+  
+  end subroutine allocateForC0BelyuType
 
 !******************************************************
   subroutine allocateFieldsRound(NTestMeshR,MeshR,ExaktR) 
@@ -145,16 +170,16 @@ contains
     !------------------------------------------------------------------------!
     ! Liste der übergebenen Argumente                                        !
     !                                                                        !
-    type(tRoundMeshInfo)    :: NTestMeshR  ! Dimensions                      !                     !
+    type(tRoundMeshInfo)    :: NTestMeshR  ! Dimensions                      !
     type(tRoundRandU)               :: BCU       ! Randbedingungen Biegg     !
     type(tRoundRandS)               :: BCS       ! Randbedingungen Kraft     !
     ! Local variable declaration                                             !
     !                                                                        !
     integer                 :: nxmx,nymx,i,allocStat                         !
-    !------------------------------------------------------------------------!                                 !
+    !------------------------------------------------------------------------!
     intent(inout)           ::  BCU,BCS                                      !
     intent(in)              :: NTestMeshR                                    !
-    !-------------------------------------------------------------------------!
+    !------------------------------------------------------------------------!
 
     nxmx = NTestMeshR%nxmx
     nymx = NTestMeshR%nymx
@@ -190,9 +215,10 @@ contains
 
     nn = NTestMeshR%nNode
     ne = NTestMeshR%nElem ! A priori je nach Element geordnet, node 1(ux,vy,wz,Tx,Ty,.), node 2, node 3
-
-    allocate(VarNumR%displacement(1:ne,1:NumberofDisp),       &
-             VarNumR%rhs(1:ne,1:NumberofDisp),       &
+                          ! gut aber nicht je nach Element sondern nach Node und Tz ist dabei: 6
+                          ! fuer tension und biegmoment je nach Element, da es im Post Prozessing ist.
+    allocate(VarNumR%displacement(1:nn,1:NumberofDisp),       &
+             VarNumR%rhs(1:nn,1:NumberofDisp),       &
              VarNumR%tension(1:ne,1:NumberofTension),        &
              VarNumR%biegmoment(1:ne,1:NumberofMom),        &
          STAT = allocStat )        
@@ -240,26 +266,26 @@ contains
 
   implicit none
   
-    !-----------------------------------------------------------------------!
+    !------------------------------------------------------------------------!
     ! Variabledeklarationen
-    !-----------------------------------------------------------------------!
-    ! Liste der uebergebenen Argumente                                      !
-    !                                                                       !
+    !------------------------------------------------------------------------!
+    ! Liste der uebergebenen Argumente                                       !
+    !                                                                        !
     type(tRoundMeshInfo)   :: NTestMeshR
     type(tSparseYMat)      :: RigidYMat
     !                                                                        !
     ! Local variable declaration                                             !
-    integer                 :: nn,ne,i,allocStat,allocStatnn,allocStatne     !
+    integer                 :: nn,ne,i,allocStat                             !
     !------------------------------------------------------------------------!
-    intent(inout)           :: RigidYMat                                  !
+    intent(inout)           :: RigidYMat                                     !
     intent(in)              :: NTestMeshR                                    !
-    !                                                                        !
-    ! Local variable declaration                                             !
-    integer                 :: nn,allocStat
     !------------------------------------------------------------------------!
 
     nn = NTestMeshR%nNode
-    allocate(RigidYMat%a(1:ne*6*15), RigidMat%ia(1:ne*6*15), RigidMat%ja(1:ne*6*15),      &
+    ! Die Spezifikation der Sparse Matrix ist auf Element Zahl basiert. (Kompliziert aber eine 
+    ! dense Matrix waere von Dimension (ne*ne)=(deltax)**2*(deltay)**2 fuer quadrangles, auch wenn wir
+    ! hier Triangles nutzen.
+    allocate(RigidYMat%a(1:ne*6*15), RigidYMat%ia(1:ne*6*15), RigidYMat%ja(1:ne*6*15),      &
          STAT = allocStat )        
  
     if (allocStat.NE.0) then
@@ -268,9 +294,6 @@ contains
     end if
 
   end subroutine allocateSparseRound
-
-
-
 
 
 
@@ -444,7 +467,7 @@ contains
     integer                 :: nn,allocStat
     !------------------------------------------------------------------------!
 
-    deallocate(RigidYMat%a, RigidMat%ia, RigidMat%ja,      &
+    deallocate(RigidYMat%a, RigidYMat%ia, RigidYMat%ja,      &
          STAT = allocStat )        
  
     if (allocStat.NE.0) then
@@ -452,5 +475,6 @@ contains
        STOP
     end if
 
-  end subroutine allocateSparseRound
+  end subroutine deallocateSparseRound
+
 end module allocateFieldsRound_mod

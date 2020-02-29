@@ -4,20 +4,24 @@ module InputTruss_mod
  implicit none
 
   private
-  interface Input_file
-    module procedure Input_file
-  end interface Input_file
+!  interface Input_file
+!    module procedure Input_file
+!  end interface Input_file
+
+!  interface InputSetUnknown
+!    module procedure InputSetUnknown
+!  end interface InputSetUnknown
 
   integer    :: DLIMIT=-1.00
   integer    :: FLIMIT=-1000.00
 
-  public:: Input_file
+  public:: Input_file, InputSetUnknown
 
   contains
 !******************************************************!
 ! read, parse Input file e.g. Untitled2.in
 !******************************************************!
-  subroutine Input_file(MeshInfo,MeshT,meshpattern,meshconnect,Dimposed,Fimposed)
+  subroutine Input_file(MeshInfo,MeshT,MeshGen,meshpattern,Dimposed,Fimposed)   !meshconnect
 
   use typesbalken
 
@@ -28,63 +32,63 @@ module InputTruss_mod
   !--------------------------------------------------------------------------!
   ! Liste der übergebenen Argumente                                          !
   !                                                                          !
-  type(tMeshInfo)           :: MeshInfo     ! Gitterwerte                    !
+  type(tMeshInfo)            :: MeshInfo     ! Gitterwerte                   !
   type(tMeshCoord)           :: MeshT     ! Gitterwerte                      !
-!  type(tMeshElmt),pointer    :: ElmtS(:)     ! Gitter Klassen fur jede Verbindung
+  type(tMeshElmt),pointer    :: MeshGen(:)
+!  type(tMeshElmt),pointer   :: ElmtS(:)     ! Gitter Klassen fur jede Verbindung
   integer,pointer            :: meshpattern(:,:) ! Definition von Elementen !
-  integer,pointer            :: meshconnect(:,:) ! Definition von Verbindungen !
-!  integer,pointer            :: Dunknowns(:,:)
+!  integer,pointer           :: meshconnect(:,:) ! Definition von Verbindungen !
+!  integer,pointer           :: Dunknowns(:,:)
   real,pointer               :: Dimposed(:,:)
-!  integer,pointer            :: Fmovemt(:,:)
+!  integer,pointer           :: Fmovemt(:,:)
   real,pointer               :: Fimposed(:,:)
-!  type(tExakt)               :: Exakt      ! Exakte Loesung                 !
-!  type(tFileIO)              :: FileIO     ! Ausgabesteuerung               !
-  !--------------------------------------------------------------------------!  
+!  type(tExakt)              :: Exakt      ! Exakte Loesung                 !
+!  type(tFileIO)             :: FileIO     ! Ausgabesteuerung               !
+  !-------------------------------------------------------------------------!  
   character(LEN=13)          :: Mshfilename  ! Name of the input file (13 characters) in current dir !
   integer :: i,l,countmax !, nbound, cbound, bnddim, bndind ! counter integers
   character(LEN=6) :: bndname
 
-  OPEN(UNIT=25, FILE='Untitled2.msh', ACTION='READ')
-  read(25,307) MeshInfo%nn, MeshInfo%nt
+  OPEN(UNIT=25, FILE='Untitled2.in', ACTION='READ')
+  read(25,*) ! #
+  read(25,*) ! instead of
+!  read(25,307) MeshInfo%nn, MeshInfo%nt  ! already read
+  read(25,205) MeshInfo%EY, MeshInfo%nu
 
   do i=1,MeshInfo%nn
-    read(25,207) MeshT%x(i), MeshT%y(i), MeshT%z(i)   ! z Koordinate muss geschrieben werden, wird aber nicht benutzt
+    read(25,207) l, MeshT%x(i), MeshT%y(i), MeshT%z(i)   ! z Koordinate muss geschrieben werden, wird aber nicht benutzt
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nt
-    read(25,309) meshpattern(i,l), meshpattern(i,2), meshpattern(i,3)
+    read(25,310) meshpattern(i,l), meshpattern(i,2), meshpattern(i,3), MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
   enddo
-  read(25,*) ! #
+  read(25,*) ! # elmts consists in types of connection for element (nn,ne) see code TypesBalkDef.f90 to have a description of the code, 7 is not treated yet
   do i=1,MeshInfo%nt
     read(25,308) MeshT%elmts(i,1), MeshT%elmts(i,2), MeshT%elmts(i,3), MeshT%elmts(i,4), &
                MeshT%elmts(i,5), MeshT%elmts(i,6), MeshT%elmts(i,7)  ! 
   enddo
   read(25,*) ! #
-  do i=1,MeshInfo%nt
-    read(25,207) Dimposed(i,1), Dimposed(i,2), Dimposed(i,3)
+  do i=1,MeshInfo%nn
+    read(25,207) l, Dimposed(i,1), Dimposed(i,2), Dimposed(i,3)   ! l is not used
   enddo
   read(25,*) ! #
-  do i=1,MeshInfo%nt
-    read(25,207) Fimposed(i,1), Fimposed(i,2), Fimposed(i,3)
+  do i=1,MeshInfo%nn
+    read(25,207) l, Fimposed(i,1), Fimposed(i,2), Fimposed(i,3)  ! l is not used
   enddo
 
+  do i=1,MeshInfo%nt
+    read(25,206) l, MeshGen(i)%q1, MeshGen(i)%q2  ! l is not used, q1,q2 filled for all elemts also for non beam elmt
+  enddo
   CLOSE(UNIT=25)
 
  105  format (a20)
- 106  format (a,a)
- 205  format (f18.16)
- 206  format (a,f18.16)
- 207  format (3f18.16)
- 305  format (i10)
- 306  format (a,i10)
+ 205  format (e10.2,e10.2)   ! 10 symbols in all (e exponential _included, 2 digits after the decimal point)
+ 206  format (i10,f18.16,f18.16)
+ 207  format (i10, 2e10.2)
  307  format (2i10)
- 308  format (3i10)
- 309  format (4i10)
- 405  format (i10, i10, a6)
- 406  format (i10, f18.16, f18.16, f18.16)
- 507  format (i10, i10, i10, i10, i10, i10, i10)
- 508  format (i10, i10, i10, i10, i10, i10, i10, i10)
- 509 format (i10, i10, i10, i10, i10, i10, i10, i10, i10)
+ 308  format (7i10)
+ 309  format (3i10)
+ 310  format (i10,i10,i10,e10.2,e10.2)
 
   end subroutine Input_file
 
@@ -92,7 +96,7 @@ module InputTruss_mod
 ! InputSetUnknown: the idea behind is to have just a table (each line 
 ! an element rod or beam) with a single code number for whether displacement (resp. force)
 ! have to be determined or is imposed (resp. a force is provided at the node) and
-! this procedure fills depending from that code number (integer) booleans for each 
+! this procedure fills depending from that code number (integer) to booleans for each 
 ! triplet of dof/forces in a table per element
 ! 
 !**********************************************************************************!
@@ -104,7 +108,7 @@ module InputTruss_mod
   !                                                                          !
   type(tMeshInfo)           :: MeshInfo     ! Gitterwerte                    !
   type(tMeshCoord)           :: MeshT     ! Gitterwerte                      !
-!  type(tMeshElmt),pointer    :: ElmtS(:)     ! Gitter Klassen fur jede Verbindung
+!  type(tMeshElmt),pointer    :: MeshElmts(:)     ! Gitter Klassen fur jede Verbindung
   integer,pointer            :: meshpattern(:,:) ! Definition von Elementen !
   integer,pointer            :: meshconnect(:,:) ! Definition von Verbindungen !
   integer,pointer            :: Dunknowns(:,:)

@@ -8,13 +8,25 @@ module RigidTrussContacts_mod
 
   implicit none
 
+#define mgetI(n) connectelmt(n,2)
+
+#define mgetJ(n) connectelmt(n,3)
+
+#define mcantileverI(n) ((Dunknowns(n,1).eq.0).and.(Dunknowns(n,2).eq.0).and.(Dunknowns(n,3).eq.0))
+
+#define mcantileverJ(n) ((Dunknowns(n,4).eq.0).and.(Dunknowns(n,5).eq.0).and.(Dunknowns(n,6).eq.0))
+
+#define marticulatedI(n) ((Fmovemt(n,3).eq.1))
+
+#define marticulatedJ(n) ((Fmovemt(n,6).eq.1))
+
   private
 
     interface MatrixRotMultiply
       module procedure MatrixRotMultiply
     end interface
 
-    interface Matrice_Ke_H_local
+    interface Matrice_Ke_H_local_dfix
       module procedure Matrice_Ke_H_local_dfix
     end interface
 
@@ -33,7 +45,7 @@ module RigidTrussContacts_mod
     integer    :: TYP_BAR=1
     integer    :: TYP_BEAM=2
 
-   public::  MatrixRotMultiply, Matrice_Ke_H_local, Matrice_Ke_H_Truss, Vector_F_RHS_local, Vector_F_RHS_Truss
+   public::  MatrixRotMultiply, Matrice_Ke_H_local_dfix, Matrice_Ke_H_Truss, Vector_F_RHS_local, Vector_F_RHS_Truss
 
   contains
 
