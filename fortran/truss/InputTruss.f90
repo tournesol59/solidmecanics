@@ -48,19 +48,31 @@ module InputTruss_mod
   character(LEN=13)          :: Mshfilename  ! Name of the input file (13 characters) in current dir !
   integer :: i,l,countmax !, nbound, cbound, bnddim, bndind ! counter integers
   character(LEN=6) :: bndname
+  real             :: a, b, c, d
+  OPEN(UNIT=25, FILE='Untitled.in', ACTION='READ')  !!!!!!!!!!! ONLY FOR DEBUG TEST
+  i=1
+  read(25, "(E6.2)") MeshT%x(i)
+  write(*,"(E6.2)") MeshT%x(i)
+  i=2
+  read(25,"(E6.2)") a
+  write(*,"(E6.2)") a
+  i=3
+  read(25, "(E6.2)") MeshT%x(i)
+  write(*,"(E6.2)") MeshT%x(i)
+  CLOSE(UNIT=25)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  OPEN(UNIT=25, FILE='Untitled2.in', ACTION='READ')
+  OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
   read(25,*) ! instead of
-!  read(25,307) MeshInfo%nn, MeshInfo%nt  ! already read
+!!  read(25,307) MeshInfo%nn, MeshInfo%nt  ! already read
   read(25,205) MeshInfo%EY, MeshInfo%nu
-
+  read(25,*) ! #coord nodes (nn)
   do i=1,MeshInfo%nn
-    read(25,207) l, MeshT%x(i), MeshT%y(i), MeshT%z(i)   ! z Koordinate muss geschrieben werden, wird aber nicht benutzt
+   read(25,207) MeshT%x(i), MeshT%y(i), MeshT%z(i)   ! z Koordinate muss geschrieben werden, wird aber nicht benutzt
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nt
-    read(25,310) meshpattern(i,l), meshpattern(i,2), meshpattern(i,3), MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
+    read(25,310) meshpattern(i,1), meshpattern(i,2), meshpattern(i,3), MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
   enddo
   read(25,*) ! # elmts consists in types of connection for element (nn,ne) see code TypesBalkDef.f90 to have a description of the code, 7 is not treated yet
   do i=1,MeshInfo%nt
@@ -82,13 +94,13 @@ module InputTruss_mod
   CLOSE(UNIT=25)
 
  105  format (a20)
- 205  format (e10.2,e10.2)   ! 10 symbols in all (e exponential _included, 2 digits after the decimal point)
- 206  format (i10,f18.16,f18.16)
- 207  format (i10, 2e10.2)
- 307  format (2i10)
- 308  format (7i10)
- 309  format (3i10)
- 310  format (i10,i10,i10,e10.2,e10.2)
+ 205  format (2f8.7)             
+ 206  format (i5,2f8.7)
+ 207  format (3f8.7)
+ 307  format (2i5)
+ 308  format (7i5)
+ 309  format (3i5)
+ 310  format (i5,i5,i5,f8.7,f8.7)
 
   end subroutine Input_file
 

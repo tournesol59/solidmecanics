@@ -21,6 +21,7 @@ program mainTruss
 !  end interface 
 ! <-------------------- END INTERFACE ------------------>
 
+!<----------------- MECH. STRUCTURE ELMTs DECLARATION -------->
   integer               :: ne=3 ! dof Freiheitsgraden Anzahl
   integer               :: sizeDun=6 ! 3*2 (c1 d1 f1 c2 d2 f2
   type(tMeshInfo)       :: MeshInfo
@@ -29,10 +30,12 @@ program mainTruss
 !  type(tMeshElmt),dimension(:),allocatable :: MeshGen(:)   ! Elementen 1-2 und 1-3 THIS CANNOT BE PASSSED AS POINTER
 !  type(tVarElmt),dimension(:),allocatable   :: VarGen(:)    ! Werten (U,F) in Elementen
   type(tMeshElmt),pointer :: MeshGen(:)   ! Elementen 1-2 und 1-3 THIS WORKS
-  type(tVarElmt),pointer   :: VarGen(:)    ! Werten (U,F) in Elementen
+  type(tVarElmt),pointer :: VarGen(:)    ! Werten (U,F) in Elementen
   integer,pointer       :: elmtabbdung(:,:) 
-!  integer,pointer       :: meshverbindg(:,:) ! Definition von Verbindungen !
-!  real,pointer          :: M_rot(:)
+  type(tMesh2DShear)    :: Gitter2D
+  type(tVar2DShear)     :: Werte2D
+
+!<----------------- MECH. STRUCTURE PROBLEM DEFINITION -------->
   type(tRigidFullMat)   :: Ke_H   ! Whole global rigidity matrix - will not be used
   type(tRigidFullMat)   :: A_H, B_H  ! Sub matrices from Ke_H (f=A.U,unknown + B.U,applied)
   type(tVarFull)        :: Var_H  ! grouped solution in Ue,Fe vectors
@@ -41,16 +44,20 @@ program mainTruss
   real,pointer          :: Dimponiert(:,:)  ! imponierte Bewegungen
   integer,pointer       :: Kraftbewgg(:,:)  ! Result of Calc: unbekannte Kraefte in bewegungsfrei Lenkung
   real,pointer          :: Kraftimponiert(:,:)  ! Bekannte imponiert Kraefte
+
+!<----------------- INTEGERS and MISCs ----------------------->
   integer               :: jj,kk
   integer               :: i,j,k,km1,l,p,allocStat
 
   integer,pointer       :: inull(:)
   character(len=30)     :: SubName="mainTruss                     "
 
+!<--------------------------------- BEGIN ---------------------------->
+
 ! ************** read only first line of input def file, the rest is parsed by Input_file procedure
-  OPEN(UNIT=25, FILE='Untitled2.in', ACTION='READ')
+  OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
-  read(25,705) MeshInfo%nn, MeshInfo%nt
+  read(25,705) MeshInfo%nn, MeshInfo%nt, MeshInfo%ng
   CLOSE(UNIT=25)
 
 ! **************************** allocate Geometry Strukturen ************************
@@ -121,7 +128,7 @@ program mainTruss
 ! ****************************** Definitions von Punkten und Elementen Typen ***********************************
   call createTrussGen(MeshInfo%nn,MeshInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
 
-  OPEN(UNIT=27, FILE='Untitled2.log', ACTION='WRITE')
+  OPEN(UNIT=27, FILE='Untitled3.log', ACTION='WRITE')
   write(27,705) "----inputTruss"
 
 
@@ -201,8 +208,8 @@ program mainTruss
 
 
 701 format(a)
-702 format(a,i10)
-704 format(i10,f10.5)
-705 format (i10,i10)
+702 format(a,i5)
+
+705 format (3i5)
 
 end program mainTruss
