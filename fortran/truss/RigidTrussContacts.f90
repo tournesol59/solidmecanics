@@ -62,7 +62,7 @@ SUBROUTINE MatrixRotMultiply(Krigid, Rortho, n)
   implicit none
 
   type(tRigidMat), intent(inout)  :: Krigid !!assumed 3x3
-  real,dimension(9),intent(in)    :: Rortho
+  type(tPassageMat),intent(in)    :: Rortho
   integer,intent(in)              :: n
   
 ! lokale Variablen
@@ -73,7 +73,7 @@ SUBROUTINE MatrixRotMultiply(Krigid, Rortho, n)
     do col=1,n      
       Kcopy(3*(col-1)+row)=0.0
       do k=1,n
-         Kcopy(3*(col-1)+row)= Kcopy(3*(col-1)+row) + Krigid%Ke(row,k)*Rortho(3*(col-1)+k)
+         Kcopy(3*(col-1)+row)= Kcopy(3*(col-1)+row) + Krigid%Ke(row,k)*Rortho%Mp(3*(col-1)+k)
       enddo
     enddo
   enddo
@@ -82,8 +82,8 @@ SUBROUTINE MatrixRotMultiply(Krigid, Rortho, n)
     do col=1,n      
       Krigid%Ke(row,col)=0.0
       do k=1,n
-!!        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho(3*(row-1)+k)*Kcopy(3*(col-1)+k) !! error in first ver
-        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho(3*(k-1)+row)*Kcopy(3*(col-1)+k) ! multiply left by transpose of Rortho
+!!        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho%Mp(3*(row-1)+k)*Kcopy(3*(col-1)+k) !! error in first ver
+        Krigid%Ke(row,col)= Krigid%Ke(row,col) + Rortho%Mp(3*(k-1)+row)*Kcopy(3*(col-1)+k) ! multiply left by transpose of Rortho
       enddo
     enddo
   enddo
@@ -101,7 +101,7 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
   use printabstractstruct_mod
 
   implicit none
-
+!  integer,intent(in)           :: iel ! think about passing the whole struct array tMeshElmt,pointer or just an Elmt
   type(tMeshElmt), intent(in)  :: MeshT
   type(tVarElmt), intent(in)   :: VarT
   type(tRigidMat), intent(inout) :: Keii, Keij, Kejj
@@ -111,8 +111,8 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
 ! lokalen Variablen
   character(len=30)           :: SubName="Matrice_Ke_H_local_dfix       "
 !  type(tRigidMat)             :: Ke_preii, Ke_preij, Ke_prejj
-  real,pointer                :: M_rot(:)
-  real                        :: EIsL, EIsL2, EIsL3, ESsL
+  type(tPassagemat)           :: M_rot
+
   real                        :: costh, sinth
   integer                     :: i,j, allocstat
   integer,pointer             :: inull(:)
@@ -121,74 +121,41 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
   if (allocstat.ne.0) then
     print *,"Matrice_Ke_H_local_dfix: error allocate null"
   endif
-  allocate(M_rot(9), STAT=allocstat)
+  allocate(M_rot%Mp(9), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"Matrice_Ke_H_local_dfix: error allocate M_rot"
   endif
   do i=1,9
-    M_rot(i)=0.0
+    M_rot%Mp(i)=0.0
   enddo
 
   costh=(MeshT%endx-MeshT%startx)/MeshT%dlen
   sinth=(MeshT%endy-MeshT%starty)/MeshT%dlen
-
-  ESsL=MeshT%EY*MeshT%SArea/MeshT%dlen
-  EIsL=MeshT%EY*MeshT%CI/(MeshT%dlen)
-  EIsL2=MeshT%EY*MeshT%CI/(MeshT%dlen**2)
-  EIsL3=MeshT%EY*MeshT%CI/(MeshT%dlen**3)
-  ! initialisierung
-  do i=1,3
-    do j=1,3
-      Keii%Ke(i,j)=0.
-      Keij%Ke(i,j)=0.
-      Kejj%Ke(i,j)=0.
-      M_rot(3*(i-1)+j)=0.
-    enddo
-  enddo
-  print *, MeshT%typ
-  ! ausfuellen
+ 
   if ((MeshT%typ).eq.TYP_BAR) then ! elmt is a bar, no flexion
-    Keii%Ke(1,1) = ESsL    
-    Keij%Ke(1,1) = -ESsL
-    Kejj%Ke(1,1) = ESsL     
+     call matrixrodcondition(MeshT, Keii)
   elseif ((MeshT%typ).eq.TYP_BEAM) then  ! elmt is a beam with flexion around axis z only.
-      Keii%Ke(1,1) = ESsL
-      Keii%Ke(2,2) = 12*EIsL3
-      Keii%Ke(2,3) = -6*EIsL2
-      Keii%Ke(3,2) = -6*EIsL2
-      Keii%Ke(3,3) = 4*EIsL
-
-      Keij%Ke(1,1) = -ESsL
-      Keij%Ke(2,2) = -12*EIsL3
-      Keij%Ke(2,3) = 6*EIsL2
-      Keij%Ke(3,2) = -6*EIsL2  !! is negative
-      Keij%Ke(3,3) = 2*EIsL
-
-      Kejj%Ke(1,1) = ESsL
-      Kejj%Ke(2,2) = 12*EIsL3
-      Kejj%Ke(2,3) = -6*EIsL2
-      Kejj%Ke(3,2) = -6*EIsL2
-      Kejj%Ke(3,3) = 4*EIsL
-
+     call matrixfixedcondition(MeshT, Keii, 1)
+     call matrixfixedcondition(MeshT, Keij, 2)
+     call matrixfixedcondition(MeshT, Kejj, 3)
   endif
 
 !  write(*,401) "----- ", adjustl(SubName)
 ! 401  format (a,a)
 
-  M_rot(1)=costh
-  M_rot(2)=sinth
-  M_rot(4)=-sinth
-  M_rot(5)=costh
-  M_rot(9)=1.0
+  M_rot%Mp(1)=costh
+  M_rot%Mp(2)=sinth
+  M_rot%Mp(4)=-sinth
+  M_rot%Mp(5)=costh
+  M_rot%Mp(9)=1.0
   
-  call prntsimplearray(9, 2, inull, M_rot, SubName)
+  call prntsimplearray(9, 2, inull, M_rot%Mp, SubName)
 
   call prntsimplestruct(3,3,Keii,SubName)
 
   call prntsimplestruct(3,3,Keij,SubName)
 
   call prntsimplestruct(3,3,Kejj,SubName)
-
 
   call MatrixRotMultiply(Keii, M_rot, 3)
   call prntsimplestruct(3,3,Keii,SubName)
@@ -199,9 +166,9 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
   call MatrixRotMultiply(Kejj, M_rot, 3)
   call prntsimplestruct(3,3,Kejj,SubName)
 
-  deallocate(inull, M_rot, STAT = allocstat)
+  deallocate(inull, M_rot%Mp, STAT = allocstat)
   if (allocstat.ne.0) then
-    print *,"Matrice_Ke_H_Truss: error deallocate M_rot"
+    print *,"Matrice_Ke_H_local_dfix: error deallocate M_rot"
   endif
 END SUBROUTINE Matrice_Ke_H_local_dfix
 
@@ -220,10 +187,9 @@ SUBROUTINE Matrice_Ke_K_assembly(Ke_H,Keii,Keij,Kejj,jj,kk,n,ne)
   type(tRigidMat),intent(in)   :: Keii, Keij, Kejj
   integer,intent(in)           :: n,ne   ! Max number of nodes, max number of deg freedom (3 or 6)
   integer,intent(in)           :: jj,kk       ! index of connected nodes to be assemblied in Ke_H
-  character(len=30)            :: SubName="Matrice_Ke_H_assembly         "
 ! lokalen Variablen
-  integer                       :: i,j,l,p,allocstat
-
+  integer                     :: i,j,l,p,allocstat
+  character(len=30)            :: SubName="Matrice_Ke_H_assembly         "
 
   do i=1,3
      do j=1,3
@@ -234,13 +200,16 @@ SUBROUTINE Matrice_Ke_K_assembly(Ke_H,Keii,Keij,Kejj,jj,kk,n,ne)
      enddo
   enddo
 
+  call prntsimplestruct(3,3,Ke_H,SubName)
+
 END SUBROUTINE  Matrice_Ke_K_assembly
 
-!*************************************************************!
+!**************************************************************!
 !							       !
 !  Subroutine Matrice_Ke_H_Truss                               !
-!   shall be called in the main Program as there are elements  !
-! not terminated
+!   shall be called in the main Program as frequent there      !
+!   are many elements                                          !
+! not terminated                                               !
 !**************************************************************!
 
 SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &

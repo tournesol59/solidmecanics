@@ -17,10 +17,9 @@ MODULE TypesBalken
   private
   !---------------------------------------------------------------------------!
   type tMeshInfo
-     integer        :: nn,nt,ng       ! Number 1D-Nodes and Element und geometric beam-section defined at the end
+     integer        :: nn,nt,ngeobeam ! Number 1D-Nodes and Element und geometric beam-section defined at the end
      real           :: EY             ! YOUNG Modulus
      real           :: nu             ! Poisson Coeff
-     integer        :: nn2d, nt2d     ! Anzahl der 2D-Punkte und Elementen fuer eine Schnittebene zur Berechnung mittel 2D-FE der Schubkoeffizienten
   end type tMeshInfo
 
   type tMeshCoord
@@ -69,31 +68,28 @@ MODULE TypesBalken
      real,pointer         :: CoeffsH3(:)  ! Coefficients des Hermites Polynoms H3 (H3(0)=1, H3'(0)=0
      real,pointer         :: CoeffsH4(:)  ! Coefficients des Hermites Polynoms H4 (H4(0)=0, H4'(0)=1
   end type tMeshElmt
+  
+  type :: tMesh2DInfo
+     integer           :: nnodes, nelmts,nboundary
+  end type tMesh2DInfo
 
-  type :: tMesh2DShear
-     real              :: dy             ! Gitterschrittweite (Delta y)  assumed there is homogenous                               ! Quadrangle mesh, like rectangle or L sections  !
+  type :: tMesh2DSection
+     real              :: dy             ! Gitterschrittweite (Delta y)  assumed there is homogenous                               ! Triangle mesh (of rectangular section)!
      real              :: dz             ! Gitterschrittweite (Delta z)    !
      real,pointer      :: y(:),z(:)           ! Punkte im normal Ebene des Balken zur x-achse !
-     integer,pointer   :: elements(:)    ! iel n1,n2,n3,n4
-     integer,pointer   :: neighbours(:)  ! iel nh1,nh2,nh3,nh4 (-1 if boundary)     
-  end type tMesh2DShear
+     integer,pointer   :: elements(:,:)    ! iel n1,n2,n3
+     integer,pointer   :: neighbours(:,:)  ! iel nh1,nh2,nh3(-1 if boundary)     
+  end type tMesh2DSection
 
-  type :: tVar2DShear
-  ! die 3 folgend. Vektor dienen als Loesung Vectors, die nach Schreib und Aufloesen des Problems, Felder enthalten, die interessant fuer der 2D Beam Benehmen sind
-     real,pointer        :: warpnum(:)  ! Warping function (also noted Phi) values per nodes in 2D beam section mesh
-     real,pointer        :: displace(:) ! Biegung Werte, auftreten im prinzip der virtuellen Kraefte
-     real,pointer        :: constvector(:,:)  ! (3 x nNodes) Matrix oder Vektor, die zus. als  
-                                              ! rechte Seite fuer das erste Gl. System dienen werden
-     real,pointer        :: forcevector(:) ! (nNodes), die als rechte Seite fuer das zweite Gl.System 
-                                              ! diesen werden
-
-  ! die folgend sind sparse matrix Vektoren (col)
-     integer             :: warb_len     ! Anzahl der Non Zero Werten
-     real,pointer        :: warp_nnz(:)  ! Non Zero Werten
-     integer,pointer     :: warp_ia(:)   ! Anzahl der Non Zero Werten Per Lines
-     integer,pointer     :: warp_ja(:)   ! Position per Lines
-     
-  end type tVar2DShear
+  type :: tVar2DSection
+     real              :: force         ! Right hand side
+     real              :: func          ! f, G*a*((df/dy)-z)=sigma_xy, G*a*((df/dz)+y)=sigma_xz,
+                                        ! G=EY/(1+vu)
+     integer           :: nlen          ! following is the implementation of a sparse column compressed format
+     integer,pointer   :: nnz(:)        
+     integer,pointer   :: icol(:)
+     real,pointer      :: ival(:)       ! at the end the nnz values of the square matrix compressed in a vector
+  end type tVar2DSection
 
   type tVarElmt
      real,dimension(3)         :: UeIi, UeJi
@@ -105,6 +101,10 @@ MODULE TypesBalken
 !      real,dimension(:,:),allocatable  :: Ke
       real,pointer             :: Ke(:,:)
   end type tRigidMat
+
+  type tPassageMat
+     real,pointer              :: Mp(:)
+  end type tPassageMat
 
   type tVarFull
      real,pointer              :: Ue(:)
@@ -138,8 +138,8 @@ MODULE TypesBalken
 
   !---------------------------------------------------------------------------!
   public  :: tMeshInfo, tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, &
-             tRigidFullMat, tVarFull, tExakt, tPolynom, tFileIO, &
-             tMesh2DShear, tVar2DShear
+             tRigidFullMat, tPassageMat, tVarFull, tExakt, tPolynom, tFileIO, &
+             tMesh2DSection, tVar2DSection, tMesh2DInfo
   !---------------------------------------------------------------------------!
 
 ! contains

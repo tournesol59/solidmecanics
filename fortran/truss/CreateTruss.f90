@@ -20,7 +20,7 @@ module CreateTruss_mod
 #define LINK_BARTOBAR 6
 #define LINK_BEAMTOBEAM 7
 
- public :: createTrussGen, matrixfixedcondition
+ public :: createTrussGen, matrixrodcondition, matrixfixedcondition
 
  contains
 !************************************************************
@@ -33,7 +33,7 @@ module CreateTruss_mod
  type(tMeshElmt),pointer               :: MeshGen(:)
  type(tMeshCoord)                      :: MeshPoints
  integer,pointer                       :: meshconnect(:,:)
- intent(in)                            :: nn,nt,MeshPoints
+ intent(in)                            :: nn,nt,MeshPoints,meshconnect
  intent(inout)                         :: MeshGen
 ! lokal
  integer                               :: i,j,n1,n2,c1,c2,allocStat
@@ -105,28 +105,89 @@ module CreateTruss_mod
  enddo
  end subroutine createTrussGen
 
+
 !***********************************************************
-! fills a previous allocated rigidity matrix by Integration
- subroutine matrixfixedcondition(i, MeshGen, Mat)
+! fills a previous allocated rod rigidity matrix by Integration
+ subroutine matrixrodcondition(MeshGen, Mat, kpart)
+ use typesbalken
+ implicit none
+
+ integer                               :: kpart
+ type(tMeshElmt)                       :: MeshGen 
+ type(tRigidMat)                       :: Mat
+ intent(in)                            :: kpart, MeshGen
+ intent(inout)                         :: Mat
+ ! lokale
+ real                                  :: ESsL
+
+
+  ESsL=MeshGen%EY * MeshGen%SArea / MeshGen%dlen
+  if (kpart.eq.1) then
+    Mat%Ke(1,1)=ESsL
+  else if (kpart.eq.2) then
+    Mat%Ke(1,1)=-ESsL
+  else if (kpart.eq.3) then
+    Mat%Ke(1,1)=ESsL 
+  endif
+  Mat%Ke(1,2)=0.
+  Mat%Ke(1,3)=0.
+  Mat%Ke(2,1)=0.
+  Mat%Ke(2,2)=0.
+  Mat%Ke(2,3)=0.
+  Mat%Ke(3,1)=0.
+  Mat%Ke(3,2)=0.
+  Mat%Ke(3,3)=0.
+
+ end subroutine matrixrodcondition
+
+!***********************************************************
+! fills a previous allocated beam rigidity matrix by Integration
+ subroutine matrixfixedcondition(MeshGen, Mat, kpart)
  use typesbalken
  implicit none
  
- integer                               :: i
- type(tMeshElmt),pointer               :: MeshGen(:)
+ integer                               :: kpart
+ type(tMeshElmt)                       :: MeshGen
  type(tRigidMat)                       :: Mat
- intent(in)                            :: i, MeshGen
+ intent(in)                            :: kpart, MeshGen
  intent(inout)                         :: Mat
  ! lokale
- !
+  real          :: EIsL, EIsL2, EIsL3, ESsL
 
-  Mat%Ke(1,1)=MeshGen(i)%EY * MeshGen(i)%SArea / MeshGen(i)%dlen
+  ESsL=MeshGen%EY * MeshGen%SArea / MeshGen%dlen
+  EIsL=(MeshGen%EY) * (MeshGen%CI) / (MeshGen%dlen)
+  EIsL2=(MeshGen%EY) * (MeshGen%CI) / (MeshGen%dlen) **2
+  EIsL3= (MeshGen%EY) * (MeshGen%CI) / (MeshGen%dlen) **3
+
+ if (kpart.eq.1) then
+  Mat%Ke(1,1)= ESsL
   Mat%Ke(1,2)=0.0
   Mat%Ke(1,3)=0.0
   Mat%Ke(2,1)=0.0
-  Mat%Ke(2,2)=12.0 * (MeshGen(i)%EY) * (MeshGen(i)%CI) / (MeshGen(i)%dlen) **3
-  Mat%Ke(2,3)=-6.0 * (MeshGen(i)%EY) * (MeshGen(i)%CI) / (MeshGen(i)%dlen) **2
+  Mat%Ke(2,2)=12.0 * EIsL3
+  Mat%Ke(2,3)=-6.0 * EIsL2
   Mat%Ke(3,2)= Mat%Ke(2,3)
-  Mat%Ke(2,2)= 4.0 * (MeshGen(i)%EY) * (MeshGen(i)%CI) / (MeshGen(i)%dlen)  ! this must be updated as continuation
+  Mat%Ke(2,2)= 4.0 * EIsL  
+ else if (kpart.eq.2) then
+  Mat%Ke(1,1)= -ESsL
+  Mat%Ke(1,2)=0.0
+  Mat%Ke(1,3)=0.0
+  Mat%Ke(2,1)=0.0
+  Mat%Ke(2,2)=-12.0 * EIsL3   !***
+  Mat%Ke(2,3)=6.0 * EIsL2
+  Mat%Ke(3,2)=-6.0 * EIsL2    !***
+  Mat%Ke(2,2)= 2.0 * EIsL  
+ else if (kpart.eq.3) then
+  Mat%Ke(1,1)= ESsL
+  Mat%Ke(1,2)=0.0
+  Mat%Ke(1,3)=0.0
+  Mat%Ke(2,1)=0.0
+  Mat%Ke(2,2)=12.0 * EIsL3
+  Mat%Ke(2,3)=-6.0 * EIsL2
+  Mat%Ke(3,2)= Mat%Ke(2,3)
+  Mat%Ke(2,2)= 4.0 * EIsL  
+ endif
+
  end subroutine matrixfixedcondition
 
 end module CreateTruss_mod

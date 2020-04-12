@@ -32,8 +32,8 @@ module InputTruss_mod
   !--------------------------------------------------------------------------!
   ! Liste der übergebenen Argumente                                          !
   !                                                                          !
-  type(tMeshInfo)            :: MeshInfo     ! Gitterwerte                   !
-  type(tMeshCoord)           :: MeshT     ! Gitterwerte                      !
+  type(tMeshInfo)            :: MeshInfo     ! GitterDims                    !
+  type(tMeshCoord)           :: MeshT        ! Gitterwerte                   !
   type(tMeshElmt),pointer    :: MeshGen(:)
 !  type(tMeshElmt),pointer   :: ElmtS(:)     ! Gitter Klassen fur jede Verbindung
   integer,pointer            :: meshpattern(:,:) ! Definition von Elementen !
@@ -48,18 +48,7 @@ module InputTruss_mod
   character(LEN=13)          :: Mshfilename  ! Name of the input file (13 characters) in current dir !
   integer :: i,l,countmax !, nbound, cbound, bnddim, bndind ! counter integers
   character(LEN=6) :: bndname
-  real             :: a, b, c, d
-  OPEN(UNIT=25, FILE='Untitled.in', ACTION='READ')  !!!!!!!!!!! ONLY FOR DEBUG TEST
-  i=1
-  read(25, "(E6.2)") MeshT%x(i)
-  write(*,"(E6.2)") MeshT%x(i)
-  i=2
-  read(25,"(E6.2)") a
-  write(*,"(E6.2)") a
-  i=3
-  read(25, "(E6.2)") MeshT%x(i)
-  write(*,"(E6.2)") MeshT%x(i)
-  CLOSE(UNIT=25)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  integer             :: a, b, c, d, e, f, g
 
   OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
@@ -76,18 +65,32 @@ module InputTruss_mod
   enddo
   read(25,*) ! # elmts consists in types of connection for element (nn,ne) see code TypesBalkDef.f90 to have a description of the code, 7 is not treated yet
   do i=1,MeshInfo%nt
-    read(25,308) MeshT%elmts(i,1), MeshT%elmts(i,2), MeshT%elmts(i,3), MeshT%elmts(i,4), &
-               MeshT%elmts(i,5), MeshT%elmts(i,6), MeshT%elmts(i,7)  ! 
+    read(25,308) a, b, c, d, e, f, g
+    MeshT%elmts(i,1)=a
+    MeshT%elmts(i,2)=b
+    MeshT%elmts(i,3)=c
+    MeshT%elmts(i,4)=d
+    MeshT%elmts(i,5)=e
+    MeshT%elmts(i,6)=f
+    MeshT%elmts(i,7)=g 
+  enddo
+  read(25,*) ! #
+  do i=1,MeshInfo%nn ! data not used any more ..
+    read(25, *) ! # 
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nn
-    read(25,207) l, Dimposed(i,1), Dimposed(i,2), Dimposed(i,3)   ! l is not used
+    read(25,207) Dimposed(i,1), Dimposed(i,2), Dimposed(i,3)  !
+  enddo
+  read(25,*) ! #
+  do i=1,MeshInfo%nn ! data not used any more ..
+    read(25, *) ! # 
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nn
-    read(25,207) l, Fimposed(i,1), Fimposed(i,2), Fimposed(i,3)  ! l is not used
+    read(25,207) Fimposed(i,1), Fimposed(i,2), Fimposed(i,3)  ! 
   enddo
-
+  read(25,*) ! #
   do i=1,MeshInfo%nt
     read(25,206) l, MeshGen(i)%q1, MeshGen(i)%q2  ! l is not used, q1,q2 filled for all elemts also for non beam elmt
   enddo
@@ -138,7 +141,7 @@ module InputTruss_mod
            case(1)                 ! + 1= >o--  bar articulated
                Dunknowns(i,3*(j-1)+1) = 1
                Dunknowns(i,3*(j-1)+2) = 1
-               Dunknowns(i,3*(j-1)+3) = 0  ! angle free
+               Dunknowns(i,3*(j-1)+3) = 0  ! angle free unknown
 
                Fmovemt(i,3*(j-1)+1) = 0    ! force to determine
                Fmovemt(i,3*(j-1)+2) = 0

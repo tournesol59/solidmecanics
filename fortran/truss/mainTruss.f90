@@ -32,8 +32,8 @@ program mainTruss
   type(tMeshElmt),pointer :: MeshGen(:)   ! Elementen 1-2 und 1-3 THIS WORKS
   type(tVarElmt),pointer :: VarGen(:)    ! Werten (U,F) in Elementen
   integer,pointer       :: elmtabbdung(:,:) 
-  type(tMesh2DShear)    :: Gitter2D
-  type(tVar2DShear)     :: Werte2D
+  type(tMesh2DSection)    :: Gitter2D
+  type(tVar2DSection)     :: Werte2D
 
 !<----------------- MECH. STRUCTURE PROBLEM DEFINITION -------->
   type(tRigidFullMat)   :: Ke_H   ! Whole global rigidity matrix - will not be used
@@ -57,7 +57,7 @@ program mainTruss
 ! ************** read only first line of input def file, the rest is parsed by Input_file procedure
   OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
-  read(25,705) MeshInfo%nn, MeshInfo%nt, MeshInfo%ng
+  read(25,705) MeshInfo%nn, MeshInfo%nt, MeshInfo%ngeobeam
   CLOSE(UNIT=25)
 
 ! **************************** allocate Geometry Strukturen ************************
@@ -69,7 +69,10 @@ program mainTruss
 !  if (allocstat.ne.0) then
 !    print *,"mainTruss: error allocate M_rot"
 !  endif
-  allocate(MeshPunkte%x(1:MeshInfo%nn), MeshPunkte%y(1:MeshInfo%nn), MeshPunkte%z(1:MeshInfo%nn), STAT=allocStat)
+  allocate(MeshPunkte%x(1:MeshInfo%nn), MeshPunkte%y(1:MeshInfo%nn), &
+            MeshPunkte%z(1:MeshInfo%nn), &
+            MeshPunkte%elmts(1:MeshInfo%nt,1:7), &
+            STAT=allocStat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate MeshPunkte"
   endif
@@ -121,7 +124,7 @@ program mainTruss
 
 ! <-------------------- PARSE INPUT FILE FOR DEFINITION of points and imposed bc--------------->
   call Input_file(MeshInfo, MeshPunkte, MeshGen, elmtabbdung, Dimponiert, Kraftimponiert)
- 
+
   call InputSetUnknown(MeshInfo, MeshPunkte, elmtabbdung, Dunbekannt, & 
                        Dimponiert, Kraftbewgg, Kraftimponiert)
 
@@ -129,14 +132,13 @@ program mainTruss
   call createTrussGen(MeshInfo%nn,MeshInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
 
   OPEN(UNIT=27, FILE='Untitled3.log', ACTION='WRITE')
-  write(27,705) "----inputTruss"
+  write(27,701) "----inputTruss"
 
-
+  call printCreateTrussGen(MeshInfo%nn,MeshInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
 
 !********************************* Build and Assembly matrices                     *****************************
 ! <-------------------- DO SOMETHING --------------------->
   write(*,701) "----- mainTruss"
-
 
 
 !! THINK ABOUT TO GENERALIZE EXPRESSION BELOW: IT COULD HAVE ALSO A SPC condition

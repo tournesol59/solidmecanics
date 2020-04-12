@@ -19,7 +19,8 @@ module printabstractstruct_mod
  !    module procedure prntmultisimplearray
  !  end interface
 
-   public::  prntsimplearray, prntsimplestruct, prntadjuststruct
+   public::  prntsimplearray, prntsimplestruct, prntadjuststruct, &
+               printCreateTrussGen
 
   contains
 
@@ -237,6 +238,46 @@ module printabstractstruct_mod
 
  end subroutine prntinputmatrices
 
+
+!************************************************************
+! Fills the (in main prgm allocated table of struct tMeshElmt
+ subroutine printCreateTrussGen(nn,nt,MeshGen,MeshPoints,meshconnect)
+ use typesbalken
+ implicit none
+
+ integer                               :: nn,nt
+ type(tMeshElmt),pointer               :: MeshGen(:)
+ type(tmeshCoord)                      :: MeshPoints
+ integer,pointer                       :: meshconnect(:,:)
+ intent(in)                            :: nn,nt,MeshPoints,meshconnect,MeshGen
+! lokal
+ integer                               :: i,j
+ character(len=30)     :: SubName="printCreateTrussGen           "
+
+ write(27,701) "----- ", adjustl(SubName)
+ do i=1,nt
+   write(27, 701) "   ", ""
+   write(27,702) " --- Element no. ", i, " with ", MeshGen(i)%nraumx, " nodes"
+   write(27,702) "  Node 1: ", MeshGen(i)%node_1, " Node 2: ", MeshGen(i)%node_2, " "
+   write(27,701) "  ","Coord x,y"
+   write(27,703)    MeshGen(i)%startx, MeshGen(i)%endx, &
+                   MeshGen(i)%starty, MeshGen(i)%endy   
+
+   write(27,704)    MeshGen(i)%dlen, MeshGen(i)%anglez
+   do j=1,4
+     write(27,705) "   Polynoms coeff for index: ", j
+     write(27,703) MeshGen(i)%CoeffsH1(j), MeshGen(i)%CoeffsH2(j), &
+                   MeshGen(i)%CoeffsH3(j), MeshGen(i)%CoeffsH4(j)
+   enddo
+ enddo
+ write(27, 701) "   ", ""
+
+ 701 format(a,a)
+ 702 format(a,i10,a,i10,a)
+ 703 format(4f10.5)
+ 704 format(2f10.5)
+ 705 format(a,i10)
+ end subroutine printCreateTrussGen
 
 end module printabstractstruct_mod
 
