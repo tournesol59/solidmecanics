@@ -41,30 +41,30 @@ module printabstractstruct_mod
   ! lokale vars
   integer                         :: i,j,q,r
 
-  write(*,201) "----- ", adjustl(SubName)
+  write(FILEOUTPUT,201) "----- ", adjustl(SubName)
   if (nlen<=7) then
      if (typ.eq.1) then  ! integer
-        write(*,202) (ptr_int(j), j=1,nlen)
+        write(FILEOUTPUT,202) (ptr_int(j), j=1,nlen)
      elseif (typ.eq.2) then ! real
-        write(*,203) (ptr_dou(j), j=1,nlen)
+        write(FILEOUTPUT,203) (ptr_dou(j), j=1,nlen)
      endif
   elseif (nlen>=8) then
      q=nlen/7
      r=nlen-7*q
      do i=1,q
-       write(*,204) "      ", i
+       write(FILEOUTPUT,204) "      ", i
        if (typ.eq.1) then  ! integer
-          write(*,202) (ptr_int((i-1)*7+j), j=1,7)
+          write(FILEOUTPUT,202) (ptr_int((i-1)*7+j), j=1,7)
        elseif (typ.eq.2) then ! real
-          write(*,203) (ptr_dou((i-1)*7+j), j=1,7)
+          write(FILEOUTPUT,203) (ptr_dou((i-1)*7+j), j=1,7)
        endif
 
     enddo
-    write(*,204) "      ", q+1
+    write(FILEOUTPUT,204) "      ", q+1
     if (typ.eq.1) then  ! integer
-        write(*,202) (ptr_int(q*7+j), j=1,r)
+        write(FILEOUTPUT,202) (ptr_int(q*7+j), j=1,r)
      elseif (typ.eq.2) then ! real
-        write(*,203) (ptr_dou(q*7+j), j=1,r)
+        write(FILEOUTPUT,203) (ptr_dou(q*7+j), j=1,r)
      endif
   endif
 
@@ -90,13 +90,13 @@ module printabstractstruct_mod
   integer                         :: i,j,q,r
   real                            :: scalar
 
-  write(*,301) "----- ", adjustl(SubName)
+  write(FILEOUTPUT,301) "----- ", adjustl(SubName)
 
     do i=1,n1
-      write(*,304) "      ", i
+      write(FILEOUTPUT,304) "      ", i
       do j=1,n2 
         scalar = Ms%Ke(i,j)
-        write(*,303) i,j,scalar
+        write(FILEOUTPUT,303) i,j,scalar
       enddo
     enddo
 !  endif
@@ -138,16 +138,16 @@ module printabstractstruct_mod
   ! lokale vars
   integer                         :: i,j,q,r,l
 
-  write(*,501) "----- ", adjustl(SubName)
+  write(FILEOUTPUT,501) "----- ", adjustl(SubName)
 
   q=n2/7
   r=n2-q*7
   do i=1,n1
-  write(*,504) "      ", i
+  write(FILEOUTPUT,504) "      ", i
     do l=1,q
-      write(*,507) (FMs%Ke(i,(l-1)*7+j), j=1,7)
+      write(FILEOUTPUT,507) (FMs%Ke(i,(l-1)*7+j), j=1,7)
     enddo
-    write(*,507) (FMs%Ke(i,q*7+j), j=1,r)
+    write(FILEOUTPUT,507) (FMs%Ke(i,q*7+j), j=1,r)
   enddo
 
  501  format (a,a)
@@ -171,15 +171,15 @@ module printabstractstruct_mod
   ! lokale vars
   integer                         :: i,j,k,l,q,r
 
-  write(*,601) "----- ", adjustl(SubName)
+  write(FILEOUTPUT,601) "----- ", adjustl(SubName)
   if (typ.eq.1) then  ! integer
     do i=1,nrow
        q=ncol/7
        r=ncol-q*7
        do k=1,q
-         write(*,602) (ptr_int(i, (7*k+l)), l=1,7)  ! j=q*7+k
+         write(FILEOUTPUT,602) (ptr_int(i, (7*k+l)), l=1,7)  ! j=q*7+k
        enddo
-         write(*,602) (ptr_int(i, (7*k+l)), l=1,r) 
+         write(FILEOUTPUT,602) (ptr_int(i, (7*k+l)), l=1,r) 
    enddo
 
   elseif (typ.eq.2) then
@@ -187,9 +187,9 @@ module printabstractstruct_mod
        q=ncol/5
        r=ncol-q*5
        do k=1,q
-         write(*,603) (ptr_dou(i, (5*k+l)), l=1,5)  ! j=q*7+k
+         write(FILEOUTPUT,603) (ptr_dou(i, (5*k+l)), l=1,5)  ! j=q*7+k
        enddo
-         write(*,603) (ptr_dou(i, (5*k+l)), l=1,r) 
+         write(FILEOUTPUT,603) (ptr_dou(i, (5*k+l)), l=1,r) 
    enddo
 
   endif
@@ -254,23 +254,29 @@ module printabstractstruct_mod
  integer                               :: i,j
  character(len=30)     :: SubName="printCreateTrussGen           "
 
- write(27,701) "----- ", adjustl(SubName)
+ write(FILEOUTPUT,701) "----- ", adjustl(SubName)
  do i=1,nt
-   write(27, 701) "   ", ""
-   write(27,702) " --- Element no. ", i, " with ", MeshGen(i)%nraumx, " nodes"
-   write(27,702) "  Node 1: ", MeshGen(i)%node_1, " Node 2: ", MeshGen(i)%node_2, " "
-   write(27,701) "  ","Coord x,y"
-   write(27,703)    MeshGen(i)%startx, MeshGen(i)%endx, &
+   write(FILEOUTPUT, 701) "   ", ""
+   write(FILEOUTPUT,702) " --- Element no. ", i, " with ", MeshGen(i)%nraumx, " nodes"
+   if ((MeshGen(i)%typ).eq.1) then  !bar.eq.1)
+      write(FILEOUTPUT,701) "  ", "rod element"
+   elseif ((MeshGen(i)%typ).eq.2) then  !beam.eq.2)
+      write(FILEOUTPUT,701) "  ", "beam element"
+   endif
+   write(FILEOUTPUT,702) "  Node 1: ", MeshGen(i)%node_1, " Node 2: ", MeshGen(i)%node_2, " "
+   write(FILEOUTPUT,701) "  ","Coord x,y"
+   write(FILEOUTPUT,703)    MeshGen(i)%startx, MeshGen(i)%endx, &
                    MeshGen(i)%starty, MeshGen(i)%endy   
 
-   write(27,704)    MeshGen(i)%dlen, MeshGen(i)%anglez
+   write(FILEOUTPUT,704)    MeshGen(i)%SArea, MeshGen(i)%CI
+   write(FILEOUTPUT,704)    MeshGen(i)%dlen, MeshGen(i)%anglez
    do j=1,4
-     write(27,705) "   Polynoms coeff for index: ", j
-     write(27,703) MeshGen(i)%CoeffsH1(j), MeshGen(i)%CoeffsH2(j), &
+     write(FILEOUTPUT,705) "   Polynoms coeff for index: ", j
+     write(FILEOUTPUT,703) MeshGen(i)%CoeffsH1(j), MeshGen(i)%CoeffsH2(j), &
                    MeshGen(i)%CoeffsH3(j), MeshGen(i)%CoeffsH4(j)
    enddo
  enddo
- write(27, 701) "   ", ""
+ write(FILEOUTPUT, 701) "   ", ""
 
  701 format(a,a)
  702 format(a,i10,a,i10,a)

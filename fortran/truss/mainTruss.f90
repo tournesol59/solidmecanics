@@ -29,7 +29,8 @@ program mainTruss
 !  type(tMeshElmt)       :: MeshT1, MeshT2
 !  type(tMeshElmt),dimension(:),allocatable :: MeshGen(:)   ! Elementen 1-2 und 1-3 THIS CANNOT BE PASSSED AS POINTER
 !  type(tVarElmt),dimension(:),allocatable   :: VarGen(:)    ! Werten (U,F) in Elementen
-  type(tMeshElmt),pointer :: MeshGen(:)   ! Elementen 1-2 und 1-3 THIS WORKS
+  type(tMeshElmt),pointer :: MeshGen(:)   ! fuer nt Elementen 1-2 und 1-3 THIS WORKS
+  type(tMeshBeam),pointer :: Meshbalk(:) ! fuer nbeam Beam Elementen
   type(tVarElmt),pointer :: VarGen(:)    ! Werten (U,F) in Elementen
   integer,pointer       :: elmtabbdung(:,:) 
   type(tMesh2DSection)    :: Gitter2D
@@ -57,7 +58,7 @@ program mainTruss
 ! ************** read only first line of input def file, the rest is parsed by Input_file procedure
   OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
-  read(25,705) MeshInfo%nn, MeshInfo%nt, MeshInfo%ngeobeam
+  read(25,705) MeshInfo%nn, MeshInfo%nt, MeshInfo%nbeam, MeshInfo%ngeobeam, MeshInfo%nsection 
   CLOSE(UNIT=25)
 
 ! **************************** allocate Geometry Strukturen ************************
@@ -91,7 +92,16 @@ program mainTruss
   if (allocStat.ne.0) then
      print *," Error allocation Matrizen zur berechnenden Bewegungskraefte matrix !"
   endif 
-
+  allocate(Meshbalk(1:MeshInfo%nbeam), STAT=allocstat)
+  if (allocstat.ne.0) then
+    print *,"mainTruss: error allocate Meshbalk null"
+  endif
+  do k=1,MeshInfo%nbeam
+    allocate( Meshbalk(k)%nodes(10), STAT=allocStat)  ! This is not a good choice of Nmax 10 nodes in code but how to know the number before diving in input file?
+    if (allocStat.ne.0) then
+       print *," Error allocation node array of Meshbalk !"
+    endif
+  enddo
   allocate(MeshGen(1:MeshInfo%nt), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate MeshGen null"
@@ -123,7 +133,7 @@ program mainTruss
   enddo
 
 ! <-------------------- PARSE INPUT FILE FOR DEFINITION of points and imposed bc--------------->
-  call Input_file(MeshInfo, MeshPunkte, MeshGen, elmtabbdung, Dimponiert, Kraftimponiert)
+  call Input_file(MeshInfo, MeshPunkte, MeshGen, Meshbalk, elmtabbdung, Dimponiert, Kraftimponiert)
 
   call InputSetUnknown(MeshInfo, MeshPunkte, elmtabbdung, Dunbekannt, & 
                        Dimponiert, Kraftbewgg, Kraftimponiert)
@@ -138,8 +148,11 @@ program mainTruss
 
 !********************************* Build and Assembly matrices                     *****************************
 ! <-------------------- DO SOMETHING --------------------->
-  write(*,701) "----- mainTruss"
-
+  write(27,701) "----- mainTruss"
+!      call Matrice_Ke_H_Truss(MeshGen(1), VarGen(1), Ke_H, 1,2, MeshInfo%nn, MeshInfo%ne, &
+!                              elmtabbdung, &
+!                              Dunbekannt, Dimponiert, &
+!                              Kraftbewgg, Kraftimponiert)
 
 !! THINK ABOUT TO GENERALIZE EXPRESSION BELOW: IT COULD HAVE ALSO A SPC condition
 
@@ -212,6 +225,6 @@ program mainTruss
 701 format(a)
 702 format(a,i5)
 
-705 format (3i5)
+705 format (5i5)
 
 end program mainTruss

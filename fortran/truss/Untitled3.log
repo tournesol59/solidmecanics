@@ -2,30 +2,35 @@
 ----- printCreateTrussGen           
    
  --- Element no.          1 with          2 nodes
+  beam element
   Node 1:          1 Node 2:          2 
   Coord x,y
    0.00000   0.00000   0.00000   0.00050
+   0.00000   0.00000
    0.00050   1.57080
    Polynoms coeff for index:          1
    1.00000   1.00000  -2.00000   1.00000
    Polynoms coeff for index:          2
    0.00000   0.00000   0.00000   0.00000
    Polynoms coeff for index:          3
-  -3.00000   0.00005  -0.00002  -0.00000
+  -3.00000  98.46930  98.46588  98.45966
    Polynoms coeff for index:          4
-   2.00000**********   0.00000   0.00000
+   2.00000   0.00000   0.00000   0.00000
    
  --- Element no.          2 with          2 nodes
-  Node 1:          1 Node 2:          2 
+  beam element
+  Node 1:          1 Node 2:          3 
   Coord x,y
-   0.00000   0.00010   0.00000   0.00000
-   0.00010   0.00000
+   0.00000   0.00005   0.00000   0.00000
+   0.00000   0.00000
+   0.00005   0.00000
    Polynoms coeff for index:          1
    1.00000   1.00000  -2.00000   1.00000
    Polynoms coeff for index:          2
    0.00000   0.00000   0.00000   0.00000
    Polynoms coeff for index:          3
-  -3.00000  -0.00000  -0.00000  -0.00000
+  -3.00000  98.45966  98.45966  98.45966
    Polynoms coeff for index:          4
    2.00000   0.00000   0.00000   0.00000
    
+----- mainTruss

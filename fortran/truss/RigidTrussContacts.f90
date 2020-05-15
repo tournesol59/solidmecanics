@@ -226,7 +226,7 @@ SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
   type(tRigidFullMat)          :: Ke_H   ! Whole global rigidity matrix
   integer,intent(in)           :: n, ne   ! Max number of nodes, max number of deg freedom (3 or 6)
   integer,intent(in)           :: jj,kk       ! index of connected nodes to be assemblied in Ke_H
-  integer,pointer,intent(in)   :: connectelmt(:,:)  ! These indexes (j,k) are also found if connectelmt(j,k)=1
+  integer,pointer,intent(in)   :: connectelmt(:,:)  ! These indexes (jj,kk) are also found if connectelmt(j,k)=1
   integer,pointer,intent(in)   :: Dunknowns(:,:)    ! Dunkowns(i,j)=1 means j-th of 4 deg of 
                                                     ! freedom of i-th of n nodes is unknown, 0 by default
   real,pointer,intent(in)      :: Dimposed(:,:)  ! imponierte Bewegungen at move elsewhere Dunknowns(i,j)=-1

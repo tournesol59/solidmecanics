@@ -17,7 +17,7 @@ MODULE TypesBalken
   private
   !---------------------------------------------------------------------------!
   type tMeshInfo
-     integer        :: nn,nt,ngeobeam ! Number 1D-Nodes and Element und geometric beam-section defined at the end
+     integer        :: nn,nt,nbeam,ngeobeam, nsection ! Number 1D-Nodes and Element und geometric beam-section defined at the end
      real           :: EY             ! YOUNG Modulus
      real           :: nu             ! Poisson Coeff
   end type tMeshInfo
@@ -40,6 +40,18 @@ MODULE TypesBalken
                                      !  + and similar index number for the second node: c2 d2 f2
   end type tMeshCoord
 
+  type tMeshBeam
+    integer     :: ibnn ! Anzahl von Nodes
+    integer,dimension(:),allocatable    :: nodes  ! Ein Beam hat 2 Elements (def.) aber eine Diskretisierung 
+                                                    ! kann aus mehrere 1D Elementen gemacht werden
+    integer     :: section_index        ! Index des Schnittflaeches des Elements.
+    real        :: SArea                ! Flaeche
+    real        :: EY                   ! YOUNG Modulus
+    real        :: vu                   ! Poisson Coeff
+    real        :: CI                   ! kinetics inertia moment (aus interne Berechnung)
+    real        :: shear_ky, shear_kz ! Nur fuer Balken. Shear Faktor Koeffizienten  
+  end type tMeshBeam
+
   type tMeshElmt
      integer     :: typ            ! 1=Bar, 2=Balken
      integer     :: nraumx         ! subdivsion, default=2
@@ -57,9 +69,8 @@ MODULE TypesBalken
      real        :: CI             ! kinetics inertia moment (2 and 3?)
      real        :: q1, q2         ! Nur fuer Balken. verteilte  Lasten q(x)=x/dlen*q1+(1-x/dlen)*q2
 !     real        :: q?
-     real        :: shear_ky, shear_kz ! Nur fuer Balken. Shear Faktor Koeffizienten
      integer     :: node_1, node_2
-
+    real        :: shear_ky, shear_kz ! Nur fuer Balken. Shear Faktor Koeffizienten  
      ! real,pointer (c_ptr) :: x(:)        ! do NOT work
      !real,dimension(2)         :: x,y,z
 
@@ -139,7 +150,7 @@ MODULE TypesBalken
   !---------------------------------------------------------------------------!
   public  :: tMeshInfo, tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, &
              tRigidFullMat, tPassageMat, tVarFull, tExakt, tPolynom, tFileIO, &
-             tMesh2DSection, tVar2DSection, tMesh2DInfo
+             tMesh2DSection, tVar2DSection, tMesh2DInfo, tMeshBeam
   !---------------------------------------------------------------------------!
 
 ! contains

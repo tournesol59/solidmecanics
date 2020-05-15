@@ -39,9 +39,12 @@ module CreateTruss_mod
  integer                               :: i,j,n1,n2,c1,c2,allocStat
 
   do i=1,nt    ! fuer jedes Element
-    n1 = meshconnect(i,2)  
+    n1 = meshconnect(i,2)       ! Index of the node corresp. as one extremity
     n2 = meshconnect(i,3)
-    c1 = MeshPoints%elmts(i,2)
+    MeshGen(i)%node_1=n1
+    MeshGen(i)%node_2=n2
+
+    c1 = MeshPoints%elmts(i,2)  ! type of connection/element type at node_1
     c2 = MeshPoints%elmts(i,5)
     if ((c1.eq.LINK_BAREND).or.(c1.eq.LINK_BARSLIDE).or.(c1.eq.LINK_BARTOBAR)) then
         if ((c2.eq.LINK_BAREND).or.(c2.eq.LINK_BARSLIDE).or.(c2.eq.LINK_BARTOBAR)) then
@@ -65,16 +68,6 @@ module CreateTruss_mod
                     (  MeshGen(i)%endz -   MeshGen(i)%startz )**2)           ! Laengen des Rechengebiets (Balk) in x/y !
     MeshGen(i)%anglez = acos( (MeshGen(i)%endx - MeshGen(i)%startx) / MeshGen(i)%dlen)
 
-
-!    MeshGen(i)%SArea = 0.0004        ! Section area
-!    MeshGen(i)%EY = 210000000        ! YOUNG Modulus
-!    MeshGen(i)%vu = 0.3              ! Poisson Coeff, already filled in InputTruss.f90
-!    MeshGen(i)%CI= 0.005             ! kinetics inertia moment
-!    MeshGen(i)%q1 = -0.0            ! already filled in InputTruss.f90
-!    MeshGen(i)%q2 = -0.0            ! verteilte  Lasten q(x)=x/xlen*q1+(1-x/xlen)*q2
-!     real        :: q?
-    MeshGen(i)%node_1 = 1 ! shall be overwritten
-    MeshGen(i)%node_2 = 2
   allocate(   MeshGen(i)%CoeffsH1(1:4),   MeshGen(i)%CoeffsH2(1:4),   MeshGen(i)%CoeffsH3(1:4), &
                MeshGen(i)%CoeffsH4(1:4), STAT=allocStat)
   if (allocStat.ne.0) then
