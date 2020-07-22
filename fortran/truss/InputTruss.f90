@@ -4,16 +4,16 @@ module InputTruss_mod
  implicit none
 
   private
-!  interface Input_file
-!    module procedure Input_file
-!  end interface Input_file
+  interface Input_file
+    module procedure Input_file
+  end interface Input_file
 
-!  interface InputSetUnknown
-!    module procedure InputSetUnknown
-!  end interface InputSetUnknown
+  interface InputSetUnknown
+    module procedure InputSetUnknown
+  end interface InputSetUnknown
 
-  integer    :: DLIMIT=-1.00
-  integer    :: FLIMIT=-1000.00
+  integer    :: DLIMIT=-1.00  ! lower constant for arbitrary decision to not impose a displacement
+  integer    :: FLIMIT=-1000.00  ! lower constant for arbitrary decision to not impose a force
 
   public:: Input_file, InputSetUnknown
 
@@ -57,7 +57,8 @@ module InputTruss_mod
   read(25,*) ! #
   read(25,*) ! instead of
 !!  read(25,307) MeshInfo%nn, MeshInfo%nt  ! already read
-  read(25,205) MeshInfo%EY, MeshInfo%nu
+!  read(25,205) MeshInfo%EY, MeshInfo%nu
+  read(25,*)
   read(25,*) ! #coord nodes (nn)	
   do i=1,MeshInfo%nn
    read(25,207) MeshT%x(i), MeshT%y(i), MeshT%z(i)   ! z Koordinate muss geschrieben werden, wird aber nicht benutzt
@@ -105,18 +106,18 @@ module InputTruss_mod
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nt
-    read(25,206) l, MeshGen(i)%q1, MeshGen(i)%q2  ! l is not used, q1,q2 filled for all elemts also for non beam elmt
+    read(25,206) MeshGen(i)%q1, MeshGen(i)%q2  ! as many lines as elmts: q1,q2 filled for all elemts also for non beam elmt
   enddo
   CLOSE(UNIT=25)
 
  105  format (a20)
- 205  format (2f8.7)             
- 206  format (i5,2f8.7)
- 207  format (3f8.7)
+ 205  format (2e10.2)             
+ 206  format (2e10.2)
+ 207  format (3e10.2)
  307  format (2i5)
  308  format (7i5)
  309  format (3i5)
- 310  format (i5,i5,i5,f8.7,f8.7)
+ 310  format (i5,i5,i5,e10.2,e10.2)
  311  format (i5)
   end subroutine Input_file
 

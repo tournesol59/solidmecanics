@@ -1,13 +1,13 @@
 program main
 
   use typesround
-!  use inputround_mod
+  use input_mod
   use allocatefieldsround_mod
   use createmeshround_mod
   use verifymeshround_mod
   use spacegeometry_mod
-  use lagrangeGrad2DRound_mod
-
+!  use lagrangeGrad2DRound_mod
+  use lagrangeround2d_mod
   !--------------------------------------------------------------------------!
   ! Variablendeklarationen                                                   !
   !--------------------------------------------------------------------------!
@@ -20,6 +20,7 @@ program main
   type(tRoundRandU)               :: RBU          ! Randbedingungen Biegung
   type(tRoundRandS)               :: RBS          ! Randbedingungen Force
   type(tPassageMatrix)            :: axref_xyz, axout_xyz, Pmat_xyz    ! a 3x3 Matrix contains local axes 
+  type(tSparseYMat)               :: RigidYMatrix
                                                   ! vs global axes coordinates!
  ! type(tNode),dimension(1:3)      :: vects        ! contains 3x 3 Vectors
   type(tNode)                     :: vx,vy,vz     ! Zum test of check in verifymeshRound!
@@ -38,12 +39,12 @@ program main
 
   ! -------------------------------------------------------------< BEGIN >---!
  ! call input(Gitter,Exakt,Const,FileIO)
-
+  call Input_file(NTestGitterR,GitterR)   ! untitled.msh 
   ! ------------------------------------------< Speicherplatz allokieren >---!
-  NTestGitterR%nNode = 9
-  NTestGitterR%nElem = 8
-  NTestGitterR%nxmx = 9 ! frontier length should be optimized in the future ..
-  NTestGitterR%nymx = 9  ! but essential in the present. If not: seg. fault!
+!  NTestGitterR%nNode = 9
+!  NTestGitterR%nElem = 8
+!  NTestGitterR%nxmx = 9 ! frontier length should be optimized in the future ..
+!  NTestGitterR%nymx = 9  ! but essential in the present. If not: seg. fault!
  ! allocate(vx%vects(3), vy%vects(3), vz%vects(3), STAT=allocStat) 
  ! if (allocStat.NE.0) then
  !    print *, 'ERROR Allocate vx vy vz: Could not allocate all variables!'
@@ -53,10 +54,13 @@ program main
   call allocateFieldsBCSRound(NTestGitterR,RBU,RBS)
   call allocateFieldsVarRound(NTestGitterR,VarFelderR)
 !  call allocateFieldsCoeffRound(NTestGitterR,GitterCoeffR) 
+  call allocateSparseRound(NTestGitterR, RigidYMatrix)
 
    ! --------------------------< Gitter festlegen >---------------------!
-   call createRoundMesh2(NTestGitterR,GitterR)    
-   call createRoundRand2(NTestGitterR,RBU,RBS)
+!   call createRoundMesh2(NTestGitterR,GitterR)    
+!   call createRoundRand2(NTestGitterR,RBU,RBS)
+   call createRoundMeshFile(NTestGitterR,GitterR)   ! untitled2.inp
+   
   print *, 'Terminated createRoundMesh2 and createRoundRand: OK'
   
    ! --------------------< functional test of verifymesh module subroutines >-!

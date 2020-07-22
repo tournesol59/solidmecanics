@@ -41,25 +41,31 @@ LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES=""\
+        INPUT="INPUT_mod" \
 	TYPESROUND="TYPESROUND.mod" \
 	ALLOCATEFIELDSROUND="ALLOCATEFIELDSROUND_mod.mod" \
 	CREATEMESHROUND="CREATEMESHROUND_mod.mod" \
         LAGRANGEGRAD2DROUND="LAGRANGEGRAD2DROUND_mod.mod" \
+        HERMITE2DDKT="HERMITE2DDKT_mod.mod" \
         VERIFYMESHROUND="VERIFYMESHROUND_mod.mod" \
         SPACEGEOMETRY="SPACEGEOMETRY_mod.mod" \
-        TESTCONNRIGIDMAT="TESTCONNRIGIDMAT_mod.mod"
+        TESTCONNRIGIDMAT="TESTCONNRIGIDMAT_mod.mod" \
+        LAGRANGEROUND2D="LAGRANGEROUND2D_mod.mod"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES="" \
+        INPUT="input_mod" \
 	TYPESROUND="typesround.mod" \
 	ALLOCATEFIELDSROUND="allocatefieldsround_mod.mod" \
 	CREATEMESHROUND="createmeshround_mod.mod" \
         LAGRANGEGRAD2DROUND="Lagrangegrad2dround_mod.mod" \
+        HERMITE2DDKT="hermite2dDKT_mod.mod" \
         VERIFYMESHROUND="verifymeshround_mod.mod" \
         SPACEGEOMETRY="spacegeometry_mod.mod" \
-        TESTCONNRIGIDMAT="testconnrigidmat_mod.mod"
+        TESTCONNRIGIDMAT="testconnrigidmat_mod.mod" \
+        LAGRANGEROUND2D="lagrangeround2d_mod.mod"
 endif
 
 ####################################################################
@@ -75,13 +81,15 @@ endif
 
 #Regeln fuer Module
 $(TYPESROUND): typesrounddef.o
+$(INPUT): input_mod.o
 $(ALLOCATEFIELDSROUND): allocatefieldsround.o
 ${CREATEMESHROUND}: createmeshround.o
-{LAGRANGEGRAD2DROUND}: Lagrangegrad2dround.o
-{VERIFYMESHROUND}:verifymeshround.o 
-{SPACEGEOMETRY}:spacegeometry.o
-{TESTCONNRIGIDMAT}:testconnrigidmat.o
-
+${LAGRANGEGRAD2DROUND}: Lagrangegrad2dround.o
+${HERMITE2DDKT}: hermite2dDKT.o
+${VERIFYMESHROUND}: verifymeshround.o 
+${SPACEGEOMETRY}: spacegeometry.o
+${TESTCONNRIGIDMAT}: testconnrigidmat.o
+${LAGRANGEROUND2D}: lagrangeround2d.o
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
 #
@@ -100,12 +108,15 @@ sgi:
 # Targets, die letztendlich das Programm Herstellen
 #
 library: $(LIB)(typesrounddef.o) \
+         $(LIB)(input_mod.o) \
 	 $(LIB)(allocatefieldsround.o) \
 	 $(LIB)(createmeshround.o) \
 	 $(LIB)(Lagrangegrad2dround.o) \
+	 $(LIB)(hermite2dDKT.o) \
          $(LIB)(verifymeshround.o) \
          $(LIB)(spacegeometry.o) \
-         $(LIB)(testconnrigidmat.o)
+         $(LIB)(testconnrigidmat.o) \
+         $(LIB)(lagrangeround2d.o)
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
@@ -135,15 +146,19 @@ cleanall:
 ######################################################
 # Abhaengigkeiten
 #
+$(LIB)(input_mod.o): $(INPUT)
 $(LIB)(createmeshround.o): $(TYPESROUND)
 $(LIB)(allocatefieldsround.o): $(TYPESROUND)
 $(LIB)(Lagrangegrad2dround.o): $(TYPESROUND)
+$(LIB)(hermite2dDKT.o): $(TYPESROUND)
 $(LIB)(spacegeometry.o): $(TYPESROUND)
 $(LIB)(verifymeshround.o):$(SPACEGEOMETRY) $(TYPESROUND)
 $(LIB)(testconnrigidmat.o):$(TYPESROUND)
+$(LIB)(lagrangeround2d.o):$(LAGRANGEROUND2D)
 
-main.o: $(TYPESROUND) $(ALLOCATEFIELDSROUND) $(CREATEROUNDMESH) \
-        $(LAGRANGEGRAD2DROUND) $(TESTCONNRIGIDMAT)
+main.o: $(TYPESROUND) $(INPUT) $(ALLOCATEFIELDSROUND) $(CREATEROUNDMESH) \
+        $(HERMITE2DDKT) $(LAGRANGEGRAD2DROUND) $(TESTCONNRIGIDMAT) \
+        $(LAGRANGEROUND2D)
 
 	@echo "make cleanall completed..."
 

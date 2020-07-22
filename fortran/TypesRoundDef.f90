@@ -76,7 +76,8 @@ module TypesRound
 
   type tRoundCoeff        ! benutzbar aber muss allokiert werden und a priori 
                           ! interpol order 2 => 1:6 coeffs per Elements
-     real,pointer     :: Coefficients(:,:) ! des Polynoms fuer Interpolation, 1 fuer jedes Elements! 
+     real,pointer     :: Coefficients(:,:) ! 1: Matrix coeffs von Biegung zur Deformationen !
+                                           ! 2: oder Coeffs des Polynoms fuer Interpolation, 1 fuer jedes Elements! 
 !     real,pointer                 :: Jacobian(:)    ! 2x2 real, nur diesen Test vorgesehen !
 !     logical,pointer              :: Test(:)        ! Resultat des Tests an dem Element !
   end type tRoundCoeff

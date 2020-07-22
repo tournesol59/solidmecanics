@@ -69,7 +69,7 @@ subroutine Input_file(NTestMeshR,MeshR)  ! FileIO
   !write(*,106) ' Mesh filename: (e.g. Untitled1.msh) '
   !read(5,106)  MshFilename
   
-  OPEN(UNIT=25, FILE='Untitled.msh', ACTION='READ')
+  OPEN(UNIT=25, FILE='untitled2.msh', ACTION='READ')
   ! .. couts Nodes and Elements and Boudary Element...
 
   read (25,*)                ! $MeshFormat
@@ -90,14 +90,14 @@ subroutine Input_file(NTestMeshR,MeshR)  ! FileIO
 
   read (25, 305)  NTestMeshR%nNode  ! Anzahl Punkten (e.g. 56)
   do nodes=1,NTestMeshR%nNode
-     read(25,*)              ! Skip it, for further, go on createMesh.f90
+     read(25,*)              ! Skip it, for further, go on createMeshRound.f90
   enddo
   read (25,*)                ! $EndNodes
 
   read (25,*)                ! $Elements
   read (25, 305)  NTestMeshR%nElem ! Anzahl Elements (e.g. 56)
   do elmts=1,NTestMeshR%nElem
-     read(25,*)              ! Skip it, for further, go on createMesh.f90
+     read(25,*)              ! Skip it, for further, go on createMeshRound.f90
   enddo
 
   CLOSE(UNIT=25)

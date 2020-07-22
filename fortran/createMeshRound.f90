@@ -15,7 +15,8 @@ module createmeshround_mod
 !**************************************************************************!
 !  Variable Tabelle der Patch Test-Plate fur die Koordinaten der 9 Punkten !
 !**************************************************************************!
- integer,dimension(2) :: NTest2 = (/ 3, 3/)
+ integer,dimension(2) :: NTest2 = (/ 3, 3/) ! dimension of Patch Test Mesh, then coordinates:
+ 
  real,dimension(9)  ::  X2 = (/ 0.0, 0.05, 0.1, 0.0, 0.05, 0.1, 0.0, 0.05, 0.1 /)
 
  real,dimension(9)  ::  Y2 = (/ 0.0, 0.0, 0.0, 0.05, 0.05, 0.05, 0.1, 0.1, 0.1 /)
@@ -28,6 +29,7 @@ module createmeshround_mod
   contains
 
 !******************************************************
+!  generates 9 nodes and 8 elements simple mesh for Patch Test
   subroutine createRoundMesh2(NTestMeshR,MeshR)
 
   use TypesRound
@@ -138,6 +140,7 @@ module createmeshround_mod
   end subroutine createRoundMesh2
 
 !******************************************************
+! create simple boundary condition structures for Patch Test
   subroutine createRoundRand2(NTestMeshR,BCU,BCS)
 
   use TypesRound
@@ -245,12 +248,11 @@ module createmeshround_mod
 
   !-----------------------------------<  calculate constants  >-----------
   
-  OPEN(UNIT=25, FILE='Untitled.inp', ACTION='READ')
+  OPEN(UNIT=25, FILE='untitled2.inp', ACTION='READ')
   ! .. couts Nodes and Elements and Boudary Element...
 
   read (25,*)                ! *Heading
-  read (25,*)                !  /home/fredrik/Documents/gmsh/untitled3.inp
-  read (25,*)                ! 2.2 0 8
+  read (25,*)                !  /home/fredrik/Documents/gmsh/untitled2.inp
   read (25,*)                ! *NODE
 
   do i=1,NTestMeshR%nNode
@@ -263,20 +265,30 @@ module createmeshround_mod
 
 !!! crucial: search for
 ! *ELEMENT, type=CPS4, ELSET=Surface1
+    read (25,106) Rawtext
   do while ((Rawtext).NE.("*ELEMENT, type=T3D2, ELSET=Line1"))
-    read (25,106) 
+    read (25,106) Rawtext
   end do
 
-  do j=1,NTestMeshR%nElem
+    read (25,106) Rawtext
+  do while ((Rawtext).NE.("*ELEMENT, type=CPS3, ELSET=Surface1"))
+    read (25,106) Rawtext
+  end do
+
+  j=1
+  elmx=1
+  elmn=1
+  do while ((j).le.(  470  ))  ! 470 lines corresponds to "untitled2.inp" file only
      read(25,307) MeshR%elems(j)%numeros(1), MeshR%elems(j)%numeros(2), MeshR%elems(j)%numeros(3), &
-                   MeshR%elems(j)%numeros(4)             ! Skip it, for further, go on createMesh.f90
-     if (j.eq.1) then
+                   MeshR%elems(j)%numeros(4)          
+     if (elmn.ge.( MeshR%elems(j)%numeros(1) )) then
        elmn=MeshR%elems(j)%numeros(1)
-     elseif (j.eq.NTestMeshR%nElem) then
+     elseif (elmx.le.( MeshR%elems(j)%numeros(1) )) then
        elmx=MeshR%elems(j)%numeros(1)
      endif
+     j=j+1
   enddo
-  if ((elmx-elmn+1).ne.NTestMeshR%nElem) then
+  if (j.ne.NTestMeshR%nElem) then
     print *, "elements spec in .msh is not equal to elements lines read in .inp Input File"
   endif  
   

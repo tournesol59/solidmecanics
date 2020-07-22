@@ -145,7 +145,9 @@ contains
    !!! Pcharac%angleEuler(j)
   enddo
 
-  ! fill coeffs=difference of local coord for multiply normalized ref elmt:
+  ! fill coeffs=difference of local coord for !multiply! normalized reference elmt:
+  ! this is a awkyard mean to program genralized element from a conform triangle rectangle
+  ! (SEE the constant table K_reference at the top of this module) !
 
   K_eval%Coefficients(1,1) = triplet(3)                          !  Ux,%x(1) dof coeff corresp to y3
   K_eval%Coefficients(2,1) = 1.0                                 !  Uy,%y(1) dof coeff will mult zero value..
@@ -165,10 +167,10 @@ contains
 
   K_eval%Coefficients(1,5) = 1.0                                 !  Ux,%x(3) dof coeff will mult zero value..
   K_eval%Coefficients(2,5) = 1.0                                 !  Uy,%y(3) dof coeff will mult zero value
-  K_eval%Coefficients(3,5) = triplet(1)                          !  Uy,%x(3) dof coeff correspond to x2
+  K_eval%Coefficients(3,5) = triplet(1)   ! ERROR HERE (see (2,6)                       !  Uy,%x(3) dof coeff correspond to x2
 
   K_eval%Coefficients(1,6) = 1.0                                 !  Uy,%x(3) dof coeff will mult zero value
-  K_eval%Coefficients(2,6) = triplet(1)                          !  Uy,%y(3) dof coeff correspond to x2..
+  K_eval%Coefficients(2,6) = triplet(1)  ! ERROR HERE (see (3,5)                        !  Uy,%y(3) dof coeff correspond to x2..
   K_eval%Coefficients(3,6) = 1.0                                 !  Ux,%y(3) dof coeff will mult zero value
 
 ! deallocate nodes only
@@ -208,10 +210,10 @@ contains
   endif
   ! fills matrix of plane stress behaviour Dm
   D_sig(1,1)=EY/(1-vu*vu)*1
-  D_sig(2,1)=EY/(1-vu*vu)*(-vu)
+  D_sig(2,1)=EY/(1-vu*vu)*(vu) !! +nu
   D_sig(3,1)=0.0
   D_sig(1,3)=0.0
-  D_sig(1,2)=EY/(1-vu*vu)*(-vu)
+  D_sig(1,2)=EY/(1-vu*vu)*(vu)  !! +nu
   D_sig(2,2)=EY/(1-vu*vu)*1
   D_sig(2,3)=0.0
   D_sig(3,2)=0.0
@@ -237,22 +239,81 @@ contains
 !********************************************************
 ! follows the last subroutine in order to begin to assemble the rigitity matrix
 ! (membrane rigitity terms
- subroutine linlgassemblePartAMem()
+ subroutine linlgassemblyPartAMem(NTestMeshR,K_mem,ie,iabooleans,iplacetoja)
 
   use TypesRound
   implicit none
 
+  type(tRoundMeshInfo)              :: NTestMeshR
+  real,pointer                      :: K_mem(:,:)
+  integer                           :: ie
+  type(tSparseYMat)                 :: RigidYMat
+  integer,pointer                   :: iabooleans(:) ! dimension nn
+  integer,pointer                   :: iplacetoja(:,:) ! dimension nn,1..2 two data foreach elmt
+  intent(inout)                     :: iabooleans ! pass to modify it
+  intent(inout)                     :: iplacetoja  ! has only be once created
+  integer                           :: i,k,l,nn
+
+  nn=NTestMeshR%nn
+!  from iaboolean(i)=true(1) if and only if there already exists at least an integer at RigidYMat%ja(i) -> will have to update it
+!  if there does not exist an integer at RigidYMat%ja(i) -> create it and for this set iabooleans(i)=new(2) (temporarly)
+
+! RigidYMat%a(i) = nonzeros values as simple array
+! RigidYMat%ia(i) = number of nnz values in each line, dim ne
+! RigidYMat%ja(i) = index of columns of nnz values
 
  end subroutine linlgassemblyPartAMem
 
 !********************************************************
 ! in this subroutine, the memory matrix will be really assemblied
- subroutine linlgassemblyPartBMem()
+ subroutine linlgassemblyPartBMem(NTestMeshR,K_mem,ie,RigidYMat,iplacetoja)
 
   use TypesRound
   implicit none
 
+  type(tRoundMeshInfo) :: NTestMeshR
+  integer,pointer                   :: iplacetoja(:,:) ! dimension 10*ne,1..2 two data foreach elmt
+  real,pointer                      :: K_mem(:,:)
+  integer                           :: ie
+  type(tSparseYMat)                 :: RigidYMat
+  integer,pointer                   :: iabooleans(:) ! dimension ne 
+  integer,pointer                   :: iplacetoja(:,:) ! dimension ne,1..2 two data foreach elmt
+  integer                           :: i,k,l,nn,ne,ibool,nbnew,nbentries,nbtotal
 
+  intent(in)                     :: iabooleans,iplacetoja
+
+  nn=NTestMeshR%nn
+  ne=NTestMeshR%ne
+  i=0
+  nbnew=0
+  nbtotal=0
+  ibool=ibooleans(i)
+! count new elements and elements alreay in (nbtotal)
+  do while (i.le.nn)   ! there exists at least an integer at RigidYMat%ja(j(i)) j=1..RigidYMat%ia(i)
+    if (ibool.eq.2) then
+     nbnew=nbnew+1 
+    elseif (ibool.ge.1) then
+     nbtotal=nbtotal+1 
+    endif
+    i=i+1
+    ibool=ibooleans(i)
+  enddo
+  nbentries=6*6  ! the size of an elementar matrix
+! at this point we know that we will have to insert max nbnew*6 (pts connected) and consequently pushing the other existing values in RigidYMat%ja(:), how many of 1..6 that is the question
+
+  ! pseudo code:
+! if (iboolean(ie)=1)
+  ! i=0
+  ! while i<=36
+      ! k=index line of (i)
+      ! l=index line of (i)
+      ! 
+  ! end    
+! else if (iboolean(ie)=2)
+
+
+
+! endif
  end subroutine linlgassemblyPartBMem
 
 end module LagrangeRound2D_mod

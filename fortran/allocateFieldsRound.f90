@@ -29,18 +29,20 @@ module allocateFieldsRound_mod
   ! koennen aber nicht modifiziert werden.
 
   ! Dieser Parameter ist fuer Node gedacht
-  integer, parameter  :: NumberofDisp = 6       ! 6 dof per nn, so kann es geaendert werden !
+  !  integer, parameter :: NumberofDisp = 6  ! mit parameter muss es nicht mofiziert werden
+
+  integer  :: NumberofDisp = 6       ! 6 dof per nn, so kann es geaendert werden !
   ! Diese zwei folg. Parameter sind fuer Element gedacht (in Post treatment)
-  integer, parameter  :: NumberofTension = 6    ! 6 tang. Kraft per ne, so kann es geaendert werden !
-  integer, parameter  :: NumberofMom = 6        ! 6 bieg. Momentums per ne, so kann es geaendert werden !
+  integer  :: NumberofTension = 6    ! 6 tang. Kraft per ne, so kann es geaendert werden !
+  integer  :: NumberofMom = 6        ! 6 bieg. Momentums per ne, so kann es geaendert werden !
 
   !--------------------------------------------------------------------------!
   interface allocateForC0BelyuType
      module procedure allocateForC0BelyuType
   end interface
-!  interface allocateForDKTType
-!     module procedure allocateForDKTType
-!  end interface
+  interface allocateForDKTType
+     module procedure allocateForDKTType
+  end interface
   interface allocateFieldsRound
      module procedure allocateFieldsRound
   end interface
@@ -80,7 +82,7 @@ module allocateFieldsRound_mod
   end interface
 
   !--------------------------------------------------------------------------!
-  public  :: allocateForC0BelyuType, &
+  public  :: allocateForC0BelyuType, allocateForDKTType, &
              allocateFieldsRound, allocateFieldsVarRound, allocateFieldsBCSRound, & ! allocateFieldsCoeffRound,&
              allocateSparseRound, &
              deallocateFieldsRound, deallocateFieldsVarRound, deallocateFieldsBCSRound, & ! deallocateFieldsCoeffRound,
@@ -101,6 +103,19 @@ contains
    NumberofMom = 6       ! <M1xx,M1yy,M1xy,M2xx,M2yy,M2xy,M3xx,M3yy,M3xy>
   
   end subroutine allocateForC0BelyuType
+
+!******************************************************
+! Configuration for Triangle C0 (or Belyushko Element)
+  subroutine allocateForDKTType()
+    use TypesRound
+    implicit none
+    !------------------------------------------------------------------------!
+    ! no input variables
+   NumberofDisp = 15     ! <u1x,u1y,u1z,r1x,r1y,u2x,u2y,u2z,r2x,r2y,u3x,u3y,u3z,r3x,r3y>
+   NumberofTension = 6   ! <F1x,F1y,F2x,F2y,F3x,F3y>
+   NumberofMom = 6       ! <M1xx,M1yy,M1xy,M2xx,M2yy,M2xy,M3xx,M3yy,M3xy>
+  
+  end subroutine allocateForDKTType
 
 !******************************************************
   subroutine allocateFieldsRound(NTestMeshR,MeshR,ExaktR) 
@@ -131,7 +146,7 @@ contains
     nn = NTestMeshR%nNode
     ne = NTestMeshR%nElem
 
-    allocate(MeshR%nodes(1:nn), MeshR%elems(1:nn), MeshR%neighbours(1:nn), &            
+    allocate(MeshR%nodes(1:nn), MeshR%elems(1:ne), MeshR%neighbours(1:ne), &            
          ExaktR%loesung(1:nn,1:NumberofDisp),       &
          STAT = allocStat )        
     if (allocStat.NE.0) then
