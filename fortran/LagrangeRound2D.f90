@@ -28,7 +28,7 @@ implicit none
     module procedure linlgintegratematrixMem
   end interface
 
-public :: multmatrixAcB, linprntmatrixMem, linlgcreatematrixMem, linlgintegratematrixMem, linlgassemblyPartAMem
+public :: multmatrixAcB, linprntmatrixMem, linlgcreatematrixMem, linlgintegratematrixMem !, linlgassemblyPartAMem
 
 
 contains 
@@ -254,7 +254,8 @@ contains
   intent(inout)                     :: iplacetoja  ! has only be once created
   integer                           :: i,k,l,nn
 
-  nn=NTestMeshR%nn
+!  nn=NTestMeshR%nn
+
 !  from iaboolean(i)=true(1) if and only if there already exists at least an integer at RigidYMat%ja(i) -> will have to update it
 !  if there does not exist an integer at RigidYMat%ja(i) -> create it and for this set iabooleans(i)=new(2) (temporarly)
 
@@ -262,43 +263,44 @@ contains
 ! RigidYMat%ia(i) = number of nnz values in each line, dim ne
 ! RigidYMat%ja(i) = index of columns of nnz values
 
- end subroutine linlgassemblyPartAMem
+end subroutine linlgassemblyPartAMem
 
 !********************************************************
 ! in this subroutine, the memory matrix will be really assemblied
- subroutine linlgassemblyPartBMem(NTestMeshR,K_mem,ie,RigidYMat,iplacetoja)
+! subroutine linlgassemblyPartBMem(NTestMeshR,K_mem,ie,RigidYMat,iplacetoja)
 
-  use TypesRound
-  implicit none
+!  use TypesRound
+!  implicit none
 
-  type(tRoundMeshInfo) :: NTestMeshR
-  integer,pointer                   :: iplacetoja(:,:) ! dimension 10*ne,1..2 two data foreach elmt
-  real,pointer                      :: K_mem(:,:)
-  integer                           :: ie
-  type(tSparseYMat)                 :: RigidYMat
-  integer,pointer                   :: iabooleans(:) ! dimension ne 
-  integer,pointer                   :: iplacetoja(:,:) ! dimension ne,1..2 two data foreach elmt
-  integer                           :: i,k,l,nn,ne,ibool,nbnew,nbentries,nbtotal
+!  type(tRoundMeshInfo) :: NTestMeshR
+!  integer,pointer                   :: iplacetoja(:,:) ! dimension 10*ne,1..2 two data foreach elmt
+!  real,pointer                      :: K_mem(:,:)
+!  integer                           :: ie
+!  type(tSparseYMat)                 :: RigidYMat
+!  integer,pointer                   :: iabooleans(:) ! dimension ne 
+!  integer,pointer                   :: iplacetoja(:,:) ! dimension ne,1..2 two data foreach elmt
+!  integer                           :: i,k,l,nn,ne,ibool,nbnew,nbentries,nbtotal
 
-  intent(in)                     :: iabooleans,iplacetoja
+!  intent(in)                     :: iabooleans,iplacetoja
 
-  nn=NTestMeshR%nn
-  ne=NTestMeshR%ne
-  i=0
-  nbnew=0
-  nbtotal=0
-  ibool=ibooleans(i)
+!  nn=NTestMeshR%nn
+!  ne=NTestMeshR%ne
+!  i=0
+!  nbnew=0
+!  nbtotal=0
+!  ibool=ibooleans(i)
+
 ! count new elements and elements alreay in (nbtotal)
-  do while (i.le.nn)   ! there exists at least an integer at RigidYMat%ja(j(i)) j=1..RigidYMat%ia(i)
-    if (ibool.eq.2) then
-     nbnew=nbnew+1 
-    elseif (ibool.ge.1) then
-     nbtotal=nbtotal+1 
-    endif
-    i=i+1
-    ibool=ibooleans(i)
-  enddo
-  nbentries=6*6  ! the size of an elementar matrix
+!  do while (i.le.nn)   ! there exists at least an integer at RigidYMat%ja(j(i)) j=1..RigidYMat%ia(i)
+!    if (ibool.eq.2) then
+!     nbnew=nbnew+1 
+!    elseif (ibool.ge.1) then
+!     nbtotal=nbtotal+1 
+!    endif
+!    i=i+1
+!    ibool=ibooleans(i)
+!  enddo
+!  nbentries=6*6  ! the size of an elementar matrix
 ! at this point we know that we will have to insert max nbnew*6 (pts connected) and consequently pushing the other existing values in RigidYMat%ja(:), how many of 1..6 that is the question
 
   ! pseudo code:
@@ -314,7 +316,7 @@ contains
 
 
 ! endif
- end subroutine linlgassemblyPartBMem
+!end subroutine linlgassemblyPartBMem
 
 end module LagrangeRound2D_mod
 

@@ -16,13 +16,35 @@ module TestConnAppelC
   use ISO_C_BINDING, only : C_CHAR, C_INT, C_DOUBLE, C_PTR
   implicit none
 
+!typedef struct edge {
+
+ !  Index node1, node2; 
+ !  Number weight;
+ !  struct edge *next;
+   
+!} * ptr_EDGE;
+
     type, bind(C) ::  edge
       integer(kind=C_INT)                         :: el_1, el_2
       real(kind=C_DOUBLE)                         :: weight
       type(C_PTR)                                 :: cel
     end type edge 
 
+!typedef struct tree {
+
+ !  Index node1, node2;
+ !  Index clusterId; // the final tree will be constructed by assembling tree of elements with different clusterIds
+ !  struct tree *next;
+! } * ptr_TREE;
+
+    type, bind(C) ::  tree
+      integer(kind=C_INT)                         :: no_1, no_2
+      integer(kind=C_INT)                         :: cid
+      type(C_PTR)                                 :: tre
+    end type tree
+
    interface
+
     type(C_PTR) function create_edge_f(n1, n2, r) bind (C,name='create_edge')
       import C_INT, C_DOUBLE, C_PTR
       real(kind=C_DOUBLE)                 :: r
@@ -48,7 +70,7 @@ module TestConnAppelC
     end function removeheap_list_f
 
 
-    subroutine cp_edge_nodes_f(cell, copy) bind (C,name='remove_end_edge')
+    subroutine cp_edge_nodes_f(cell, copy) bind (C,name='cp_edge_nodes')
       import C_INT, C_DOUBLE, C_PTR
       type(C_PTR)                          :: cell, copy
     end subroutine cp_edge_nodes_f
@@ -86,10 +108,49 @@ module TestConnAppelC
       integer(kind=C_INT)                  :: i,j
     end function find_edge_f
 
+!graph tree procedures/functions
+
+    type(C_PTR) function create_tree_f(n1, n2, cid) bind (C,name='create_tree')
+      import C_INT, C_DOUBLE, C_PTR
+      integer(kind=C_INT)                 :: n1,n2,cid
+    end function create_tree_f
+
+    subroutine add_end_tree_f(cell, endcell) bind (C,name='add_end_tree')
+      import C_INT, C_DOUBLE, C_PTR
+      type(C_PTR)                         :: cell, endcell
+    end subroutine add_end_tree_f
+
+    integer function remove_end_tree_f(cell) bind (C,name='remove_end_tree')
+      import C_INT, C_DOUBLE, C_PTR
+      type(C_PTR)                         :: cell 
+    end function remove_end_tree_f
+
+    subroutine cp_tree_nodes_f(cell, copy) bind (C,name='cp_tree_nodes')
+      import C_INT, C_DOUBLE, C_PTR
+      type(C_PTR)                          :: cell, copy
+    end subroutine cp_tree_nodes_f
+
+    integer(kind=C_INT) function get_clusterId_f(cell) bind (C,name='get_clusterId')
+      import C_INT, C_DOUBLE, C_PTR
+      type(C_PTR)                          :: cell
+    end function get_clusterId_f
+
+    type(C_PTR) function get_next_tree_f(cell) bind (C,name='get_next_tree')
+      import C_INT, C_DOUBLE, C_PTR
+      type(C_PTR)                          :: cell
+    end function get_next_tree_f
+
+    integer(kind=C_INT) function length_tree_f(cell) bind (C,name='length_tree')
+      import C_INT, C_DOUBLE, C_PTR
+      type(C_PTR)                          :: cell
+    end function length_tree_f
+
    end interface
 
-!   public ::  edge, create_edge_f, add_end_edge_f, remove_end_edge_f, removeheap_list_f, &
-!             cp_edge_nodes_f, get_weight_f, get_next_edge_f, length_edge_f, reverse_list_f
+   public ::  edge, create_edge_f, add_end_edge_f, remove_end_edge_f, removeheap_list_f, &
+              cp_edge_nodes_f, get_weight_f, get_next_edge_f, length_edge_f, reverse_list_f, &
+              create_tree_f, add_end_tree_f, remove_end_tree_f, cp_tree_nodes_f, get_clusterId_f, & 
+              get_next_tree_f, length_tree_f
 
 end module TestConnAppelC
 
