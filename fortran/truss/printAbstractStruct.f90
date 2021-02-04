@@ -5,6 +5,7 @@ module printabstractstruct_mod
 ! at the end it should be reused for Triangular Mesh of Element
 !**********************************************************************!
   use typesbalken
+!  use types
   implicit none
 
 #define FILEOUTPUT 27
@@ -30,6 +31,7 @@ module printabstractstruct_mod
 !*******************************************************************
   subroutine prntsimplearray(nlen, typ, ptr_int, ptr_dou, SubName)
   use typesbalken
+!  use types
   implicit none
   ! args
   integer                         :: nlen, typ
@@ -79,6 +81,7 @@ module printabstractstruct_mod
 
   subroutine prntsimplestruct(n1, n2, Ms, SubName)
   use typesbalken
+ ! use types
   implicit none
   ! args
   integer                         :: n1, n2
@@ -128,6 +131,7 @@ module printabstractstruct_mod
 
   subroutine prntadjuststruct(n1, n2, FMs, SubName)
   use typesbalken
+ ! use types
   implicit none
   ! args
   integer                         :: n1, n2
@@ -160,6 +164,7 @@ module printabstractstruct_mod
 !   for verification of input data coding the problem
   subroutine prntsimplematrix(nrow,ncol, typ, ptr_int, ptr_dou, SubName)
   use typesbalken
+ ! use types
   implicit none
   ! args
   integer                         :: nrow,ncol,typ

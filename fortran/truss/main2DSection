@@ -1,0 +1,30 @@
+program main2DSection
+  use typesbalken
+  use InputTruss_mod
+  use CreateTruss_mod
+  use printabstractstruct_mod
+  use CreateBeamTriangles_mod
+
+  implicit none
+
+!******************* variables declaration ************************
+  type(tMesh2DInfo)       :: Gitter2DInfo
+  type(tMesh2DSection)    :: Gitter2D
+  type(tVar2DSection)     :: Werte2D
+
+!<----------------- INTEGERS and MISCs ----------------------->
+  integer               :: jj,kk
+  integer               :: i,j,k,km1,l,p,allocStat
+
+  integer,pointer       :: inull(:)
+  character(len=30)     :: SubName="mainTruss  
+
+
+!<--------------------------------- BEGIN ---------------------------->
+  call allocMesh2DfromFile(Gitter2DInfo,Gitter2D)
+
+  call createMesh2DfromFile(Gitter2DInfo,Gitter2D)
+
+  call deallocMesh2DfromFile(Gitter2DInfo,Gitter2D)
+
+end program main2DSection

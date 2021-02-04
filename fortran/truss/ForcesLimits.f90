@@ -5,8 +5,8 @@ module ForceLimits_mod
  private
 
   interface ExtractTrussUnknowns
-    module ExtractTrussUnknowns
-  end ExtractTrussUnknowns
+    module procedure ExtractTrussUnknowns
+  end interface
 
  public :: ExtractTrussUnknowns
 
@@ -18,12 +18,12 @@ module ForceLimits_mod
 !   only a smaller submatrix for the unknown
 !   displacement (columns->rows in Fortran) 
 !   and knowns forces (rows->columns in Fortran)
- subroutine ExtractTrussUnknowns(MeshInfo, Dunknowns, Fmovemt)
+ subroutine ExtractTrussUnknowns(MeshInfo, Dunknowns, Fmovemt, Ke_H, A_H, B_H)
  use TypesBalken
  implicit none
  type(tMeshInfo)                   :: MeshInfo
- integer,pointer(:,:)              :: Dunknowns     ! 1: disp imposed, 0: disp to determine
- integer,pointer(:,:)              :: Fmovemt       ! why this, if symetrical to Dunknonwns?
+ integer,pointer                   :: Dunknowns(:,:)     ! 1: disp imposed, 0: disp to determine
+ integer,pointer                   :: Fmovemt(:,:)       ! why this, if symetrical to Dunknonwns?
  type(tRigidFullMat)               :: Ke_H
  type(tRigidFullMat)               :: A_H, B_H
  ! Vorhabe
@@ -36,7 +36,7 @@ module ForceLimits_mod
  nn=MeshInfo%nn
  
  do i=1,nt
-   if 
+! if
  enddo 
  end subroutine ExtractTrussUnknowns
 

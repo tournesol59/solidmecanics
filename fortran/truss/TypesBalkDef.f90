@@ -87,14 +87,20 @@ MODULE TypesBalken
   type :: tMesh2DSection
      real              :: dy             ! Gitterschrittweite (Delta y)  assumed there is homogenous                               ! Triangle mesh (of rectangular section)!
      real              :: dz             ! Gitterschrittweite (Delta z)    !
+     integer           :: ny,nz          ! number of points in y and z direction (rectangular zones meshed with triangles rectangles)
      real,pointer      :: y(:),z(:)           ! Punkte im normal Ebene des Balken zur x-achse !
      integer,pointer   :: elements(:,:)    ! iel n1,n2,n3
-     integer,pointer   :: neighbours(:,:)  ! iel nh1,nh2,nh3(-1 if boundary)     
+!     integer,pointer   :: neighbours(:,:)  ! iel nh1,nh2,nh3(-1 if boundary)       NO! not this complicated solution of neighbours!
+     integer,dimension(10) :: izoney  ! (:)  ! indices of sub-regions (vertical bands between izoney(k), izoney(k+1) 
+                                     ! with constant G modulus
+     real,dimension(10)    :: Gzoney  ! (:)  ! values of G modulus
   end type tMesh2DSection
 
   type :: tVar2DSection
-     real              :: force         ! Right hand side
-     real              :: func          ! f, G*a*((df/dy)-z)=sigma_xy, G*a*((df/dz)+y)=sigma_xz,
+!     real              :: force         ! Right hand side
+     real,pointer      :: force         ! Right hand side
+!     real              :: func 
+     real,pointer      :: func          ! f, G*a*((df/dy)-z)=sigma_xy, G*a*((df/dz)+y)=sigma_xz,
                                         ! G=EY/(1+vu)
      integer           :: nlen          ! following is the implementation of a sparse column compressed format
      integer,pointer   :: nnz(:)        

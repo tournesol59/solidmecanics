@@ -4,14 +4,17 @@ program mainTruss
   use CreateTruss_mod
   use RigidTrussContacts_mod
   use printabstractstruct_mod
+  use CreateBeamTriangles_mod
 
   implicit none
+
+#define BEAM_ELMT_SIZE  6
 
 ! <-------------------- INTERFACE --------------------->
 !  interface 
 !    subroutine Input_file(MeshI,MeshT,MeshG,meshpattern,Dimposed,Fimposed)
 !    use typesbalken
-!    type(tMeshInfo)            :: MeshI     ! Gitterwerte                   !
+!    type(tGitterInfo)            :: MeshI     ! Gitterwerte                   !
 !    type(tMeshCoord)           :: MeshT     ! Gitterwerte                      !
 !    type(tMeshElmt),pointer    :: MeshG(:)
 !    integer,pointer            :: meshpattern(:,:) ! Definition von Elementen !
@@ -24,7 +27,8 @@ program mainTruss
 !<----------------- MECH. STRUCTURE ELMTs DECLARATION -------->
   integer               :: ne=3 ! dof Freiheitsgraden Anzahl
   integer               :: sizeDun=6 ! 3*2 (c1 d1 f1 c2 d2 f2
-  type(tMeshInfo)       :: MeshInfo
+  type(tMeshInfo)       :: GitterInfo
+  type(tMesh2DInfo)     :: Gitter2DInfo
   type(tMeshCoord)      :: MeshPunkte
 !  type(tMeshElmt)       :: MeshT1, MeshT2
 !  type(tMeshElmt),dimension(:),allocatable :: MeshGen(:)   ! Elementen 1-2 und 1-3 THIS CANNOT BE PASSSED AS POINTER
@@ -39,7 +43,8 @@ program mainTruss
 !<----------------- MECH. STRUCTURE PROBLEM DEFINITION -------->
   type(tRigidFullMat)   :: Ke_H   ! Whole global rigidity matrix - will not be used
   type(tRigidFullMat)   :: A_H, B_H  ! Sub matrices from Ke_H (f=A.U,unknown + B.U,applied)
-  type(tVarFull)        :: Var_H  ! grouped solution in Ue,Fe vectors
+  type(tRigidFullMat)   :: Ke_Be   ! whole Timoshenko elements rigidity matrix
+  type(tVarFull)        :: Var_H, Var_Be  ! grouped solution in Ue,Fe vectors and also for Timoshenko element
   type(tExakt)          :: Exakt ! Struct fuer Exakte Loesung
   integer,pointer       :: Dunbekannt(:,:)  ! Unbekannte Bewegungen zu berechnen
   real,pointer          :: Dimponiert(:,:)  ! imponierte Bewegungen
@@ -58,8 +63,22 @@ program mainTruss
 ! ************** read only first line of input def file, the rest is parsed by Input_file procedure
   OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
-  read(25,705) MeshInfo%nn, MeshInfo%nt, MeshInfo%nbeam, MeshInfo%ngeobeam, MeshInfo%nsection 
+  read(25,705) GitterInfo%nn, GitterInfo%nt, GitterInfo%nbeam, GitterInfo%ngeobeam, GitterInfo%nsection 
   CLOSE(UNIT=25)
+  write(*,*) 'Enter index of the Beam'
+  read(*,311) Meshbalk%section_index
+
+  write(*,*) 'Enter number of elements in the Beam'
+  read(*,311) Meshbalk%ibnn
+
+  write(*,*) 'Enter surface of the section of the Beam'
+  read(*,205) Meshbalk%SArea
+
+  write(*,*) 'Enter moment of inertia of the Beam'
+  read(*,205) Meshbalk%CI
+
+  write(*,*) 'Enter Young Modulus and Poisson number of the Beam'
+  read(*,206) Meshbalk%EY, Meshbalk%vu
 
 ! **************************** allocate Geometry Strukturen ************************
   allocate(inull(1), STAT=allocstat)
@@ -70,86 +89,107 @@ program mainTruss
 !  if (allocstat.ne.0) then
 !    print *,"mainTruss: error allocate M_rot"
 !  endif
-  allocate(MeshPunkte%x(1:MeshInfo%nn), MeshPunkte%y(1:MeshInfo%nn), &
-            MeshPunkte%z(1:MeshInfo%nn), &
-            MeshPunkte%elmts(1:MeshInfo%nt,1:7), &
+  allocate(MeshPunkte%x(1:GitterInfo%nn), MeshPunkte%y(1:GitterInfo%nn), &
+            MeshPunkte%z(1:GitterInfo%nn), &
+            MeshPunkte%elmts(1:GitterInfo%nt,1:7), &
             STAT=allocStat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate MeshPunkte"
   endif
 
-  allocate(elmtabbdung(1:MeshInfo%nt,1:3), STAT = allocStat)
+  allocate(elmtabbdung(1:GitterInfo%nt,1:3), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation connection matrix !"
   endif
 
 ! ***************************** allocate Elementen Strukturen (allocatable) *****************************************
-  allocate(Dunbekannt(1:MeshInfo%nt,1:6), Dimponiert(1:MeshInfo%nn,1:3), STAT = allocStat)
+  allocate(Dunbekannt(1:GitterInfo%nt,1:6), Dimponiert(1:GitterInfo%nn,1:3), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation Bewegungs definitionsmatrizen !"
   endif 
-  allocate(Kraftbewgg(1:MeshInfo%nt,1:6), Kraftimponiert(1:MeshInfo%nn,1:3), STAT = allocStat)
+  allocate(Kraftbewgg(1:GitterInfo%nt,1:6), Kraftimponiert(1:GitterInfo%nn,1:3), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation Matrizen zur berechnenden Bewegungskraefte matrix !"
   endif 
-  allocate(Meshbalk(1:MeshInfo%nbeam), STAT=allocstat)
+  allocate(Meshbalk(1:GitterInfo%nbeam), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate Meshbalk null"
   endif
-  do k=1,MeshInfo%nbeam
+  do k=1,GitterInfo%nbeam
     allocate( Meshbalk(k)%nodes(10), STAT=allocStat)  ! This is not a good choice of Nmax 10 nodes in code but how to know the number before diving in input file?
     if (allocStat.ne.0) then
        print *," Error allocation node array of Meshbalk !"
     endif
   enddo
-  allocate(MeshGen(1:MeshInfo%nt), STAT=allocstat)
+  allocate(MeshGen(1:GitterInfo%nt), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate MeshGen null"
   endif
-  do k=1,MeshInfo%nt
+  do k=1,GitterInfo%nt
     allocate( MeshGen(k)%CoeffsH1(1:4), MeshGen(k)%CoeffsH2(1:4), &
                  MeshGen(k)%CoeffsH3(1:4), MeshGen(k)%CoeffsH4(1:4), STAT=allocStat)
     if (allocStat.ne.0) then
        print *," Error allocation polynoms elmt 2 !"
     endif
   enddo
-  allocate(VarGen(1:MeshInfo%nt), STAT=allocstat)
+  allocate(VarGen(1:GitterInfo%nt), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate VarGen null"
   endif
 
 ! ***************************** allocate definition arrays in the main program *********************************
-  allocate(Ke_H%Ke(1:ne*MeshInfo%nn,1:ne*MeshInfo%nn), Var_H%Ue(1:ne*MeshInfo%nn), Var_H%Fe(1:ne*MeshInfo%nn), &
-           Exakt%Ux(1:ne*MeshInfo%nn), Exakt%Fx(1:ne*MeshInfo%nn), STAT = allocStat)
+  allocate(Ke_H%Ke(1:ne*GitterInfo%nn,1:ne*GitterInfo%nn), Var_H%Ue(1:ne*GitterInfo%nn), Var_H%Fe(1:ne*GitterInfo%nn), &
+           Exakt%Ux(1:ne*GitterInfo%nn), Exakt%Fx(1:ne*GitterInfo%nn), STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error allocation global matrix !"
   endif  
-  do i=1,ne*MeshInfo%nn       ! initialisierung
-    do j=1,ne*MeshInfo%nn
+  do i=1,ne*GitterInfo%nn       ! initialisierung
+    do j=1,ne*GitterInfo%nn
        Ke_H%Ke(i,j)=0.0
     enddo
     Var_H%Ue(i)=0.0
     Var_H%Fe(i)=0.0   
   enddo
+!  assume there is only one beam structure Meshbalk
+  allocate(Ke_Be%Ke(1:((Meshbalk(1)%ibnn-1)*BEAM_ELMT_SIZE),1:((Meshbalk(1)%ibnn-1)*BEAM_ELMT_SIZE)), &
+           Var_Be%Ue(1:((Meshbalk(1)%ibnn-1)*BEAM_ELMT_SIZE)), Var_Be%Fe(1:((Meshbalk(1)%ibnn-1)*BEAM_ELMT_SIZE)), &
+             STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error allocation Beam rigidity matrix !"
+  endif  
+  do i=1,(Meshbalk(1)%ibnn-1)*BEAM_ELMT_SIZE       ! initialisierung
+    do j=1,(Meshbalk(1)%ibnn-1)*BEAM_ELMT_SIZE
+       Ke_Be%Ke(i,j)=0.0
+    enddo
+    Var_Be%Ue(i)=0.0
+    Var_Be%Fe(i)=0.0   
+  enddo
 
 ! <-------------------- PARSE INPUT FILE FOR DEFINITION of points and imposed bc--------------->
-  call Input_file(MeshInfo, MeshPunkte, MeshGen, Meshbalk, elmtabbdung, Dimponiert, Kraftimponiert)
+  call Input_file(GitterInfo, MeshPunkte, MeshGen, Meshbalk, elmtabbdung, Dimponiert, Kraftimponiert)
 
-  call InputSetUnknown(MeshInfo, MeshPunkte, elmtabbdung, Dunbekannt, & 
+  call InputSetUnknown(GitterInfo, MeshPunkte, elmtabbdung, Dunbekannt, & 
                        Dimponiert, Kraftbewgg, Kraftimponiert)
 
 ! ****************************** Definitions von Punkten und Elementen Typen ***********************************
-  call createTrussGen(MeshInfo%nn,MeshInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
+  call createTrussGen(GitterInfo%nn,GitterInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
 
   OPEN(UNIT=27, FILE='Untitled3.log', ACTION='WRITE')
   write(27,701) "----inputTruss"
 
-  call printCreateTrussGen(MeshInfo%nn,MeshInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
+  call printCreateTrussGen(GitterInfo%nn,GitterInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
+
+!<---------------------- PARSE INPUT FILE FOR DEFINITION of section 2S mesh" ---------------------------->
+  call allocMesh2DfromFile(Gitter2DInfo,Gitter2D)
+
+  call createMesh2DfromFile(Gitter2DInfo,Gitter2D)
+
+  call deallocMesh2DfromFile(Gitter2DInfo,Gitter2D)
 
 !********************************* Build and Assembly matrices                     *****************************
 ! <-------------------- DO SOMETHING --------------------->
   write(27,701) "----- mainTruss"
-!      call Matrice_Ke_H_Truss(MeshGen(1), VarGen(1), Ke_H, 1,2, MeshInfo%nn, MeshInfo%ne, &
+!      call Matrice_Ke_H_Truss(MeshGen(1), VarGen(1), Ke_H, 1,2, GitterInfo%nn, GitterInfo%ne, &
 !                              elmtabbdung, &
 !                              Dunbekannt, Dimponiert, &
 !                              Kraftbewgg, Kraftimponiert)
@@ -184,6 +224,13 @@ program mainTruss
   if (allocStat.ne.0) then
      print *," Error deallocation Matrizen !"
   endif  
+
+  deallocate(Ke_Be%Ke, Var_Be%Ue, Var_Be%Fe, &
+             STAT = allocStat)
+  if (allocStat.ne.0) then
+     print *," Error deallocation Matrizen !"
+  endif 
+
   deallocate(Dunbekannt, Dimponiert, STAT = allocStat)
   if (allocStat.ne.0) then
      print *," Error deallocation Bewegungs definitionsmatrizen !"
@@ -216,12 +263,21 @@ program mainTruss
   if (allocstat.ne.0) then
     print *," Error deallocate MeshPunkte null"
   endif
-
+  deallocate(Meshbalk(1)%nodes, STAT=allocstat)
+  if (allocstat.ne.0) then
+    print *," Error deallocate Meshbalk(1)%nodes null"
+  endif
+  deallocate(Meshbalk, STAT=allocstat)
+  if (allocstat.ne.0) then
+    print *," Error deallocate Meshbalk null"
+  endif
 ! close log file
   CLOSE(UNIT=27)
   print *,"========== PROGRAM TERMINATED CORRECTLY =========="
 
-
+205  format (e10.2)             
+206  format (2e10.2)
+311  format (i5)
 701 format(a)
 702 format(a,i5)
 

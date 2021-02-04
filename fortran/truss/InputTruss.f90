@@ -53,6 +53,7 @@ module InputTruss_mod
   integer             :: a, b, c, d, e, f, g
 
   countbeam=0
+
   OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
   read(25,*) ! instead of
@@ -64,9 +65,9 @@ module InputTruss_mod
    read(25,207) MeshT%x(i), MeshT%y(i), MeshT%z(i)   ! z Koordinate muss geschrieben werden, wird aber nicht benutzt
   enddo
   read(25,*) ! #
-  do i=1,MeshInfo%nt
-    read(25,310) meshpattern(i,1), meshpattern(i,2), meshpattern(i,3) , MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
-    if (meshpattern(i,1).ge.3) then
+  do i=1,MeshInfo%nt  ! read: #number of points contained in an elmt #begin point of the element #end point of the element
+    read(25,310) meshpattern(i,1), meshpattern(i,2), meshpattern(i,3) !, MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
+    if (meshpattern(i,1).ge.3) then  ! 	a beam can contain one or more mid-points
       countbeam=countbeam+1
       MeshBSet(countbeam)%ibnn=meshpattern(i,1)
     endif
@@ -80,13 +81,13 @@ module InputTruss_mod
   read(25,*) ! # elmts consists in types of connection for element (nn,ne) see code TypesBalkDef.f90 to have a description of the code, 7 is not treated yet
   do i=1,MeshInfo%nt
     read(25,308) a, b, c, d, e, f, g
-    MeshT%elmts(i,1)=a
-    MeshT%elmts(i,2)=b
-    MeshT%elmts(i,3)=c
-    MeshT%elmts(i,4)=d
-    MeshT%elmts(i,5)=e
-    MeshT%elmts(i,6)=f
-    MeshT%elmts(i,7)=g 
+    MeshT%elmts(i,1)=a  ! Index
+    MeshT%elmts(i,2)=b  ! type of connection at end point 1
+    MeshT%elmts(i,3)=c  ! imposed or unknown displacement at end point 1
+    MeshT%elmts(i,4)=d  ! imposed or unknown force at end point 1
+    MeshT%elmts(i,5)=e  ! type of connection at end point 2
+    MeshT%elmts(i,6)=f  ! imposed or unknown displacement at end point 2
+    MeshT%elmts(i,7)=g  ! imposed or unknown force at end point 2
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nn ! data not used any more ..
@@ -106,18 +107,18 @@ module InputTruss_mod
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nt
-    read(25,206) MeshGen(i)%q1, MeshGen(i)%q2  ! as many lines as elmts: q1,q2 filled for all elemts also for non beam elmt
+    read(25,206) MeshGen(i)%q1, MeshGen(i)%q2  ! (forces linear distributed) as many lines as elmts: q1,q2 filled for all elemts also for non beam elmt
   enddo
   CLOSE(UNIT=25)
 
  105  format (a20)
- 205  format (2e10.2)             
+ 205  format (e10.2)             
  206  format (2e10.2)
  207  format (3e10.2)
  307  format (2i5)
  308  format (7i5)
  309  format (3i5)
- 310  format (i5,i5,i5,e10.2,e10.2)
+ 310  format (i5,i5,i5)  !,e10.2,e10.2)
  311  format (i5)
   end subroutine Input_file
 

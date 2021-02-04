@@ -1,3 +1,6 @@
+!************************************************************
+! procedure to fill the -in main prgm allocated tables of struct tMeshElmt
+!  and rigidity elements (in the moment redundant with RigidTrussContacts
 module CreateTruss_mod
  use typesbalken
  implicit none

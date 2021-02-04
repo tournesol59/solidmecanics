@@ -45,7 +45,10 @@ LINUX_FLAGS = \
 	INPUTTRUSS="INPUTTRUSS_mod.mod" \
         CREATETRUSS="CREATETRUSS_mod.mod" \
 	PRINTABSTRACTSTRUCT="PRINTABSTRACTSTRUCT_mod.mod" \
-	RIGIDTRUSSCONTACTS="RIGIDTRUSSCONTACTS_mod.mod" 
+	RIGIDTRUSSCONTACTS="RIGIDTRUSSCONTACTS_mod.mod" \
+        CREATEBEAMTRIANGLES="CREATEBEAMTRIANGLES_mod.mod" \
+        FORCESLIMITS="FORCESLIMITS_mod" \
+        SETTIMOBEAMELEMENT="SETTIMOBEAMELEMENT"
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
@@ -55,7 +58,10 @@ LINUX_FLAGS = \
 	INPUTTRUSS="inputtruss_mod.mod" \
         CREATETRUSS="createtruss_mod.mod" \
 	PRINTABSTRACTSTRUCT="printabstractstruct_mod.mod" \
-	RIGIDTRUSSCONTACTS="rigidtrusscontacts_mod.mod"
+	RIGIDTRUSSCONTACTS="rigidtrusscontacts_mod.mod" \
+        CREATEBEAMTRIANGLES="createbeamtriangles_mod.mod" \
+        FORCESLIMITS="forceslimits_mod.mod" \
+        SETTIMOBEAMELEMENT="settimobeamelement"
 endif
 
 ####################################################################
@@ -75,6 +81,9 @@ $(INPUTTRUSS): inputtruss.o
 $(CREATETRUSS): createtruss.o
 $(PRINTABSTRACTSTRUCT): printabstractstruct.o
 ${RIGIDTRUSSCONTACTS}: rigidtrusscontacts.o
+${CREATEBEAMTRIANGLES}: createbeamtriangles.o
+${FORCESLIMITS}: forceslimits.o
+${SETTIMOBEAMELEMENT}: settimobeamelement.o
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -97,8 +106,11 @@ library: $(LIB)(typesbalken.o) \
          $(LIB)(inputtruss.o) \
          $(LIB)(createtruss.o) \
 	 $(LIB)(printabstractstruct.o) \
-	 $(LIB)(rigidtrusscontacts.o)
-
+	 $(LIB)(rigidtrusscontacts.o) \
+	 $(LIB)(createbeamtriangles.o) \
+         $(LIB)(forceslimits.o) \
+         $(LIB)(settimobeamelement.o)
+ 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
 	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lTrussPkkum -g
@@ -131,8 +143,11 @@ cleanall:
 $(LIB)(printabstractstruct.o): $(TYPESBALKEN)
 $(LIB)(rigidtrussstruct.o):$(PRINTABSTRACTSTRUCT) $(TYPESBALKEN) $(INPUTTRUSS)
 $(LIB)(createtruss.o): $(TYPESBALKEN)
-main.o: $(TYPESBALKEN) $(PRINTABTRACTSTRUCT) $(RIGIDTRUSSCONTACTS) $(INPUTTRUSS) $(CREATETRUSS)
-
+$(LIB)(createbeamtriangles.o): $(TYPESBALKEN)
+$(LIB)(forceslimits.o): $(TYPESBALKEN)
+$(LIB)(settimobeamelement.o): $(TYPESBALKEN)
+main.o: $(TYPESBALKEN) $(PRINTABTRACTSTRUCT) $(RIGIDTRUSSCONTACTS) $(INPUTTRUSS) $(CREATETRUSS) \
+                $(CREATEBEAMTRIANGLES) $(FORCESLIMITS) $(SETTIMOBEAMELEMENT)
 	@echo "make cleanall completed..."
 
 
