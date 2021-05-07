@@ -5,6 +5,10 @@ module CreateBeamTriangles_mod
 
   private
 
+#define BeELnum_Ycoord(m,n)	 (MeshSec%dy*(m-1))  
+! for a rectangular global form section only
+#define BeELnum_Zcoord(m,n)      (MeshSec%dz*(n-1))
+
     interface allocMesh2DfromFile
       module procedure allocMesh2DfromFile
     end interface
@@ -19,9 +23,12 @@ module CreateBeamTriangles_mod
 
   public:: allocMesh2DfromFile, createMesh2DfromFile, deallocMesh2DfromFile
 
+  ! Macros definition for access to mesh2DSection
+  #define BEAM2D_NAME_OF_STRUCTURE_index_plus_index_of_neighbou 
+
   contains
   !****************************
-  ! subroutine allocate a field of type Mesh2DTorsion
+  ! subroutine allocate a field of type tMesh2DSection
  subroutine allocMesh2DfromFile(MeshNTest,MeshSec)
   use typesbalken
   implicit none

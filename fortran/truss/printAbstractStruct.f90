@@ -21,7 +21,7 @@ module printabstractstruct_mod
  !  end interface
 
    public::  prntsimplearray, prntsimplestruct, prntadjuststruct, &
-               printCreateTrussGen
+               printCreateTrussGen, printNodesNumResults
 
   contains
 
@@ -160,9 +160,9 @@ module printabstractstruct_mod
   end subroutine prntadjuststruct
 
 !****************************************************
-! subroutine prntinputmatrices, need to print a ne*nd matrix
-!   for verification of input data coding the problem
-  subroutine prntsimplematrix(nrow,ncol, typ, ptr_int, ptr_dou, SubName)
+! subroutine prntsimplematrix need to print a matrix
+! containing either integer or float elements
+subroutine prntsimplematrix(nrow,ncol, typ, ptr_int, ptr_dou, SubName)
   use typesbalken
  ! use types
   implicit none
@@ -206,6 +206,10 @@ module printabstractstruct_mod
  606  format (5f10.5)
  end subroutine prntsimplematrix
 
+
+!****************************************************
+! subroutine prntinputmatrices, need to print a ne*nd matrix
+!   for verification of input data coding the problem
 
  subroutine prntinputmatrices(ne, connectelmt, &
                               Dunknowns, Dimposed, &
@@ -275,11 +279,11 @@ module printabstractstruct_mod
 
    write(FILEOUTPUT,704)    MeshGen(i)%SArea, MeshGen(i)%CI
    write(FILEOUTPUT,704)    MeshGen(i)%dlen, MeshGen(i)%anglez
-   do j=1,4
-     write(FILEOUTPUT,705) "   Polynoms coeff for index: ", j
-     write(FILEOUTPUT,703) MeshGen(i)%CoeffsH1(j), MeshGen(i)%CoeffsH2(j), &
-                   MeshGen(i)%CoeffsH3(j), MeshGen(i)%CoeffsH4(j)
-   enddo
+!   do j=1,4
+!     write(FILEOUTPUT,705) "   Polynoms coeff for index: ", j
+!     write(FILEOUTPUT,703) MeshGen(i)%CoeffsH1(j), MeshGen(i)%CoeffsH2(j), &
+!                   MeshGen(i)%CoeffsH3(j), MeshGen(i)%CoeffsH4(j)
+!   enddo
  enddo
  write(FILEOUTPUT, 701) "   ", ""
 
@@ -289,6 +293,109 @@ module printabstractstruct_mod
  704 format(2f10.5)
  705 format(a,i10)
  end subroutine printCreateTrussGen
+
+!************************************************************
+! Writes in a file the solved values for displacements and forces
+ subroutine printNodesNumResults(nn,nt,connectelmt, &
+                              Dunknowns, Dimposed, &
+                              Fmovemt, Fapplied, NumericVar)
+ use typesbalken
+ implicit none
+!-------------------------------------------------------
+! writes to the output file a table of the form:
+! #node #Ux     #Uy     #Oz     #Fx     #Fy     #Mz     #sig,n  #sig,t
+! and replace at right places the value by the boundary condition instead
+!-------------------------------------------------------
+
+ integer                               :: nn,nt
+ type(tMeshElmt),pointer               :: MeshGen(:)
+! type(tmeshCoord)                      :: MeshPoints
+ integer,pointer                       :: connectelmt(:,:)
+ integer,pointer                       :: Dunknowns(:,:)
+ real,pointer                          :: Dimposed(:,:)
+ integer,pointer                       :: Fmovemt(:,:)
+ real,pointer                          :: Fapplied(:,:)
+ type(tVarFull)                        :: NumericVar
+ intent(in)                            :: nn,nt, connectelmt, Dunknowns, & 
+                                          Dimposed, Fmovemt, Fapplied
+! lokal
+ integer                               :: i,j,nti
+ real                                  :: Ux, Uy, Thez, Fx, Fy, Mz, sgn, sgt
+ character(len=122)    :: Textstd !(10x8+6*7)
+ character(len=30)     :: SubName="printNodesNumResults          "
+
+ write(FILEOUTPUT,801) "----- ", adjustl(SubName)
+ write(FILEOUTPUT,801) "  #node #Ux     #Uy     #Oz     #Fx     #Fy     #Mz     #sig,n  #sig,t"
+
+ do i=1,nn
+    nti = connectelmt(i, 2)
+      Ux = NumericVar%Ue(3*(i-1)+1)
+      Uy = NumericVar%Ue(3*(i-1)+2)
+      Thez = NumericVar%Ue(3*(i-1)+3)
+      Fx = NumericVar%Fe(3*(i-1)+1)
+      Fy = NumericVar%Fe(3*(i-1)+2)
+      Mz = NumericVar%Fe(3*(i-1)+3)
+      sgn = 0.0
+      sgt = 0.0
+    if ((Dunknowns(nti,1).eq.1).and.(Dunknowns(nti,2).eq.1).and.(Dunknowns(nti,3).eq.1) &
+            .and.(Fmovemt(nti,1).eq.1).and.(Fmovemt(nti,2).eq.1).and.(Fmovemt(nti,3).eq.1)) then
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz, sgn, sgt 
+    elseif ((Dunknowns(nti,2).eq.1).and.(Dunknowns(nti,3).eq.1) &
+         .and.(Fmovemt(nti,1).eq.1).and.(Fmovemt(nti,2).eq.1).and.(Fmovemt(nti,3).eq.1)) then
+         Ux = Dimposed(i,1)
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz, sgn, sgt
+    elseif ((Dunknowns(nti,1).eq.1).and.(Dunknowns(nti,3).eq.1) &
+         .and.(Fmovemt(nti,1).eq.1).and.(Fmovemt(nti,3).eq.1)) then
+         Uy = Dimposed(i,2)
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz , sgn, sgt
+    elseif ((Dunknowns(nti,1).eq.1).and.(Dunknowns(nti,2).eq.1) &
+         .and.(Fmovemt(nti,1).eq.1).and.(Fmovemt(nti,2).eq.1).and.(Fmovemt(nti,3).eq.1)) then 
+         Thez = Dimposed(i,3)
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz , sgn, sgt
+    elseif ((Dunknowns(nti,1).eq.1).and.(Dunknowns(nti,2).eq.1).and.(Dunknowns(nti,3).eq.1) &
+         .and.(Fmovemt(nti,2).eq.1).and.(Fmovemt(nti,3).eq.1)) then 
+         Fx = Fapplied(i,1)
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz, sgn, sgt
+    elseif ((Dunknowns(nti,1).eq.1).and.(Dunknowns(nti,2).eq.1).and.(Dunknowns(nti,3).eq.1) &
+         .and.(Fmovemt(nti,1).eq.1).and.(Fmovemt(nti,3).eq.1)) then
+         Fy = Fapplied(i,2)
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz , sgn, sgt
+    elseif ((Dunknowns(nti,1).eq.1).and.(Dunknowns(nti,2).eq.1).and.(Dunknowns(nti,3).eq.1)&
+         .and.(Fmovemt(nti,1).eq.1).and.(Fmovemt(nti,2).eq.1)) then 
+         Mz = Fapplied(i,3)
+         write(FILEOUTPUT, 802) i, Ux, Uy, Thez, Fx, Fy, Mz , sgn, sgt
+
+    endif
+ enddo
+
+
+ 801 format(a,a)
+ 802 format(a, i10, a, f10.5,  a, f10.5,  a, f10.5,  a, f10.5,  a, f10.5,  a, f10.5,  &
+         a, f10.5,  a, f10.5)
+ end subroutine printNodesNumResults
+
+ !--------------------------------------------
+ ! appenIntString: concatenation (aggregate)
+ !
+ ! subroutine appendIntString(string_A, number_B, string_idx)
+!  implicit none
+!  character(len=122)     :: string_A ! char position from string_idx to 122 can be set, not the previous one
+!  integer                :: number_B, string_idx
+!  intent(inout)          :: string_A, string_idx
+!  intent(in)             :: number_B
+! ! lokale
+!  integer                :: j
+!  character(len=10)       :: string_B
+!
+!  string_B = (char)( number_B )
+!
+!  do j=1,10
+!!  will not work
+!  enddo
+!  
+!  
+! 902 format(1i10)
+! end subroutine appendIntString
 
 end module printabstractstruct_mod
 

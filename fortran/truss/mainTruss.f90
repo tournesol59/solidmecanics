@@ -65,20 +65,7 @@ program mainTruss
   read(25,*) ! #
   read(25,705) GitterInfo%nn, GitterInfo%nt, GitterInfo%nbeam, GitterInfo%ngeobeam, GitterInfo%nsection 
   CLOSE(UNIT=25)
-  write(*,*) 'Enter index of the Beam'
-  read(*,311) Meshbalk%section_index
 
-  write(*,*) 'Enter number of elements in the Beam'
-  read(*,311) Meshbalk%ibnn
-
-  write(*,*) 'Enter surface of the section of the Beam'
-  read(*,205) Meshbalk%SArea
-
-  write(*,*) 'Enter moment of inertia of the Beam'
-  read(*,205) Meshbalk%CI
-
-  write(*,*) 'Enter Young Modulus and Poisson number of the Beam'
-  read(*,206) Meshbalk%EY, Meshbalk%vu
 
 ! **************************** allocate Geometry Strukturen ************************
   allocate(inull(1), STAT=allocstat)
@@ -125,18 +112,37 @@ program mainTruss
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate MeshGen null"
   endif
-  do k=1,GitterInfo%nt
-    allocate( MeshGen(k)%CoeffsH1(1:4), MeshGen(k)%CoeffsH2(1:4), &
-                 MeshGen(k)%CoeffsH3(1:4), MeshGen(k)%CoeffsH4(1:4), STAT=allocStat)
-    if (allocStat.ne.0) then
-       print *," Error allocation polynoms elmt 2 !"
-    endif
-  enddo
+! Coeffs1 not used
+!  do k=1,GitterInfo%nt
+!    allocate( MeshGen(k)%CoeffsH1(1:4), MeshGen(k)%CoeffsH2(1:4), &
+!                 MeshGen(k)%CoeffsH3(1:4), MeshGen(k)%CoeffsH4(1:4), STAT=allocStat)
+!    if (allocStat.ne.0) then
+!       print *," Error allocation polynoms elmt 2 !"
+!    endif
+!  enddo
   allocate(VarGen(1:GitterInfo%nt), STAT=allocstat)
   if (allocstat.ne.0) then
     print *,"mainTruss: error allocate VarGen null"
   endif
+  !********************* Enter Manually sections: Beam that are modeles by segment of doublets ***********!
+  write(*,*) 'Enter index of the Beam'
+  read(*,311) Meshbalk%section_index
 
+  write(*,*) 'Enter number of elements in the Beam'
+  read(*,311) Meshbalk%ibnn
+
+  write(*,*) 'Enter surface of the section of the Beam'
+  read(*,205) Meshbalk%SArea
+
+  write(*,*) 'Enter moment of inertia of the Beam'
+  read(*,205) Meshbalk%CI
+
+  write(*,*) 'Enter Young Modulus of the Beam'
+  read(*,206) Meshbalk%EY
+ 
+  write(*,*) 'Enter Poisson number of the Beam'
+  read(*,206) Meshbalk%vu
+  
 ! ***************************** allocate definition arrays in the main program *********************************
   allocate(Ke_H%Ke(1:ne*GitterInfo%nn,1:ne*GitterInfo%nn), Var_H%Ue(1:ne*GitterInfo%nn), Var_H%Fe(1:ne*GitterInfo%nn), &
            Exakt%Ux(1:ne*GitterInfo%nn), Exakt%Fx(1:ne*GitterInfo%nn), STAT = allocStat)
@@ -172,7 +178,7 @@ program mainTruss
                        Dimponiert, Kraftbewgg, Kraftimponiert)
 
 ! ****************************** Definitions von Punkten und Elementen Typen ***********************************
-  call createTrussGen(GitterInfo%nn,GitterInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
+  call createTrussGen(GitterInfo,MeshGen,MeshPunkte,elmtabbdung)
 
   OPEN(UNIT=27, FILE='Untitled3.log', ACTION='WRITE')
   write(27,701) "----inputTruss"
@@ -185,8 +191,14 @@ program mainTruss
   call createMesh2DfromFile(Gitter2DInfo,Gitter2D)
 
   call deallocMesh2DfromFile(Gitter2DInfo,Gitter2D)
+ 
+  call createTrussGen(GitterInfo,MeshGen,MeshPunkte,elmtabbdung)
 
-!********************************* Build and Assembly matrices                     *****************************
+!************** First Part: Resolve the Laplacian for torsion stress  *****************************
+! <-------------------- DO SOMETHING --------------------->
+  write(27,701) "----- main2DSection"
+! call Matrice_Ke_H_Torsion(Gitter2DInfo, Gitter2D, Ke_H_2D)
+!************** Second (Main) Part: Build and Assembly Truss matrices                     *****************************
 ! <-------------------- DO SOMETHING --------------------->
   write(27,701) "----- mainTruss"
 !      call Matrice_Ke_H_Truss(MeshGen(1), VarGen(1), Ke_H, 1,2, GitterInfo%nn, GitterInfo%ne, &
@@ -243,13 +255,14 @@ program mainTruss
 !  if (allocStat.ne.0) then
 !     print *," Error deallocation Matrizen inull... !"
 !  endif 
-  do k=1,2
-    deallocate( MeshGen(k)%CoeffsH1, MeshGen(k)%CoeffsH2, &
-                MeshGen(k)%CoeffsH3, MeshGen(k)%CoeffsH4, STAT = allocStat)
-    if (allocStat.ne.0) then
-       write(*,702) " Error deallocation polynoms elmt k= !", k
-    endif
-  enddo
+! not used any more:
+!  do k=1,2
+!    deallocate( MeshGen(k)%CoeffsH1, MeshGen(k)%CoeffsH2, &
+!                MeshGen(k)%CoeffsH3, MeshGen(k)%CoeffsH4, STAT = allocStat)
+!    if (allocStat.ne.0) then
+!       write(*,702) " Error deallocation polynoms elmt k= !", k
+!    endif
+!  enddo
   deallocate(MeshGen, STAT=allocstat)
   if (allocstat.ne.0) then
     print *," Error allocate MeshGen null"

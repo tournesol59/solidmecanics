@@ -74,10 +74,10 @@ MODULE TypesBalken
      ! real,pointer (c_ptr) :: x(:)        ! do NOT work
      !real,dimension(2)         :: x,y,z
 
-     real,pointer         :: CoeffsH1(:)  ! Coefficients des Hermites Polynoms H1 (H1(0)=1, H1'(0)=0
-     real,pointer         :: CoeffsH2(:)  ! Coefficients des Hermites Polynoms H2 (H2(0)=0, H2'(0)=1
-     real,pointer         :: CoeffsH3(:)  ! Coefficients des Hermites Polynoms H3 (H3(0)=1, H3'(0)=0
-     real,pointer         :: CoeffsH4(:)  ! Coefficients des Hermites Polynoms H4 (H4(0)=0, H4'(0)=1
+!     real,pointer         :: CoeffsH1(:)  ! Coefficients des Hermites Polynoms H1 (H1(0)=1, H1'(0)=0
+!     real,pointer         :: CoeffsH2(:)  ! Coefficients des Hermites Polynoms H2 (H2(0)=0, H2'(0)=1
+!     real,pointer         :: CoeffsH3(:)  ! Coefficients des Hermites Polynoms H3 (H3(0)=1, H3'(0)=0
+!     real,pointer         :: CoeffsH4(:)  ! Coefficients des Hermites Polynoms H4 (H4(0)=0, H4'(0)=1
   end type tMeshElmt
   
   type :: tMesh2DInfo
@@ -85,15 +85,17 @@ MODULE TypesBalken
   end type tMesh2DInfo
 
   type :: tMesh2DSection
-     real              :: dy             ! Gitterschrittweite (Delta y)  assumed there is homogenous                               ! Triangle mesh (of rectangular section)!
-     real              :: dz             ! Gitterschrittweite (Delta z)    !
-     integer           :: ny,nz          ! number of points in y and z direction (rectangular zones meshed with triangles rectangles)
-     real,pointer      :: y(:),z(:)           ! Punkte im normal Ebene des Balken zur x-achse !
+     real        :: dy ! Gitterschrittweite Delta y assumed there is homogenous                               ! Triangle mesh (of rectangular section)!
+     real        :: dz        ! Gitterschrittweite (Delta z)    !
+     integer     :: ny,nz     ! number of points in y and z direction
+                      ! (rectangular zones meshed with triangles rectangles)
+     real,pointer :: y(:),z(:) ! Punkte im normal Ebene des Balken zur x-achse !
      integer,pointer   :: elements(:,:)    ! iel n1,n2,n3
-!     integer,pointer   :: neighbours(:,:)  ! iel nh1,nh2,nh3(-1 if boundary)       NO! not this complicated solution of neighbours!
-     integer,dimension(10) :: izoney  ! (:)  ! indices of sub-regions (vertical bands between izoney(k), izoney(k+1) 
-                                     ! with constant G modulus
-     real,dimension(10)    :: Gzoney  ! (:)  ! values of G modulus
+!     integer,pointer   :: neighbours(:,:) ! iel nh1,nh2,nh3(-1 if boundary) 
+! NO! not this complicated solution of neighbours!
+!     integer,dimension(10) :: izoney ! (:)  ! indices of sub-regions (vertical 
+            ! bands between izoney(k), izoney(k+1) with constant G modulus
+!     real,dimension(10)    :: Gzoney  ! (:)  ! values of G modulus
   end type tMesh2DSection
 
   type :: tVar2DSection

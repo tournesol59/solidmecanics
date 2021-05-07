@@ -28,18 +28,22 @@ module CreateTruss_mod
  contains
 !************************************************************
 ! Fills the (in main prgm allocated table of struct tMeshElmt
- subroutine createTrussGen(nn,nt,MeshGen,MeshPoints,meshconnect)
+ subroutine createTrussGen(MeshInfo,MeshGen,MeshPoints,meshconnect)
  use typesbalken
  implicit none
- 
- integer                               :: nn,nt
+
+ type(tMeshInfo)                       :: MeshInfo
  type(tMeshElmt),pointer               :: MeshGen(:)
  type(tMeshCoord)                      :: MeshPoints
  integer,pointer                       :: meshconnect(:,:)
- intent(in)                            :: nn,nt,MeshPoints,meshconnect
+ intent(in)                            :: MeshPoints,meshconnect
  intent(inout)                         :: MeshGen
 ! lokal
  integer                               :: i,j,n1,n2,c1,c2,allocStat
+ integer                               :: nn,nt
+
+ nn = MeshInfo%nn
+ nt = MeshInfo%nt
 
   do i=1,nt    ! fuer jedes Element
     n1 = meshconnect(i,2)       ! Index of the node corresp. as one extremity
@@ -71,32 +75,32 @@ module CreateTruss_mod
                     (  MeshGen(i)%endz -   MeshGen(i)%startz )**2)           ! Laengen des Rechengebiets (Balk) in x/y !
     MeshGen(i)%anglez = acos( (MeshGen(i)%endx - MeshGen(i)%startx) / MeshGen(i)%dlen)
 
-  allocate(   MeshGen(i)%CoeffsH1(1:4),   MeshGen(i)%CoeffsH2(1:4),   MeshGen(i)%CoeffsH3(1:4), &
-               MeshGen(i)%CoeffsH4(1:4), STAT=allocStat)
-  if (allocStat.ne.0) then
-     print *," Error allocation polynoms elmt 1 !"
-  endif  
+!  allocate(   MeshGen(i)%CoeffsH1(1:4),   MeshGen(i)%CoeffsH2(1:4),   MeshGen(i)%CoeffsH3(1:4), &
+!               MeshGen(i)%CoeffsH4(1:4), STAT=allocStat)
+!  if (allocStat.ne.0) then
+!     print *," Error allocation polynoms elmt 1 !"
+!  endif  
 
- ! Fill Hermite  Polynoms, this would be only for implementation of other type of polynoms but will not be used
-  MeshGen(i)%CoeffsH1(1)=1.0
-  MeshGen(i)%CoeffsH1(2)=0.0
-  MeshGen(i)%CoeffsH1(3)=-3.0
-  MeshGen(i)%CoeffsH1(4)=2.0
+ ! not used Fill Hermite  Polynoms, this would be only for implementation of other type of polynoms but will not be used
+!  MeshGen(i)%CoeffsH1(1)=1.0
+!  MeshGen(i)%CoeffsH1(2)=0.0
+!  MeshGen(i)%CoeffsH1(3)=-3.0
+!  MeshGen(i)%CoeffsH1(4)=2.0
 
-  MeshGen(i)%CoeffsH2(1)=0.0
-  MeshGen(i)%CoeffsH2(1)=1.0
-  MeshGen(i)%CoeffsH2(1)=-2.0
-  MeshGen(i)%CoeffsH2(1)=1.0
+!  MeshGen(i)%CoeffsH2(1)=0.0
+!  MeshGen(i)%CoeffsH2(1)=1.0
+!  MeshGen(i)%CoeffsH2(1)=-2.0
+!  MeshGen(i)%CoeffsH2(1)=1.0
 
-  MeshGen(i)%CoeffsH3(1)=0.0
-  MeshGen(i)%CoeffsH3(1)=0.0
-  MeshGen(i)%CoeffsH3(1)=3.0
-  MeshGen(i)%CoeffsH3(1)=-2.0
+!  MeshGen(i)%CoeffsH3(1)=0.0
+!  MeshGen(i)%CoeffsH3(1)=0.0
+!  MeshGen(i)%CoeffsH3(1)=3.0
+!  MeshGen(i)%CoeffsH3(1)=-2.0
 
-  MeshGen(i)%CoeffsH4(1)=0.0
-  MeshGen(i)%CoeffsH4(1)=0.0
-  MeshGen(i)%CoeffsH4(1)=-1.0
-  MeshGen(i)%CoeffsH4(1)=1.0
+!  MeshGen(i)%CoeffsH4(1)=0.0
+!  MeshGen(i)%CoeffsH4(1)=0.0
+!  MeshGen(i)%CoeffsH4(1)=-1.0
+!  MeshGen(i)%CoeffsH4(1)=1.0
 
  enddo
  end subroutine createTrussGen
@@ -145,7 +149,7 @@ module CreateTruss_mod
  integer                               :: kpart
  type(tMeshElmt)                       :: MeshGen
  type(tRigidMat)                       :: Mat
- intent(in)                            :: kpart, MeshGen
+ intent(in)                            :: kpart, MeshGen ! kpart reads which part of the Matrix Mat must be filled out
  intent(inout)                         :: Mat
  ! lokale
   real          :: EIsL, EIsL2, EIsL3, ESsL
