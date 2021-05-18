@@ -21,10 +21,15 @@ module CreateBeamTriangles_mod
       module procedure deallocMesh2DfromFile
     end interface
 
-  public:: allocMesh2DfromFile, createMesh2DfromFile, deallocMesh2DfromFile
+    interface  importGrad2DfromFile
+      module procedure  importGrad2DfromFile
+    end interface
+
+  public:: allocMesh2DfromFile, createMesh2DfromFile, deallocMesh2DfromFile, importGrad2DfromFile
+
 
   ! Macros definition for access to mesh2DSection
-  #define BEAM2D_NAME_OF_STRUCTURE_index_plus_index_of_neighbou 
+#define BEAM2D_NAME_OF_STRUCTURE_index_plus_index_of_neighbou 
 
   contains
   !****************************
@@ -53,19 +58,19 @@ module CreateBeamTriangles_mod
 !    read(25,101) nodetag  ! search for Tag beyond Number of elements line
 !    i=i+1
 !  enddo
-  read(25,102) nboundary
+  read(25,102) nboundary  ! read after "$PhysicalNames"
   i=i+1
   do l=1,nboundary+2
     read(25,*)  ! skip upt to $Nodes next line
     i=i+1
   enddo
-  read(25,102) nnodes
+  read(25,102) nnodes  ! read after "$Nodes"
   i=i+1
   do l=1,nnodes+2
     read(25,*) ! # skips since only dimensions interests us for allocation up to $Elements next line
     i=i+1
   enddo
-  read(25,102) nelmts ! number of Elements
+  read(25,102) nelmts ! read after "$Elements" number of Elements
   i=i+1
   CLOSE(UNIT=25)
 
@@ -73,11 +78,11 @@ module CreateBeamTriangles_mod
   MeshNTest%nelmts=nelmts
   MeshNTest%nboundary=nboundary
 
-  allocate(MeshSec%y(nnodes), MeshSec%z(nnodes), MeshSec%elements(nelmts,1:3), &
+  allocate(MeshSec%y(1:nnodes), MeshSec%z(1:nnodes), MeshSec%elements(1:nelmts,1:3), &
             stat=allocStat)
 
  101  format (a6)
- 102  format (i10)
+ 102  format (i4)
  103  format (i10, 3f8.7)
  104  format (4i10)
  end subroutine allocMesh2DfromFile
@@ -106,7 +111,7 @@ module CreateBeamTriangles_mod
   enddo
   j=1
   do i=5+nboundary+4, 5+nboundary+4+nnodes-1
-!    read(25,203) l,x,y,z
+!    read(25,203) l,x,y,z  ! A READ ERROR HAS TO BE CORRECTED HERE BEFORE ANY GOING FURTHER
     x=0.0
     y=0.0
     read(25,*) 
@@ -120,22 +125,26 @@ module CreateBeamTriangles_mod
   enddo
   i=1
   t=1
+  s=1  ! init counter of elmts
   do while ((t.ne.3).and.(i.le.nnodes))
+  ! see Gmsh online documentation to see the significance of the first
+  ! two numbers, t u (n is elmt index), the others last four are the nodes
     read(25,204) n,t,u,v,w,j,k
-    i=i+1
+   ! form two triangles regular based upon the quadrangle read
+    MeshSec%elements(s,1)=v
+    MeshSec%elements(s,2)=w
+    MeshSec%elements(s,3)=k
+    s=s+1
+    MeshSec%elements(s,1)=w
+    MeshSec%elements(s,2)=j
+    MeshSec%elements(s,3)=k
+    s=s+1
+    i=i+1    
   enddo
-  s=1 ! init counter of elements
-  MeshSec%elements(s,1)=j  ! form two triangles regular based upon the quadrangle read
-  MeshSec%elements(s,2)=k
-  MeshSec%elements(s,3)=m
-  s=s+1
-  MeshSec%elements(s,1)=k
-  MeshSec%elements(s,2)=l
-  MeshSec%elements(s,3)=m
-  s=s+1
+  ! note: there was some init code suppressed there, hope this works
   do while ((t.eq.3).and.(i.le.nnodes))
-    read(25,204) n,t,u,v,w,j,k,l,m
-    i=i+1
+  ! again see Gmsh online Documentation
+    read(25,205) n,t,u,v,w,j,k,l,m
     MeshSec%elements(s,1)=j
     MeshSec%elements(s,2)=k
     MeshSec%elements(s,3)=m
@@ -144,6 +153,7 @@ module CreateBeamTriangles_mod
     MeshSec%elements(s,2)=l
     MeshSec%elements(s,3)=m
     s=s+1
+    i=i+1
   enddo
   CLOSE(UNIT=25)
 
@@ -153,8 +163,8 @@ module CreateBeamTriangles_mod
  201  format (a6)
 ! 202  format (i10)
  203  format (i5, 3f8.7)
- 204  format (4i5)
- 205  format (7i5)
+ 204  format (7i2)
+ 205  format (9i2)
  end subroutine createMesh2DfromFile
 
   !****************************
@@ -166,11 +176,37 @@ module CreateBeamTriangles_mod
   type(tMesh2DSection)         :: MeshSec
   
   integer                      :: allocStat
-  deallocate(MeshSec%y,MeshSec%z,MeshSec%elements, stat=allocStat)
+!  deallocate(MeshSec%y,MeshSec%z,MeshSec%elements, stat=allocStat)
+  deallocate(MeshSec%y, stat=allocStat)
+  deallocate(MeshSec%z, stat=allocStat)
+  deallocate(MeshSec%elements, stat=allocStat)
+
   if (allocStat.ne.0) then
     print *," ---deallocMesh2DfromFile ERROR could not deallocate properly "
   endif
  end subroutine deallocMesh2DfromFile
+
+ !**************************************************
+  ! subroutine create structure for copying the result of FEniCS
+ subroutine importGrad2DfromFile(MeshNTest,MeshSec)
+  use typesbalken
+  implicit none
+  type(tMesh2DInfo)            :: MeshNTest
+  type(tMesh2DSection)         :: MeshSec
+
+  integer                      :: i,j, nnodes, nelmts, nboundary
+
+  nnodes=MeshNTest%nnodes
+  nelmts=MeshNTest%nelmts
+  nboundary=MeshNTest%nboundary
+
+!  OPEN(UNIT=25, FILE='Lbeamin.msh', ACTION='READ')
+  OPEN(UNIT=25, FILE='squareforprog.msh', ACTION='READ')
+  
+  CLOSE(UNIT=25)
+
+  end subroutine importGrad2DfromFile
+
 
 end module CreateBeamTriangles_mod
 

@@ -276,10 +276,12 @@ program mainTruss
   if (allocstat.ne.0) then
     print *," Error deallocate MeshPunkte null"
   endif
-  deallocate(Meshbalk(1)%nodes, STAT=allocstat)
-  if (allocstat.ne.0) then
-    print *," Error deallocate Meshbalk(1)%nodes null"
-  endif
+  do k=1,GitterInfo%nbeam
+    deallocate(Meshbalk(k)%nodes, STAT=allocstat)
+    if (allocstat.ne.0) then
+      print *," Error deallocate Meshbalk(1)%nodes null"
+    endif
+  enddo
   deallocate(Meshbalk, STAT=allocstat)
   if (allocstat.ne.0) then
     print *," Error deallocate Meshbalk null"
