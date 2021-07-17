@@ -4,21 +4,29 @@ module RigidTrussContacts_mod
 ! The Balken have 2 nodes, each of whom have 3 displacements and 3 rotations
 !**********************************************************************!
   use typesbalken
-  ! use printabstractstruct_mod
+  use printabstractstruct_mod
+  use CreateTruss_mod
 
   implicit none
+ ! caution: duplicate preprocessor but could not find other mean (see CreateTruss.f)
+#define LINK_BAREND 1
+#define LINK_BARSLIDE 2
+#define LINK_BEAMEND 3
+#define LINK_BEAMSLIDE 4
+#define LINK_BEAMFREE 5
+#define LINK_BARTOBAR 6
+#define LINK_BEAMTOBEAM 7
 
 #define mgetI(n) connectelmt(n,2)
 
 #define mgetJ(n) connectelmt(n,3)
 
-#define mcantileverI(n) ((Dunknowns(n,1).eq.0).and.(Dunknowns(n,2).eq.0).and.(Dunknowns(n,3).eq.0))
-
-#define mcantileverJ(n) ((Dunknowns(n,4).eq.0).and.(Dunknowns(n,5).eq.0).and.(Dunknowns(n,6).eq.0))
-
-#define marticulatedI(n) ((Fmovemt(n,3).eq.1))
-
-#define marticulatedJ(n) ((Fmovemt(n,6).eq.1))
+#define mcantileverI(n,i) (Dunknowns(n,i).eq.1)  
+! I have changed it recently to the inverse (1 insof 0) because intuitively a cantilever at the wall side is the determination of
+! moment and force at the wall where D=forced zero
+#define mcantileverJ(n,i) (Dunknowns(n,i+3).eq.1)
+#define marticulatedI(n) (Fmovemt(n,3).eq.1)
+#define marticulatedJ(n) (Fmovemt(n,6).eq.1)
 
   private
 
@@ -44,6 +52,7 @@ module RigidTrussContacts_mod
 
     integer    :: TYP_BAR=1
     integer    :: TYP_BEAM=2
+! caution: linkage typ codes are defined by proprocessor in File: CreateTruss.f
 
    public::  MatrixRotMultiply, Matrice_Ke_H_local_dfix, Matrice_Ke_H_Truss, Vector_F_RHS_local, Vector_F_RHS_Truss
 
@@ -96,14 +105,15 @@ END SUBROUTINE MatrixRotMultiply
 !   creates and fills the matrix from 6 ddl to 6 force components!
 !**************************************************************!
 
-SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
+SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, linktyp_1, linktyp_2, Keii, Keij, Kejj) !MeshT, VarT, Keii, Keij, Kejj)
   use typesbalken
   use printabstractstruct_mod
 
   implicit none
 !  integer,intent(in)           :: iel ! think about passing the whole struct array tMeshElmt,pointer or just an Elmt
   type(tMeshElmt), intent(in)  :: MeshT
-  type(tVarElmt), intent(in)   :: VarT
+!  type(tVarElmt), intent(in)   :: VarT
+  integer                      :: linktyp_1, linktyp_2
   type(tRigidMat), intent(inout) :: Keii, Keij, Kejj
 !  integer,intent(in)             :: code ! 1 fest eingespannt x2; 2 l-fest eingespannt r-freies Moment, 
 !                                         ! 3 l-freies Moment r-fest eingespannt, 4 freies Moment x2
@@ -131,18 +141,42 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, VarT, Keii, Keij, Kejj)
 
   costh=(MeshT%endx-MeshT%startx)/MeshT%dlen
   sinth=(MeshT%endy-MeshT%starty)/MeshT%dlen
- 
-  if ((MeshT%typ).eq.TYP_BAR) then ! elmt is a bar, no flexion
-     call matrixrodcondition(MeshT, Keii)
-  elseif ((MeshT%typ).eq.TYP_BEAM) then  ! elmt is a beam with flexion around axis z only.
-     call matrixfixedcondition(MeshT, Keii, 1)
-     call matrixfixedcondition(MeshT, Keij, 2)
-     call matrixfixedcondition(MeshT, Kejj, 3)
-  endif
+ !! OLD: 
+!  if ((MeshT%typ).eq.TYP_BAR) then ! elmt is a bar, no flexion
+!     call matrixrodcondition(MeshT, Keii)
+!  elseif ((MeshT%typ).eq.TYP_BEAM) then  ! elmt is a beam with flexion around axis z only.
+!     call matrixfixedcondition(MeshT, Keii, 1)
+!     call matrixfixedcondition(MeshT, Keij, 2)
+!     call matrixfixedcondition(MeshT, Kejj, 3)
+!  endif
 
 !  write(*,401) "----- ", adjustl(SubName)
 ! 401  format (a,a)
 
+  ! actualized implementation: the logic of element type is performed by calling
+  ! sub Matrice_Ke_H_Truss and a selection of the element is done here with one more parameter: linktyp
+  
+  select case(MeshT%typ)
+    case(1)
+      call matrixrodcondition(MeshT, Keii, 1)
+    case(2)
+     ! in this case we should distinguish bet. more linkage cases
+      if ((linktyp_1.eq.LINK_BEAMEND).and.(linktyp_2.eq.LINK_BEAMEND)) then
+        call matrixfixedcondition(MeshT, Keii, 1)
+        call matrixfixedcondition(MeshT, Keij, 2)
+        call matrixfixedcondition(MeshT, Kejj, 3)
+      else if ((linktyp_1.eq.LINK_BEAMEND).and.(linktyp_2.eq.LINK_BEAMFREE)) then
+        call matrixfixedfreecondition(MeshT, Keii, 1)
+        call matrixfixedfreecondition(MeshT, Keij, 2)
+        call matrixfixedfreecondition(MeshT, Kejj, 3)
+      else if ((linktyp_1.eq.LINK_BEAMFREE).and.(linktyp_2.eq.LINK_BEAMEND)) then
+        call matrixfreefixedcondition(MeshT, Keii, 1)
+        call matrixfreefixedcondition(MeshT, Keij, 2)
+        call matrixfreefixedcondition(MeshT, Kejj, 3)
+!      else if ((linktyp_1.eq.LINK_BEAMFREE).and.(linktyp_2.eq.LINKBEAMFREE)) then
+      end if
+  end select
+  
   M_rot%Mp(1)=costh
   M_rot%Mp(2)=sinth
   M_rot%Mp(4)=-sinth
@@ -179,7 +213,7 @@ END SUBROUTINE Matrice_Ke_H_local_dfix
 SUBROUTINE Matrice_Ke_K_assembly(Ke_H,Keii,Keij,Kejj,jj,kk,n,ne)
 
   use typesbalken
-!  use printabstractstruct_mod
+
 
   implicit none
 
@@ -200,8 +234,6 @@ SUBROUTINE Matrice_Ke_K_assembly(Ke_H,Keii,Keij,Kejj,jj,kk,n,ne)
      enddo
   enddo
 
-  call prntsimplestruct(3,3,Ke_H,SubName)
-
 END SUBROUTINE  Matrice_Ke_K_assembly
 
 !**************************************************************!
@@ -212,11 +244,10 @@ END SUBROUTINE  Matrice_Ke_K_assembly
 ! not terminated                                               !
 !**************************************************************!
 
-SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
-                              Dunknowns, Dimposed, &
-                              Fmovemt, Fapplied)
+SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, nn, ne, n, &
+                connectelmt, Dunknowns, Dimposed, Fmovemt, Fapplied)
   use typesbalken
-  use printabstractstruct_mod
+  use printabstractstruct_mod,only : prntadjuststruct
 
   implicit none
 
@@ -224,7 +255,7 @@ SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
   type(tVarElmt), intent(in)   :: VarT1   ! Unknown variables (not used in this subroutine)
                                           ! and applied forces (used)
   type(tRigidFullMat)          :: Ke_H   ! Whole global rigidity matrix
-  integer,intent(in)           :: n, ne   ! Max number of nodes, max number of deg freedom (3 or 6)
+  integer,intent(in)           :: n, nn, ne   ! Current elmt, Max number of nodes, max number of deg freedom (3 or 6)
   integer,intent(in)           :: jj,kk       ! index of connected nodes to be assemblied in Ke_H
   integer,pointer,intent(in)   :: connectelmt(:,:)  ! These indexes (jj,kk) are also found if connectelmt(j,k)=1
   integer,pointer,intent(in)   :: Dunknowns(:,:)    ! Dunkowns(i,j)=1 means j-th of 4 deg of 
@@ -236,7 +267,8 @@ SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
 
 ! lokalen Variablen
 
-  integer                       :: i,j,l,p,allocstat
+  integer                       :: i,j,l,p,n1,n2,allocstat
+  integer                       :: linktyp_1, linktyp_2
   type(tRigidMat)               :: Keii, Keij, Kejj
 
 !  allocate(Ke_H%Ke(1:n*ne,1:n*ne), STAT=allocstat) !! BY NO WAY !! (left as comment to not do that again!)
@@ -247,9 +279,31 @@ SUBROUTINE Matrice_Ke_H_Truss(MeshT1, VarT1, Ke_H, jj, kk, n, ne, connectelmt, &
   if (allocstat.ne.0) then
     print *,"Matrice_Ke_H_Truss: error allocate Keii,ij,jj"
   endif
+  n1=MeshT1%node_1
+  n2=MeshT1%node_2
+  ! use of macros to determine which linkage is to handle
+  ! case 1: all forces have to be determined
+  if ((mcantileverI(n,1)).and.(mcantileverI(n,2)) &
+         .and.(mcantileverI(n,3)).and.(mcantileverJ(n,1)) &
+         .and.(mcantileverJ(n,2)).and.(mcantileverJ(n,3))) then
+
+     call Matrice_Ke_H_local_dfix(MeshT1, 3,3, Keii, Keij, Kejj)  
+     ! tbd/tbc: include case 7 by inquiring the index of beam elmt in a discrete BEAM
+
+     !to complete other cases
+     ! case 2: only displacement at one (let's say second, convention) node tbd
+  else if ((mcantileverI(n,1)).and.(mcantileverI(n,2)) &
+         .and.(mcantileverI(n,3)).and.(marticulatedJ(n))) then
+         
+     call Matrice_Ke_H_local_dfix(MeshT1, 3,5, Keii, Keij, Kejj) ! 1fixed,2free
+
+  else if ((marticulatedI(n)).and.(marticulatedJ(n))) then
+     call Matrice_Ke_H_local_dfix(MeshT1, 1,1, Keii, Keij, Kejj)
+  endif   
  
-  call Matrice_Ke_H_local_dfix(MeshT1, VarT1, Keii, Keij, Kejj)  
   call Matrice_Ke_K_assembly(Ke_H,Keii,Keij,Kejj,jj,kk,n,ne)
+
+  call prntadjuststruct(nn, nn, Ke_H, SubName)
 
   deallocate(Keii%Ke, Keij%Ke, Kejj%Ke, STAT = allocstat)
   if (allocstat.ne.0) then

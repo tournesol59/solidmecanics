@@ -20,7 +20,7 @@ module printabstractstruct_mod
  !    module procedure prntmultisimplearray
  !  end interface
 
-   public::  prntsimplearray, prntsimplestruct, prntadjuststruct, &
+   public::  prntsimplearray,  prntsimplestruct, prntadjuststruct, &
                printCreateTrussGen, printNodesNumResults
 
   contains
@@ -250,15 +250,15 @@ subroutine prntsimplematrix(nrow,ncol, typ, ptr_int, ptr_dou, SubName)
 
 !************************************************************
 ! Fills the (in main prgm allocated table of struct tMeshElmt
- subroutine printCreateTrussGen(nn,nt,MeshGen,MeshPoints,meshconnect)
+ subroutine printCreateTrussGen(nn,nt,MeshGen,MeshPoints,meshpattern)
  use typesbalken
  implicit none
 
  integer                               :: nn,nt
  type(tMeshElmt),pointer               :: MeshGen(:)
  type(tmeshCoord)                      :: MeshPoints
- integer,pointer                       :: meshconnect(:,:)
- intent(in)                            :: nn,nt,MeshPoints,meshconnect,MeshGen
+ integer,pointer                       :: meshpattern(:,:)
+ intent(in)                            :: nn,nt,MeshPoints,meshpattern,MeshGen
 ! lokal
  integer                               :: i,j
  character(len=30)     :: SubName="printCreateTrussGen           "

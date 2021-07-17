@@ -66,7 +66,8 @@ module InputTruss_mod
   enddo
   read(25,*) ! #
   do i=1,MeshInfo%nt  ! read: #number of points contained in an elmt #begin point of the element #end point of the element
-    read(25,310) meshpattern(i,1), meshpattern(i,2), meshpattern(i,3) !, MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
+    read(25,310) meshpattern(i,1), meshpattern(i,2), meshpattern(i,3), MeshGen(i)%SArea, MeshGen(i)%CI ! Solely for SArea and CI a call to MeshGen(i) is done
+    write(*,310) meshpattern(i,1), meshpattern(i,2), meshpattern(i,3), MeshGen(i)%SArea, MeshGen(i)%CI ! verification
     if (meshpattern(i,1).ge.3) then  ! 	a beam can contain one or more mid-points
       countbeam=countbeam+1
       MeshBSet(countbeam)%ibnn=meshpattern(i,1)
@@ -118,7 +119,7 @@ module InputTruss_mod
  307  format (2i5)
  308  format (7i5)
  309  format (3i5)
- 310  format (i5,i5,i5)  !,e10.2,e10.2)
+ 310  format (i5,i5,i5,e10.2,e10.2)
  311  format (i5)
   end subroutine Input_file
 

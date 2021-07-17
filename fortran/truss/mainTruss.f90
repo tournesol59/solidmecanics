@@ -186,11 +186,11 @@ program mainTruss
   call printCreateTrussGen(GitterInfo%nn,GitterInfo%nt,MeshGen,MeshPunkte,elmtabbdung)
 
 !<---------------------- PARSE INPUT FILE FOR DEFINITION of section 2S mesh" ---------------------------->
-  call allocMesh2DfromFile(Gitter2DInfo,Gitter2D)
+!  call allocMesh2DfromFile(Gitter2DInfo,Gitter2D)
 
-  call createMesh2DfromFile(Gitter2DInfo,Gitter2D)
+!  call createMesh2DfromFile(Gitter2DInfo,Gitter2D)
 
-  call deallocMesh2DfromFile(Gitter2DInfo,Gitter2D)
+!  call deallocMesh2DfromFile(Gitter2DInfo,Gitter2D)
  
   call createTrussGen(GitterInfo,MeshGen,MeshPunkte,elmtabbdung)
 
@@ -198,13 +198,12 @@ program mainTruss
 ! <-------------------- DO SOMETHING --------------------->
   write(27,701) "----- main2DSection"
 ! call Matrice_Ke_H_Torsion(Gitter2DInfo, Gitter2D, Ke_H_2D)
+
 !************** Second (Main) Part: Build and Assembly Truss matrices                     *****************************
 ! <-------------------- DO SOMETHING --------------------->
   write(27,701) "----- mainTruss"
-!      call Matrice_Ke_H_Truss(MeshGen(1), VarGen(1), Ke_H, 1,2, GitterInfo%nn, GitterInfo%ne, &
-!                              elmtabbdung, &
-!                              Dunbekannt, Dimponiert, &
-!                              Kraftbewgg, Kraftimponiert)
+  call Matrice_Ke_H_Truss(MeshGen(1), VarGen(1), Ke_H, 1,1,2, GitterInfo%nn, GitterInfo%nt, &
+          elmtabbdung, Dunbekannt, Dimponiert, Kraftbewgg, Kraftimponiert)
 
 !! THINK ABOUT TO GENERALIZE EXPRESSION BELOW: IT COULD HAVE ALSO A SPC condition
 
@@ -214,7 +213,7 @@ program mainTruss
 !  do kk=1,nn
 !   if (kk.ne.km1) then
 !      write(*,702) "----- mainTruss: elmt typ= ", MeshGen(km1)%typ
-!      call Matrice_Ke_H_Truss(MeshGen(km1), VarGen(km1), Ke_H, jj,kk, n, ne, &
+!      call Matrice_Ke_H_Truss(MeshGen(km1), VarGen(km1), Ke_H, km1,jj,kk, n, ne, &
 !                              elmtabbdung, &
 !                              Dunbekannt, Dimponiert, &
 !                              Kraftbewgg, Kraftimponiert)
