@@ -33,8 +33,13 @@ SGI_FLAGS = \
         F90="f90" \
         F90_CFLAGS="-C -O2 -I Modules" \
 	MOD_FILES="if test -e *.mod ; then mv -f *.mod Modules; fi " \
-	ALLOCATEFIELDS="Modules/allocateFields_mod.mod" \
 	TYPES="Modules/TYPES.mod" \
+        PRINTABSTRACTSTRUCT="Modules/printabstractstruct_mod" \
+	INPUT_MOD="Modules/Input_mod.mod" \
+	ALLOCATEFIELDS="Modules/allocateFields_mod.mod" \
+	CREATEMESH="Modules/createmesh_mod.mod" \
+	INTERPOL2D="Modules/Interpol2d_mod.mod" \
+        PATCHTEST2D5EL="Modules/Patchtest2d5el_mod.mod
 
 ifeq ($(FCOMP),"notgfortran")
 LINUX_FLAGS = \
@@ -42,32 +47,24 @@ LINUX_FLAGS = \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES=""\
 	TYPES="TYPES.mod" \
-	INPUT_MOD="Input_mod.mod" \
+        PRINTABSTRACTSTRUCT="PRINTABSTRACTSTRUCT_mod" \
+	INPUT_MOD="INPUT_mod.mod" \
 	ALLOCATEFIELDS="ALLOCATEFIELDS_mod.mod" \
 	CREATEMESH="CREATEMESH_mod.mod" \
 	INTERPOL2D="INTERPOL2D_mod.mod" \
-        LAGRANGE1D="LAGRANGE1D_mod.mod" \
-        LAGRANGE2D="LAGRANGE2D_mod.mod" \
-        HERMITE1D="HERMITE1D_mod.mod" \
-        HERMITE2D="HERMITE2D_mod.mod" \
-        LAGRANGEGRAD2D="LAGRANGEGRAD2D_mod.mod" \
-        VERIFYQUAD2D="VERIFYQUAD2D_mod.mod"
+        PATCHTEST2D5EL="PATCHTEST2D5EL_mod.mod
 else
 LINUX_FLAGS = \
         F90=$(FCOMP) \
         F90_CFLAGS=$(FC_FLAGS) \
 	MOD_FILES="" \
 	TYPES="types.mod" \
-	INPUT_MOD="Input_mod.mod" \
-	ALLOCATEFIELDS="allocatefields_mod.mod" \
+        PRINTABSTRACTSTRUCT="printabstractstruct_mod" \
+	INPUT_MOD="Modules/Input_mod.mod" \
+	ALLOCATEFIELDS="allocateFields_mod.mod" \
 	CREATEMESH="createmesh_mod.mod" \
-	INTERPOL2D="interpol2d_mod.mod" \
-        LAGRANGE1D="Lagrange1d_mod.mod" \
-        LAGRANGE2D="Lagrange2d_mod.mod" \
-        HERMITE1D="hermite1d_mod.mod" \
-        HERMITE2D="hermite2d_mod.mod" \
-        LAGRANGEGRAD2D="Lagrangegrad2d_mod.mod" \
-        VERIFYQUAD2D="verifyquad2d_mod.mod"
+	INTERPOL2D="Interpol2d_mod.mod" \
+        PATCHTEST2D5EL="Patchtest2d5el_mod.mod
 endif
 
 ####################################################################
@@ -83,16 +80,12 @@ endif
 
 #Regeln fuer Module
 $(TYPES): typesdef.o
+$(PRINTABSTRACTSTRUCT): printabstractstruct.o
 ${INPUT_MOD}: input_mod.o
 $(ALLOCATEFIELDS): allocatefields.o
 ${CREATEMESH}: createmesh.o
 {INTERPOL2D}: interpol2d.o
-{LAGRANGE1D}: Lagrange1d.o
-{LAGRANGE2D}: Lagrange2d.o
-{HERMITE1D}: hermite1d.o
-{HERMITE2D}: hermite2d.o
-{LAGRANGEGRAD2D}: Lagrangegrad2d.o 
-{VERIFYQUAD2D}: verifyquad2d.o 
+{PATCHTEST2D5EL}: Patchtest2d5el.o
 
 ####################################################################
 # Targets fuer alle Maschinen, die zugelassen sind
@@ -116,12 +109,7 @@ library: $(LIB)(typesdef.o) \
 	 $(LIB)(allocatefields.o) \
 	 $(LIB)(createmesh.o) \
 	 $(LIB)(interpol2d.o) \
-	 $(LIB)(Lagrange1d.o) \
-	 $(LIB)(Lagrange2d.o) \
-	 $(LIB)(hermite1d.o) \
-	 $(LIB)(hermite2d.o) \
-	 $(LIB)(Lagrangegrad2d.o) \
-	 $(LIB)(verifyquad2d.o)
+         $(LIB)(patchtest2d5el.o) \
 
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
@@ -151,20 +139,15 @@ cleanall:
 ######################################################
 # Abhaengigkeiten
 #
+$(LIB)(printabstractstruct.o): $(TYPES)
 $(LIB)(Input_mod.o): $(TYPES)
 $(LIB)(createMesh.o): $(TYPES)
 $(LIB)(allocateFields.o): $(TYPES)
 $(LIB)(interpol2D.o): $(TYPES)
-$(LIB)(createMesh.o): $(TYPES)
-$(LIB)(Lagrange1d.o): $(TYPES)
-$(LIB)(Lagrange2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D)
-$(LIB)(hermite1d.o): $(TYPES)
-$(LIB)(hermite2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE1D) $(HERMITE1D) 
-$(LIB)(Lagrangegrad2d.o): $(TYPES) $(INTERPOL2D) $(LAGRANGE2D)
-$(LIB)(verifyquad2d.o): $(TYPES)
+$(LIB)(createMesh.o): $(TYPES) 
+$(LIB)(patchtest2d5el.o): $(TYPES)
 main.o: $(TYPES) $(ALLOCATEFIELDS) $(CREATEMESH) $(INTERPOL2D) \
-         $(LAGRANGE1D) $(HERMITE1D) $(LAGRANGE2D)  $(LAGRANGEGRAD2D) \
-         $(HERMITE2D) $(VERIFYQUAD2D)
+        $(PATCHTEST2D5EL)
 
 	@echo "make cleanall completed..."
 

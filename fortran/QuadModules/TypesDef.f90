@@ -78,7 +78,7 @@ MODULE Types
     real,pointer     :: Tension3(:,:)     ! array pointer: Spannung in Richtung 3  !
     real,pointer     :: BiegMoment(:,:)   ! BiegMoment Tensor, nicht tangential    !
 
-     real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation! 
+!     real,pointer         :: Coefficients(:,:) ! des Polynoms fuer vordraengige Interpolation 
 
   end type tNumeric
 
@@ -100,13 +100,13 @@ MODULE Types
 ! 'trandbedingungen' is not C interoperable --> may be add type, bind(C)
 
      integer          :: randltype      ! RandTyp links: 1=Fixed, 2=Momentum, 3=Freibiegung
-     type(c_ptr)             :: randl       ! Randwerte links                 !
-     integer                 :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Momentum, 3=Freibiegung
-     type(c_ptr)             :: randr       ! Randwerte rechts                !
-     integer                 :: randotype      ! RandTyp oben: 1=Fixed, 2=Momentum, 3=Freibiegung
-     type(c_ptr)             :: rando      ! Randwerte oben                  !
-     integer                 :: randutype      ! RandTyp unten: 1=Fixed, 2=Momentum, 3=Freibiegung
-     type(c_ptr)             :: randu       ! Randwerte unten                 !
+     real,pointer     :: randl(:)       ! Randwerte links                 !
+     integer          :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Momentum, 3=Freibiegung
+      real,pointer    :: randr(:)      ! Randwerte rechts                !
+     integer          :: randotype      ! RandTyp oben: 1=Fixed, 2=Momentum, 3=Freibiegung
+     real,pointer     :: rando(:)      ! Randwerte oben                  !
+     integer          :: randutype      ! RandTyp unten: 1=Fixed, 2=Momentum, 3=Freibiegung
+    real,pointer      :: randu(:)      ! Randwerte unten                 !
   end type tRandbedingungen
   
   type tConstants  ! Original for Waermetransportsproblem geplant !
@@ -142,8 +142,8 @@ MODULE Types
   end type tLogicals
 
   type :: tExakt
-!     real,pointer         :: loesung(:,:)   ! Feld mit der exakten Loesung     !
-      type(c_ptr)         :: loesung        ! loesung(*,*)
+     real,pointer         :: loesung(:,:)   ! Feld mit der exakten Loesung     !
+!      type(c_ptr)         :: loesung        ! loesung(*,*)
      integer              :: kmaxex         ! Genauigkeit der exakten L\F6sung  !
   end type tExakt
 
@@ -181,8 +181,9 @@ MODULE Types
   end type tPolynom
 
   !---------------------------------------------------------------------------!
-  public  :: tMesh, tMeshGen, tCurv, tZeiten, tRandbedingungen, tConstants, tLogicals, &
-             tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, tNumeric, tPolynom
+  public  :: tMeshInfo, tMesh, tMeshGen, tCurv, tZeiten, tRandbedingungen, tConstants, & 
+             tLogicals, tCoeff, tExakt, tFileIO, tElliptic, tHyperbolic, tHyper1D, & 
+             tNumeric, tPolynom
   !---------------------------------------------------------------------------!
 
 ! contains
