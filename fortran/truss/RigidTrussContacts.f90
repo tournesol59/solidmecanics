@@ -162,14 +162,17 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, linktyp_1, linktyp_2, Keii, Keij, Kejj
     case(2)
      ! in this case we should distinguish bet. more linkage cases
       if ((linktyp_1.eq.LINK_BEAMEND).and.(linktyp_2.eq.LINK_BEAMEND)) then
+        print *, "Beam fixed"
         call matrixfixedcondition(MeshT, Keii, 1)
         call matrixfixedcondition(MeshT, Keij, 2)
         call matrixfixedcondition(MeshT, Kejj, 3)
       else if ((linktyp_1.eq.LINK_BEAMEND).and.(linktyp_2.eq.LINK_BEAMFREE)) then
+        print *, "Beam fixed free"
         call matrixfixedfreecondition(MeshT, Keii, 1)
         call matrixfixedfreecondition(MeshT, Keij, 2)
         call matrixfixedfreecondition(MeshT, Kejj, 3)
       else if ((linktyp_1.eq.LINK_BEAMFREE).and.(linktyp_2.eq.LINK_BEAMEND)) then
+        print *, "Beam free fixed"
         call matrixfreefixedcondition(MeshT, Keii, 1)
         call matrixfreefixedcondition(MeshT, Keij, 2)
         call matrixfreefixedcondition(MeshT, Kejj, 3)
@@ -184,7 +187,10 @@ SUBROUTINE Matrice_Ke_H_local_dfix(MeshT, linktyp_1, linktyp_2, Keii, Keij, Kejj
   M_rot%Mp(9)=1.0
   
   call prntsimplearray(9, 2, inull, M_rot%Mp, SubName)
-
+  print *,"Keii"
+  write(*,1002) Keii%Ke(2,2)
+ 1002  format (f10.5)
+ 
   call prntsimplestruct(3,3,Keii,SubName)
 
   call prntsimplestruct(3,3,Keij,SubName)
@@ -317,15 +323,67 @@ END SUBROUTINE Matrice_Ke_H_Truss
 !   creates and fills the vector from 3 ddl corresp forces and Moments!
 !**************************************************************!
 
-SUBROUTINE Vector_F_RHS_local(MeshT, VarT, code)
+SUBROUTINE Vector_F_RHS_local(MeshT, VarT, linktyp_1, linktyp_2, fx1,fy1,mz1, fx2,fy2,mz2)
   use typesbalken
   implicit none
 
   type(tMeshElmt), intent(in)  :: MeshT
-  type(tVarElmt), intent(inout)   :: VarT  ! contains the force at nodes i and j
-  integer,intent(in)              :: code ! 1 fest eingespannt x2; 2 l-fest eingespannt r-freies Moment, 
+  type(tVarElmt), intent(inout) :: VarT  ! contains the force at nodes i and j
+  integer                      :: linktyp_1, linktyp_2
+
+!  integer,intent(in)              :: code ! 1 fest eingespannt x2; 2 l-fest eingespannt r-freies Moment, 
                                          ! 3 l-freies Moment r-fest eingespannt, 4 freies Moment x2
+  real                         :: fx1,fy1,mz1, fx2,fy2,mz2
+  real                         :: costh, sinth
+
+  costh=(MeshT%endx-MeshT%startx)/MeshT%dlen
+  sinth=(MeshT%endy-MeshT%starty)/MeshT%dlen
+
   ! TO COMPLETE !
+  select case(MeshT%typ)
+    case(1) ! bar elmt
+      VarT%FeIi(1)=fx1
+      VarT%FeIi(2)=fy1
+      VarT%FeIi(3)=0.0 ! will not be used
+      VarT%FeJi(1)=fx2
+      VarT%FeJi(2)=fy1
+      VarT%FeJi(3)=0.0 ! will not be used
+    case(2) ! beam element
+     ! in this case we should distinguish bet. more linkage cases
+      if ((linktyp_1.eq.LINK_BEAMEND).and.(linktyp_2.eq.LINK_BEAMEND)) then
+        print *, "Beam fixed"
+        VarT%UeIi(1)=0.0
+        VarT%UeIi(2)=0.0
+        VarT%UeIi(3)=0.0
+        VarT%UeJi(1)=0.0
+        VarT%UeJi(2)=0.0
+        VarT%UeJi(3)=0.0
+        ! Nothing to do in Fe since displacement imposed 
+      elseif ((linktyp_1.eq.LINK_BEAMEND).and.(linktyp_2.eq.LINK_BEAMFREE)) then
+        print *, "Beam fixed and free"
+        VarT%UeIi(1)=0.0
+        VarT%UeIi(2)=0.0
+        VarT%UeIi(3)=0.0
+
+        VarT%FeJi(1)=MeshT%q1  / 2. * MeshT%dlen
+! Interpolation betw q1 and q2 will be treated after
+        VarT%FeJi(2)=MeshT%q1 / 2. * MeshT%dlen
+        VarT%FeJi(3)=MeshT%q1 /12. * ( MeshT%dlen )**2
+
+        ! Nothing to do in Fe since displacement imposed 
+      elseif ((linktyp_1.eq.LINK_BEAMFREE).and.(linktyp_2.eq.LINK_BEAMEND)) then
+        print *, "Beam free and fixed"
+       VarT%FeIi(1)=MeshT%q1  / 2. * MeshT%dlen
+! Interpolation betw q1 and q2 will be treated after
+        VarT%FeIi(2)=MeshT%q1 / 2. * MeshT%dlen
+        VarT%FeIi(3)=MeshT%q1 /12. * ( MeshT%dlen )**2
+
+        VarT%UeJi(1)=0.0
+        VarT%UeJi(2)=0.0
+        VarT%UeJi(3)=0.0 
+        ! Nothing to do in Fe since displacement imposed 
+      endif
+  end select
 
 END SUBROUTINE Vector_F_RHS_local
 

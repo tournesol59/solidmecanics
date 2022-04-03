@@ -96,6 +96,7 @@ module CreateBeamTriangles_mod
   type(tMesh2DInfo)            :: MeshNTest
   type(tMesh2DSection)         :: MeshSec
   integer                      :: i,j,k,l,m,n,t,u,v,w,s,nnodes,nelmts,nboundary
+  integer                      :: ioreadstat
   real                         :: x,y,z
   character(len=6)             :: nodetag
 
@@ -129,7 +130,11 @@ module CreateBeamTriangles_mod
   do while ((t.ne.3).and.(i.le.nnodes))
   ! see Gmsh online documentation to see the significance of the first
   ! two numbers, t u (n is elmt index), the others last four are the nodes
-    read(25,204) n,t,u,v,w,j,k
+    read(25,204,IOSTAT=ioreadstat) n,t,u,v,w,j,k
+    if( ioreadstat < 0 )then
+       write(6,'(A)') 'Warning: File containts less than 65 entries'
+       exit
+    else if (ioreadstat >0) then
    ! form two triangles regular based upon the quadrangle read
     MeshSec%elements(s,1)=v
     MeshSec%elements(s,2)=w
@@ -139,12 +144,17 @@ module CreateBeamTriangles_mod
     MeshSec%elements(s,2)=j
     MeshSec%elements(s,3)=k
     s=s+1
-    i=i+1    
+    i=i+1
+    endif    
   enddo
   ! note: there was some init code suppressed there, hope this works
   do while ((t.eq.3).and.(i.le.nnodes))
   ! again see Gmsh online Documentation
-    read(25,205) n,t,u,v,w,j,k,l,m
+    read(25,205,IOSTAT=ioreadstat) n,t,u,v,w,j,k,l,m
+    if( ioreadstat < 0 )then
+       write(6,'(A)') 'Warning: File containts less than 65 entries'
+       exit
+    else if (ioreadstat >0) then
     MeshSec%elements(s,1)=j
     MeshSec%elements(s,2)=k
     MeshSec%elements(s,3)=m
@@ -154,6 +164,7 @@ module CreateBeamTriangles_mod
     MeshSec%elements(s,3)=m
     s=s+1
     i=i+1
+    endif
   enddo
   CLOSE(UNIT=25)
 
@@ -163,8 +174,8 @@ module CreateBeamTriangles_mod
  201  format (a6)
 ! 202  format (i10)
  203  format (i5, 3f8.7)
- 204  format (7i2)
- 205  format (9i2)
+ 204  format (7i4)
+ 205  format (9i4)
  end subroutine createMesh2DfromFile
 
   !****************************

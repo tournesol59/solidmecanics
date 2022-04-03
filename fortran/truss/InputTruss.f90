@@ -12,14 +12,32 @@ module InputTruss_mod
     module procedure InputSetUnknown
   end interface InputSetUnknown
 
+  interface allocateRigidTrussMat
+    module procedure allocateRigidTrussMat
+  end interface allocateRigidTrussMat
+
+! caution: the following lines define are duplicated in RigidTrussContacts.f
+#define LINK_BAREND 1
+#define LINK_BARSLIDE 2
+#define LINK_BEAMEND 3
+#define LINK_BEAMSLIDE 4
+#define LINK_BEAMFREE 5
+#define LINK_BARTOBAR 6
+#define LINK_BEAMTOBEAM 7
+#define DOF_BAR 2
+#define DOF_BEAM 3
+
   integer    :: DLIMIT=-1.00  ! lower constant for arbitrary decision to not impose a displacement
   integer    :: FLIMIT=-1000.00  ! lower constant for arbitrary decision to not impose a force
 
-  public:: Input_file, InputSetUnknown
+  public:: Input_file, InputSetUnknown, allocateRigidTrussMat
 
   contains
 !******************************************************!
-! read, parse Input file e.g. Untitled2.in
+! read, parse Input file e.g. Untitled3.in
+! be aware that it corresp. to both truss(1) and beamsection(2) problems
+! thus the containers MeshGen and MeshBSet must be allocated before calling
+! this procedure
 !******************************************************!
   subroutine Input_file(MeshInfo,MeshT,MeshGen,MeshBSet,meshpattern,Dimposed,Fimposed)   !meshconnect
 
@@ -56,9 +74,11 @@ module InputTruss_mod
 
   OPEN(UNIT=25, FILE='Untitled3.in', ACTION='READ')
   read(25,*) ! #
-  read(25,*) ! instead of
+!  read(25,*) ! instead of
 !!  read(25,307) MeshInfo%nn, MeshInfo%nt  ! already read
-!  read(25,205) MeshInfo%EY, MeshInfo%nu
+  read(25,206) MeshInfo%EY, MeshInfo%nu
+  write(*,206) MeshInfo%EY, MeshInfo%nu
+
   read(25,*)
   read(25,*) ! #coord nodes (nn)	
   do i=1,MeshInfo%nn
@@ -258,5 +278,64 @@ module InputTruss_mod
   enddo
   end subroutine InputSetUnknown
 
+ !***********************************
+ ! subroutine allocateRigidTrussMat in this module because counting the dof's
+  subroutine allocateRigidTrussMat(MeshInfo,meshpattern,Dunknowns,Ke_H,Ue_H)
+  use typesbalken
+  implicit none
+  !------------- inputs ----------------------------!
+  type(tMeshInfo)          :: MeshInfo  
+  integer,pointer          :: meshpattern(:,:)
+  integer,pointer          :: Dunknowns(:,:)
+  type(tRigidFullMat)      :: Ke_H
+  type(tVarFull)           :: Ue_H
+  intent(in)               :: MeshInfo,meshpattern,Dunknowns
+  intent(inout)            :: Ke_H,Ue_H
+  !--------------------------------------------------!
+  integer                  :: ni,nj,i,j,k,l,dof,nalloc,allocStat
+  nalloc=0
+  do i=1,Meshinfo%nt
+     ni=meshpattern(i,1)
+     dof=DOF_BAR
+     do k=1,MeshInfo%nt  ! loop over all (neighbour of el(i)) that have a common node
+        if (ni.eq.meshpattern(k,1)) then
+            if ((meshpattern(k,2).eq.LINK_BAREND).or.(meshpattern(k,2).eq.LINK_BARSLIDE).or.(meshpattern(k,2).eq.LINK_BARTOBAR)) then
+                    ! nothing
+            elseif ((meshpattern(k,2).eq.LINK_BEAMEND).or.(meshpattern(k,2).eq.LINK_BEAMSLIDE).or.(meshpattern(k,2).eq.LINK_BEAMFREE).or.(meshpattern(k,2).eq.LINK_BEAMTOBEAM)) then 
+                dof=DOF_BEAM
+            endif
+        elseif (ni.eq.meshpattern(k,4)) then
+            if ((meshpattern(k,5).eq.LINK_BAREND).or.(meshpattern(k,5).eq.LINK_BARSLIDE).or.(meshpattern(k,5).eq.LINK_BARTOBAR)) then
+                    ! nothing
+            elseif ((meshpattern(k,5).eq.LINK_BEAMEND).or.(meshpattern(k,5).eq.LINK_BEAMSLIDE).or.(meshpattern(k,5).eq.LINK_BEAMFREE).or.(meshpattern(k,5).eq.LINK_BEAMTOBEAM)) then 
+                dof=DOF_BEAM
+            endif
+        endif
+     enddo
+     nalloc=nalloc+dof
+
+     nj=meshpattern(i,4)
+     dof=DOF_BAR 
+     do l=1,MeshInfo%nt  ! loop over all (neighbour of el(j)) that have a common node
+        if (nj.eq.meshpattern(l,1)) then
+            if ((meshpattern(l,2).eq.LINK_BAREND).or.(meshpattern(l,2).eq.LINK_BARSLIDE).or.(meshpattern(l,2).eq.LINK_BARTOBAR)) then
+                    ! nothing
+            elseif ((meshpattern(l,2).eq.LINK_BEAMEND).or.(meshpattern(l,2).eq.LINK_BEAMSLIDE).or.(meshpattern(l,2).eq.LINK_BEAMFREE).or.(meshpattern(l,2).eq.LINK_BEAMTOBEAM)) then 
+                dof=DOF_BEAM
+            endif
+        elseif (nj.eq.meshpattern(l,4)) then
+            if ((meshpattern(l,5).eq.LINK_BAREND).or.(meshpattern(l,5).eq.LINK_BARSLIDE).or.(meshpattern(l,5).eq.LINK_BARTOBAR)) then
+                    ! nothing
+            elseif ((meshpattern(l,5).eq.LINK_BEAMEND).or.(meshpattern(l,5).eq.LINK_BEAMSLIDE).or.(meshpattern(l,5).eq.LINK_BEAMFREE).or.(meshpattern(l,5).eq.LINK_BEAMTOBEAM)) then 
+                dof=DOF_BEAM
+            endif
+        endif
+     enddo
+     nalloc=nalloc+dof
+  enddo
+
+  allocate(Ke_H%Ke(1:nalloc,1:nalloc), Ue_H%Ue(1:nalloc), STAT=allocStat)
+
+  end subroutine allocateRigidTrussMat
 
 end module InputTruss_mod

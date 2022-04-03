@@ -15,9 +15,14 @@ MODULE TypesBalken
   use ISO_C_BINDING
   implicit none
   private
+
+  !---------------------------------------------------------------------------!
+  ! PART 1: STRUCTURES FOR TRUSS ASSEMBLY OF BARS AND BEAMS (1D Elements)
+  !
   !---------------------------------------------------------------------------!
   type tMeshInfo
      integer        :: nn,nt,nbeam,ngeobeam, nsection ! Number 1D-Nodes and Element und geometric beam-section defined at the end
+     integer        :: la  ! dimension of the extracted displacement pb to solve
      real           :: EY             ! YOUNG Modulus
      real           :: nu             ! Poisson Coeff
   end type tMeshInfo
@@ -40,18 +45,6 @@ MODULE TypesBalken
                                      !  + and similar index number for the second node: c2 d2 f2
   end type tMeshCoord
 
-  type tMeshBeam
-    integer     :: ibnn ! Anzahl von Nodes
-    integer,dimension(:),allocatable    :: nodes  ! Ein Beam hat 2 Elements (def.) aber eine Diskretisierung 
-                                                    ! kann aus mehrere 1D Elementen gemacht werden
-    integer     :: section_index        ! Index des Schnittflaeches des Elements.
-    real        :: SArea                ! Flaeche
-    real        :: EY                   ! YOUNG Modulus
-    real        :: vu                   ! Poisson Coeff
-    real        :: CI                   ! kinetics inertia moment (aus interne Berechnung)
-    real        :: shear_ky, shear_kz ! Nur fuer Balken. Shear Faktor Koeffizienten  
-  end type tMeshBeam
-
   type tMeshElmt
      integer     :: typ            ! 1=Bar, 2=Balken
      integer     :: nraumx         ! subdivsion, default=2
@@ -65,7 +58,7 @@ MODULE TypesBalken
      real        :: anglez         ! Angle beim Kurve auf z-Achse in radians
      real        :: SArea          ! Section area
      real        :: EY             ! YOUNG Modulus
-     real        :: vu             ! Poisson Coeff
+     real        :: nu             ! Poisson Coeff
      real        :: CI             ! kinetics inertia moment (2 and 3?)
      real        :: q1, q2         ! Nur fuer Balken. verteilte  Lasten q(x)=x/dlen*q1+(1-x/dlen)*q2
 !     real        :: q?
@@ -80,36 +73,6 @@ MODULE TypesBalken
 !     real,pointer         :: CoeffsH4(:)  ! Coefficients des Hermites Polynoms H4 (H4(0)=0, H4'(0)=1
   end type tMeshElmt
   
-  type :: tMesh2DInfo
-     integer           :: nnodes, nelmts,nboundary
-  end type tMesh2DInfo
-
-  type :: tMesh2DSection
-     real        :: dy ! Gitterschrittweite Delta y assumed there is homogenous                               ! Triangle mesh (of rectangular section)!
-     real        :: dz        ! Gitterschrittweite (Delta z)    !
-     integer     :: ny,nz     ! number of points in y and z direction
-                      ! (rectangular zones meshed with triangles rectangles)
-     real,pointer :: y(:),z(:) ! Punkte im normal Ebene des Balken zur x-achse !
-     integer,pointer   :: elements(:,:)    ! iel n1,n2,n3
-!     integer,pointer   :: neighbours(:,:) ! iel nh1,nh2,nh3(-1 if boundary) 
-! NO! not this complicated solution of neighbours!
-!     integer,dimension(10) :: izoney ! (:)  ! indices of sub-regions (vertical 
-            ! bands between izoney(k), izoney(k+1) with constant G modulus
-!     real,dimension(10)    :: Gzoney  ! (:)  ! values of G modulus
-  end type tMesh2DSection
-
-  type :: tVar2DSection
-!     real              :: force         ! Right hand side
-     real,pointer      :: force         ! Right hand side
-!     real              :: func 
-     real,pointer      :: func          ! f, G*a*((df/dy)-z)=sigma_xy, G*a*((df/dz)+y)=sigma_xz,
-                                        ! G=EY/(1+vu)
-     integer           :: nlen          ! following is the implementation of a sparse column compressed format
-     integer,pointer   :: nnz(:)        
-     integer,pointer   :: icol(:)
-     real,pointer      :: ival(:)       ! at the end the nnz values of the square matrix compressed in a vector
-  end type tVar2DSection
-
   type tVarElmt
      real,dimension(3)         :: UeIi, UeJi
      real,dimension(3)         :: FeIi,FeJi
@@ -155,10 +118,66 @@ MODULE TypesBalken
      CHARACTER(LEN=60)    :: filename       ! Filename                        !
   end type tFileIO
 
-  !---------------------------------------------------------------------------!
+ !-----------------------------------------------------------------------!
+ ! PART 2: STRUCTURES FOR CALCULATING A BEAM IN TORSION WITH IMPORTED SECTION
+ ! WARPING STRESSES
+ !-----------------------------------------------------------------------!
+
+ type tMeshBeam  ! size structure and references to MeshCoord Punkten (separation geometry and Elements
+    integer     :: ibnn ! Anzahl von Nodes
+    integer,dimension(:),allocatable    :: nodes  ! Ein Beam hat 2 Elements (def.) aber eine Diskretisierung 
+                                                    ! kann aus mehrere 1D Elementen gemacht werden
+    integer     :: section_index        ! Index des Schnittflaeches des Elements.
+    real        :: SArea                ! Flaeche
+    real        :: EY                   ! YOUNG Modulus
+    real        :: nu                   ! Poisson Coeff
+    real        :: CI                   ! kinetics inertia moment (aus interne Berechnung)
+!    real        :: shear_ky, shear_kz ! Nur fuer Balken. Shear Faktor Koeffizienten  
+  end type tMeshBeam
+
+  type :: tMesh2DInfo ! size structure for laplacian in the section: not used any
+     integer           :: nnodes, nelmts,nboundary
+  end type tMesh2DInfo
+
+  type :: tMesh2DSection ! geometry structure for laplacian: not used any more
+
+     real        :: dy ! Gitterschrittweite Delta y assumed there is homogenous                               ! Triangle mesh (of rectangular section)!
+     real        :: dz        ! Gitterschrittweite (Delta z)    !
+     integer     :: ny,nz     ! number of points in y and z direction
+                      ! (rectangular zones meshed with triangles rectangles)
+     real,pointer :: y(:),z(:) ! Punkte im normal Ebene des Balken zur x-achse !
+     integer,pointer   :: elements(:,:)    ! iel n1,n2,n3
+!     integer,pointer   :: neighbours(:,:) ! iel nh1,nh2,nh3(-1 if boundary) 
+! NO! not this complicated solution of neighbours!
+!     integer,dimension(10) :: izoney ! (:)  ! indices of sub-regions (vertical 
+            ! bands between izoney(k), izoney(k+1) with constant G modulus
+!     real,dimension(10)    :: Gzoney  ! (:)  ! values of G modulus
+  end type tMesh2DSection
+
+  type :: tVar2DSection
+!     real              :: force         ! Right hand side
+     real,pointer      :: force         ! Right hand side
+!     real              :: func 
+     real,pointer      :: func          ! f, G*a*((df/dy)-z)=sigma_xy, G*a*((df/dz)+y)=sigma_xz,
+                                        ! G=EY/(1+vu)
+  end type tVar2DSection
+
+! following structure are not used any because the laplace problem resolution
+! must be performed externally and then imported in this fortran prgm
+
+!  type :: tRigid2DSection
+!     integer           :: nlen          ! following is the implementation of a sparse column compressed format
+!     integer,pointer   :: nnz(:)        
+!     integer,pointer   :: icol(:)
+!     real,pointer      :: ival(:)       ! at the end the nnz values of the square matrix compressed in a vector
+
+!  end type tRigid2DSection
+
+ !---------------------------------------------------------------------------!
   public  :: tMeshInfo, tMeshCoord, tMeshElmt, tVarElmt, tRigidMat, &
              tRigidFullMat, tPassageMat, tVarFull, tExakt, tPolynom, tFileIO, &
              tMesh2DSection, tVar2DSection, tMesh2DInfo, tMeshBeam
+! tRigid2DSection
   !---------------------------------------------------------------------------!
 
 ! contains
