@@ -23,7 +23,7 @@ FCOMP="gfortran"
 
 #Compiler Optionen fuer Linux:
 #FC_FLAGS="-O2 -autodouble"
-FC_FLAGS="-O2"
+FC_CFLAGS="-O2"
 
 ####################################################################
 # Maschinenabhaengige Einstellungen
@@ -47,8 +47,8 @@ LINUX_FLAGS = \
 	CREATEMESHROUND="CREATEMESHROUND_mod.mod" \
         LAGRANGEGRAD2DROUND="LAGRANGEGRAD2DROUND_mod.mod" \
         HERMITE2DDKT="HERMITE2DDKT_mod.mod" \
-        VERIFYMESHROUND="VERIFYMESHROUND_mod.mod" \
         SPACEGEOMETRY="SPACEGEOMETRY_mod.mod" \
+        VERIFYMESHROUND="VERIFYMESHROUND_mod.mod" \
         TESTCONNRIGIDMAT="TESTCONNRIGIDMAT_mod.mod" \
         LAGRANGEROUND2D="LAGRANGEROUND2D_mod.mod"
 else
@@ -62,8 +62,8 @@ LINUX_FLAGS = \
 	CREATEMESHROUND="createmeshround_mod.mod" \
         LAGRANGEGRAD2DROUND="Lagrangegrad2dround_mod.mod" \
         HERMITE2DDKT="hermite2dDKT_mod.mod" \
-        VERIFYMESHROUND="verifymeshround_mod.mod" \
         SPACEGEOMETRY="spacegeometry_mod.mod" \
+        VERIFYMESHROUND="verifymeshround_mod.mod" \
         TESTCONNRIGIDMAT="testconnrigidmat_mod.mod" \
         LAGRANGEROUND2D="lagrangeround2d_mod.mod"
 endif
@@ -72,7 +72,7 @@ endif
 # Regeln zum Uebersetzen 
 #
 %.o : %.f90
-	$(F90) -c $(F90_CFLAGS) $<mv
+	$(FCOMP) $(FC_CFLAGS) -g -cpp -o $@ -c $<
 
 %.a : %.o
 	/usr/bin/ar rcv $@ $<
@@ -86,8 +86,8 @@ $(ALLOCATEFIELDSROUND): allocatefieldsround.o
 ${CREATEMESHROUND}: createmeshround.o
 ${LAGRANGEGRAD2DROUND}: Lagrangegrad2dround.o
 ${HERMITE2DDKT}: hermite2dDKT.o
-${VERIFYMESHROUND}: verifymeshround.o 
 ${SPACEGEOMETRY}: spacegeometry.o
+${VERIFYMESHROUND}: verifymeshround.o 
 ${TESTCONNRIGIDMAT}: testconnrigidmat.o
 ${LAGRANGEROUND2D}: lagrangeround2d.o
 ####################################################################
@@ -118,9 +118,11 @@ library: $(LIB)(typesrounddef.o) \
          $(LIB)(testconnrigidmat.o) \
          $(LIB)(lagrangeround2d.o)
 
+main:    mainRound.f90
+	$(FCOMP) $(FC_CFLAGS) -g -cpp -c $< -o main.o
 praktikum:library main.o
 # works only with a proper installation of lapack (not my debian)
-	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum
+	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -g -lgfortran
 #	$(FCOMP) $(FC_CFLAGS) main.o -o Praktikum -L. -lPraktikum -llapack
 	rm -f main.o 
 	@echo "============================================="
@@ -152,13 +154,13 @@ $(LIB)(allocatefieldsround.o): $(TYPESROUND)
 $(LIB)(Lagrangegrad2dround.o): $(TYPESROUND)
 $(LIB)(hermite2dDKT.o): $(TYPESROUND)
 $(LIB)(spacegeometry.o): $(TYPESROUND)
-$(LIB)(verifymeshround.o):$(SPACEGEOMETRY) $(TYPESROUND)
-$(LIB)(testconnrigidmat.o):$(TYPESROUND)
-$(LIB)(lagrangeround2d.o):$(LAGRANGEROUND2D)
+$(LIB)(verifymeshround.o): $(SPACEGEOMETRY) $(TYPESROUND)
+$(LIB)(testconnrigidmat.o): $(TYPESROUND)
+$(LIB)(lagrangeround2d.o): $(LAGRANGEROUND2D)
 
 main.o: $(TYPESROUND) $(INPUT) $(ALLOCATEFIELDSROUND) $(CREATEROUNDMESH) \
         $(HERMITE2DDKT) $(LAGRANGEGRAD2DROUND) $(TESTCONNRIGIDMAT) \
-        $(LAGRANGEROUND2D)
+        $(LAGRANGEROUND2D) $(VERIFYMESHROUND)
 
 	@echo "make cleanall completed..."
 

@@ -39,7 +39,7 @@ program main
 
   ! -------------------------------------------------------------< BEGIN >---!
  ! call input(Gitter,Exakt,Const,FileIO)
-  call Input_file(NTestGitterR,GitterR)   ! untitled.msh 
+  call Input_inpfile(NTestGitterR,GitterR)   ! untitled.inp 
   ! ------------------------------------------< Speicherplatz allokieren >---!
 !  NTestGitterR%nNode = 9
 !  NTestGitterR%nElem = 8
@@ -51,16 +51,18 @@ program main
  !    STOP
  ! end if
   call allocateFieldsRound(NTestGitterR,GitterR,ExaktLR)
+  call allocateRenum(NTestGitterR)
   call allocateFieldsBCSRound(NTestGitterR,RBU,RBS)
   call allocateFieldsVarRound(NTestGitterR,VarFelderR)
 !  call allocateFieldsCoeffRound(NTestGitterR,GitterCoeffR) 
   call allocateSparseRound(NTestGitterR, RigidYMatrix)
 
    ! --------------------------< Gitter festlegen >---------------------!
-!   call createRoundMesh2(NTestGitterR,GitterR)    
+   call createRoundMesh2(NTestGitterR,GitterR)    
 !   call createRoundRand2(NTestGitterR,RBU,RBS)
-   call createRoundMeshFile(NTestGitterR,GitterR)   ! untitled2.inp
-   
+!   call createRoundMeshFile(NTestGitterR,GitterR)   ! patch12equi.inp, untitled2.inp
+   call renumerotate(NTestGitterR,GitterR)
+  
   print *, 'Terminated createRoundMesh2 and createRoundRand: OK'
   
    ! --------------------< functional test of verifymesh module subroutines >-!
@@ -99,13 +101,14 @@ program main
   call linlgcreatematrixMem(NTestGitterR,GitterR,ni,C_evalmembrane,Pmat_xyz)  ! membrane Teil Matrix Kurvature
   call linlgintegratematrixMem(K_membrane,x,y,C_evalmembrane,Pmat_xyz) ! membrane Steifigkeit Matrix
 
-  call linprntmatrixMem(K_membrane) 
+  call linprntmatrixMem(NTestGitterR,K_membrane) 
 
   deallocate(C_evalmembrane%Coefficients, STAT=allocStat)
  
   ! ------------------------------------------< Speicherplatz de-allokieren >---!
 
   call deallocateFieldsRound(NTestGitterR,GitterR,ExaktLR) 
+  call deallocateRenum
   print *, 'Deallocate Gitter: OK'
   call deallocateFieldsBCSRound(NTestGitterR,RBU,RBS) 
   print *, 'Deallocate Randbedingungen: OK'

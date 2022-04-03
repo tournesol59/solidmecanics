@@ -145,7 +145,8 @@ contains
 
     nn = NTestMeshR%nNode
     ne = NTestMeshR%nElem
-
+    write(*,105) nn
+105 format(i10)
     allocate(MeshR%nodes(1:nn), MeshR%elems(1:ne), MeshR%neighbours(1:ne), &            
          ExaktR%loesung(1:nn,1:NumberofDisp),       &
          STAT = allocStat )        

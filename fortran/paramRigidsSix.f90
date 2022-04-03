@@ -12,22 +12,17 @@ module paramRigidSix_mod
 
   private
 
-  interface massMatrix_M_E_local
-     module procedure massMatrix_M_E_local
-  end interface
+ ! interface massMatrix_M_E_local
+ !    module procedure massMatrix_M_E_local
+ ! end interface
 
-  interface massMatrix_M_H_global
-     module procedure massMatrix_M_H_global
-  end interface
+ ! interface massMatrix_M_H_global
+ !    module procedure massMatrix_M_H_global
+ ! end interface
 
-  module 
-
-  end module procedure
-
-
-  public :: massMatrix_M_E_local, massMatrix_M_H_global
+ ! public :: massMatrix_M_E_local, massMatrix_M_H_global
 
   contains
 
 
-end paramRigidSix_mod
+end module paramRigidSix_mod

@@ -8,16 +8,29 @@ module LagrangeRound2D_mod
 implicit none
  private 
 
+#define Elnum_jnode(ne,j) MeshR%elems(ne)%numeros(j)
+
  real,dimension(18)      :: K_reference=(/ (/ 0.5, 0.0, 0.5, 0.0, 0.0, 0.0 /), &
                                            (/ 0.0, 0.5, 0.0, 0.0, 0.5, 0.5 /), &
                                            (/ 0.5, 0.5, 0.0, 0.5, 0.0, 0.0 /) /)
 
+ real,pointer            :: matrixN(:,:)
+ real,pointer            :: matrixB(:,:)
+ real,pointer            :: matrixtrB(:,:)
+ real,pointer            :: matrixKimd(:,:)
+ real,pointer            :: matrixKinc(:,:)
+ real,pointer            :: matrixKsum(:,:)
+ 
  interface multmatrixAcB
     module procedure multmatrixAcB
   end interface
 
   interface linprntmatrixMem
     module procedure linprntmatrixMem
+  end interface
+
+  interface linlgallocatematrixMem
+    module procedure linlgallocatematrixMem
   end interface
 
   interface linlgcreatematrixMem
@@ -28,13 +41,20 @@ implicit none
     module procedure linlgintegratematrixMem
   end interface
 
-public :: multmatrixAcB, linprntmatrixMem, linlgcreatematrixMem, linlgintegratematrixMem !, linlgassemblyPartAMem
+  interface linlgdeallocatematrixMem
+    module procedure linlgdeallocatematrixMem
+  end interface
 
+public :: multmatrixAcB, linprntmatrixMem,  linlgallocatematrixMem, linlgdeallocatematrixMem, & 
+        linlgcreatematrixMem, linlgintegratematrixMem !, linlgassemblyPartAMem
 
 contains 
 #define ELnum_j_Xcoord(n,j)	 MeshR%nodes( MeshR%elems(n)%numeros(j+1) )%vects(1)
 #define ELnum_j_Ycoord(n,j)	 MeshR%nodes( MeshR%elems(n)%numeros(j+1) )%vects(2)
 #define ELnum_j_Zcoord(n,j)	 MeshR%nodes( MeshR%elems(n)%numeros(j+1) )%vects(3)
+
+#define ELnum_jnode(n,j)       MeshR%elems(n)%numeros(j+1)
+
 
 !***********************************************
 ! Matrix-Product very simple function
@@ -65,38 +85,45 @@ contains
 
 !***********************************************
 ! Print a Matrix
-  subroutine linprntmatrixMem(K_integrate) 
+  subroutine linprntmatrixMem(NTestMeshR, K_integrate) 
 
   use TypesRound
   implicit none
   ! uebergegebene
-  real,pointer        :: K_integrate(:,:)    !  dimension(36) 
-  intent(in)                 :: K_integrate
+
+  type(tRoundMeshInfo) :: NTestMeshR  
+  real,pointer        :: K_integrate(:,:)    !  dimension all nodes (12*2 disp)**2
+  intent(in)          :: K_integrate
   integer i,j
   print *,"  -------- linprntmatrixMem:"
   do i=1,6
     write(*,101) "!--------!--------!--------!--------!--------!---------!"
-    write(*,301) "!", (K_integrate(i,j), j=1,6)
+    write(*,301) "!", (matrixKsum(i,j), j=1,6)
   enddo
     write(*,101) "!--------!--------!--------!--------!--------!---------!"
+
 101 format (a,a)
 201 format (a,i10)
 301 format (a,6f10.5,a)
   end subroutine linprntmatrixMem
 
+!***********************************************
+  subroutine linlgallocatematrixMem(NTestMeshR)
+  use TypesRound
+  type(tRoundMeshInfo)    :: NTestMeshR
+  integer                 :: nn,ne,statInfo
+  allocate(matrixB(1:3,1:6), matrixtrB(1:6,1:3), matrixKimd(1:6,1:6), &
+          matrixKinc(1:6,1:6), matrixKsum(1:6,1:6), STAT=statInfo)
+  if (statInfo.ne.0) then
+          print *, "Error linlgallocatematrixMem"
+  endif
+  end subroutine linlgallocatematrixMem
 
 !***********************************************
 ! create a matrix for membrane stress "binded" to an element
 ! from determination of triplet and passage matrix for
 ! a single trinagle
   subroutine linlgcreatematrixMem(NTestMeshR,MeshR,ni,K_eval,Pmat_xyz)
-!------!------!------!------!------!------!
-! y3   ! 0    !  y3  !  0   !  0   !  0   !
-!------!------!------!------!------!------!
-!  0   ! x2-x3!  0   !  0   ! x2   !  0   ! 
-!------!------!------!------!------!------!
-! x2-x3!  y3  !  0   !  y3  !  0   !  x2  ! 
-!------!------!------!------!------!------!
 
   use TypesRound
   use verifymeshround_mod   ! important module to calculate the geometry of an elementar triangle elmt given its points
@@ -114,18 +141,14 @@ contains
   integer              :: i,j,allocStat
   type(tRoundlocal)    :: Pcharac
   type(tNode)              :: ux, uy, uz
+ 
   real,dimension(1:3)      :: dist
   real,dimension(1:3)      :: angle
   real,dimension(1:3)      :: triplet
   real,dimension(1:4)      :: area
   ! end vars
- 
   allocate( ux%vects(3), uy%vects(3), uz%vects(3), &
           STAT=allocStat );  ! triangle elmt and only 6 d.o.f. (among total of 15) represents membrane effect
-                                                 ! and x and y delta values in each of them
-  if (allocStat.ne.0) then
-     print *, "linlgcreatematrixMem allocation error, cannot allocate K_eval"
-  endif
   ! copy of given element coordinates
   do j=1,3
      ux%vects(j) = ELnum_j_Xcoord(ni,j)  ! preprocessor macro
@@ -179,7 +202,6 @@ contains
      print *, " linlgcreatematrixMem deallocation error, cannot deallocate ux,uy,yz"
   endif
 
-
   end subroutine linlgcreatematrixMem
 
 !***********************************************
@@ -204,7 +226,7 @@ contains
   EY=210000
 
   allocate(K_membrane(1:6,1:6), K_trans(1:6,1:3), D_sig(1:3,1:3), K_interm(1:6,1:3), &
-          K_interm2(1:3,1:6), STAT=allocStat ); 
+          K_interm2(1:3,1:6), STAT=allocStat )
   if (allocStat.ne.0) then
      print *, "linlgintegratematrixMem allocation error, cannot allocate K_membrane, K_trans, D_sig"
   endif
@@ -239,49 +261,84 @@ contains
 !********************************************************
 ! follows the last subroutine in order to begin to assemble the rigitity matrix
 ! (membrane rigitity terms
- subroutine linlgassemblyPartAMem(NTestMeshR,K_mem,ie,iabooleans,iplacetoja)
+ subroutine linlgassemblyPartAMem(NTestMeshR,MeshR,K_mem,ie,j,RigidYMat,iaboolean,iplacetoja)
 
   use TypesRound
   implicit none
 
   type(tRoundMeshInfo)              :: NTestMeshR
+  type(tRoundMesh)     :: MeshR
+ 
   real,pointer                      :: K_mem(:,:)
-  integer                           :: ie
+  integer                           :: ie,j ! elem and node(1..3)
   type(tSparseYMat)                 :: RigidYMat
-  integer,pointer                   :: iabooleans(:) ! dimension nn
+  integer,pointer                   :: iaboolean(:) ! dimension nn
   integer,pointer                   :: iplacetoja(:,:) ! dimension nn,1..2 two data foreach elmt
-  intent(inout)                     :: iabooleans ! pass to modify it
+  intent(inout)                     :: iaboolean ! pass to modify it
   intent(inout)                     :: iplacetoja  ! has only be once created
-  integer                           :: i,k,l,nn
+  integer                           :: i,k,l,il,nn
 
 !  nn=NTestMeshR%nn
 
 !  from iaboolean(i)=true(1) if and only if there already exists at least an integer at RigidYMat%ja(i) -> will have to update it
-!  if there does not exist an integer at RigidYMat%ja(i) -> create it and for this set iabooleans(i)=new(2) (temporarly)
+!  if there does not exist an integer at RigidYMat%ja(i) -> create it and for this set iaboolean(i)=new(2) (temporarly)
+!  knowing that a node has 5 degree of freedom, one can increment this number
+! to the one store in iplacetoja( global dof index, 1) it will reach automatic
+! a max 15 values to be pushed in sparse%ja
+! the second field in iplacetoja could contain the index where the push op. would starts
 
 ! RigidYMat%a(i) = nonzeros values as simple array
 ! RigidYMat%ia(i) = number of nnz values in each line, dim ne
 ! RigidYMat%ja(i) = index of columns of nnz values
 
+!   do j=1,3  ! node is passed as arg, because the algo cannot handle blocks of nodes
+     do i=1,5 
+       do k=1,nn
+          if (k.eq.(Elnum_jnode(ne,j))) then
+            ! nothing for il
+            if (iaboolean((k-1)*5+i).eq.1) then ! entry (Elnum++i) already exits              
+            else
+               iaboolean((k-1)*5+i)=2 ! temp
+               iplacetoja((k-1)*5+i, 1) = iplacetoja((k-1)*5+i, 1)+1
+            endif
+          else 
+            il=il+RigidYMat%ia((k-1)*5+i)  ! count nnz already present inline
+         ! find where the push starts to insert one node and its dof
+          endif
+          l=0 ! nof nnz element
+          if (iaboolean((k-1)*5+i).eq.0) then
+             while ((RigidYMat%ja(il+l).le.((k-1)*5+i)).and.(l.le.nn)) 
+                l=l+1  ! a match must happen in the first cond
+             enddo
+             iplacetoja((k-1)*5+i, 2) = il+l
+          else ! node not already present
+             iplacetoja((k-1)*5+i, 2) = il+1
+          endif
+             ! at this point the position of the node rigid data in known
+       enddo
+     enddo
+!   enddo
+
 end subroutine linlgassemblyPartAMem
 
 !********************************************************
 ! in this subroutine, the memory matrix will be really assemblied
-! subroutine linlgassemblyPartBMem(NTestMeshR,K_mem,ie,RigidYMat,iplacetoja)
+ subroutine linlgassemblyPartBMem(NTestMeshR,MeshR,K_mem,ie,j,RigidYMat,iaboolean,iplacetoja)
 
-!  use TypesRound
-!  implicit none
+  use TypesRound
+  implicit none
 
-!  type(tRoundMeshInfo) :: NTestMeshR
-!  integer,pointer                   :: iplacetoja(:,:) ! dimension 10*ne,1..2 two data foreach elmt
-!  real,pointer                      :: K_mem(:,:)
-!  integer                           :: ie
-!  type(tSparseYMat)                 :: RigidYMat
-!  integer,pointer                   :: iabooleans(:) ! dimension ne 
-!  integer,pointer                   :: iplacetoja(:,:) ! dimension ne,1..2 two data foreach elmt
-!  integer                           :: i,k,l,nn,ne,ibool,nbnew,nbentries,nbtotal
-
-!  intent(in)                     :: iabooleans,iplacetoja
+  type(tRoundMeshInfo) :: NTestMeshR
+  type(tRoundMesh)     :: MeshR
+ 
+  integer,pointer                   :: iplacetoja(:,:) ! dimension 10*ne,1..2 two data foreach elmt
+  real,pointer                      :: K_mem(:,:)
+  integer                           :: ie,j
+  type(tSparseYMat)                 :: RigidYMat
+  integer,pointer                   :: iaboolean(:) ! dimension ne 
+  integer,pointer                   :: iplacetoja(:,:) ! dimension ne,1..2 two data foreach elmt
+  integer                           :: i,k,l,nn,ne,nnz,nl,lj ! ibool,nbnew,nbentries,nbtotal
+  intent(in)                     :: iaboolean,iplacetoja
 
 !  nn=NTestMeshR%nn
 !  ne=NTestMeshR%ne
@@ -312,11 +369,38 @@ end subroutine linlgassemblyPartAMem
       ! 
   ! end    
 ! else if (iboolean(ie)=2)
+  k=Elnum_jnode(ne,j) ! see #define..
+  ! test iaboolean
+  if (iaboolean((k-1)*5+1).eq.2) then  ! then must insert a new line
+        nl=iplacetoja((k-1)*5+1, 1) ! normally equal to 5
+        li=iplacetoja((k-1)*5+1, 2)
+        ! pull content of the - array %ja and %a from l to the end
+        nnz=RigidYMat%nnz
+        do lj=nnz,li,-1  ! five per step 
+           RigidYMat%ja(lj+5)=RigidYMat%ja(lj)
+           !
+           ! TBC here RigidMat%a
+           !
+        enddo
+        RigidYMat%nnz=nnz+5 
+  elseif (iaboolean((k-1)*5+i).eq.1) then ! then increment the already placed coeffs
 
 
+  endif
 
 ! endif
-!end subroutine linlgassemblyPartBMem
+end subroutine linlgassemblyPartBMem
+
+!***********************************************
+  subroutine linlgdeallocatematrixMem
+  use TypesRound
+  integer                 :: statInfo
+  deallocate(matrixB, matrixtrB, matrixKimd, &
+          matrixKinc, matrixKsum, STAT=statInfo)
+  if (statInfo.ne.0) then
+          print *, "Error linlgdeallocatematrixMem"
+  endif
+  end subroutine linlgdeallocatematrixMem
 
 end module LagrangeRound2D_mod
 
