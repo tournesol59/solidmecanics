@@ -1,4 +1,4 @@
-!*****************************************************************************!
+!!*****************************************************************************!
 !* 
 !*      $RCSfile: TypesDef.f90,v $
 !*
@@ -26,7 +26,7 @@ MODULE Types
      real       :: endx, endy     ! Position der rechten oberen Ecke!
   end type tMeshInfo
 
-  type :: tMesh
+  type :: tMesh ! use only in 4-rectangular plate meshed as a matrix nx*ny pts
      integer      :: nraumx         ! Copy of tMeshInfo after standard input  !
      integer      :: nraumy         ! idem  !
      real       :: startx, starty ! idem  !
@@ -56,6 +56,7 @@ MODULE Types
      real,pointer         :: x(:),y(:),z(:) ! Koordinaten der Gitterpunkte    !
      integer              :: elmts          ! Anzahl der Quadranglen          !
      integer,pointer      :: quad(:,:)      ! Indiz der Punte fuer Quadrangle !
+     integer,pointer      :: neighbours(:,:)
      integer              :: ntop           ! Anzahl der Quadrangle an oberen Wand !
      integer,pointer      :: quadtop(:)     ! Indiz der Quadrangle an oberen Wand  !
      integer              :: nbottom        ! Anzahl der Quadrangle an untern Wand !
@@ -99,13 +100,13 @@ MODULE Types
   type :: tRandbedingungen
 ! 'trandbedingungen' is not C interoperable --> may be add type, bind(C)
 
-     integer          :: randltype      ! RandTyp links: 1=Fixed, 2=Momentum, 3=Freibiegung
+     integer          :: randltype      ! RandTyp links: 1=Fixed, 2=Force
      real,pointer     :: randl(:)       ! Randwerte links                 !
-     integer          :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Momentum, 3=Freibiegung
+     integer          :: randrtype      ! RandTyp rechts: 1=Fixed, 2=Force
       real,pointer    :: randr(:)      ! Randwerte rechts                !
-     integer          :: randotype      ! RandTyp oben: 1=Fixed, 2=Momentum, 3=Freibiegung
+     integer          :: randotype      ! RandTyp oben: 1=Fixed, 2=Force
      real,pointer     :: rando(:)      ! Randwerte oben                  !
-     integer          :: randutype      ! RandTyp unten: 1=Fixed, 2=Momentum, 3=Freibiegung
+     integer          :: randutype      ! RandTyp unten: 1=Fixed, 2=Force
     real,pointer      :: randu(:)      ! Randwerte unten                 !
   end type tRandbedingungen
   

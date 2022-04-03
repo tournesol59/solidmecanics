@@ -16,7 +16,7 @@
 module createmesh_mod
   implicit none
 
-  public :: createMesh, createMesh2, createMeshGen, createMeshGen2
+  public :: createMesh, createMesh2, createMesh5el, createMeshGen, createMeshGen2
 
 !********************************************************************!
 !  Variable Tabelle der Biegung-Plate fuer Einlesen der (10x10)Werte !
@@ -25,6 +25,13 @@ module createmesh_mod
             -0.180, -0.0930, 0.0, 0.0930, 0.180, 0.2778, 0.370, 0.4589, 0.545, 0.6337, 0.715, 0.8000 /) 
   real,dimension(19)        :: Z1 = (/ -0.2144, -0.1725, -0.1309, -0.0910, -0.0672, -0.0455, -0.0243, &
             -0.0125, -0.0027, -0.0, -0.0027, -0.0125, -0.0243, -0.0455, -0.0672, -0.0910, -0.1309, -0.1725, -0.2144 /) 
+
+
+!********************************************************************!
+!  Variable Tabelle der 5 Elmts Patch Test fuer Einlesen der (10x10)Werte !
+!********************************************************************!
+  real,dimension(8)        :: patchXe = (/ 0.0, 3.0, 3.0, 0.0, 0.75, 2.25, 2.25, 0.75 /)
+  real,dimension(8)        :: patchYe = (/ 0.0, 0.0, 2.0, 2.0, 0.5 , 0.75, 1.5, 1.5 /)
 
   contains
 
@@ -178,7 +185,6 @@ module createmesh_mod
  end subroutine createMesh2
 
 
-
   subroutine createMeshGen(Mesh2D)
 
   use types
@@ -214,6 +220,116 @@ module createmesh_mod
 
   end subroutine createMeshGen
 
+
+  !--------------------------------------------------------------------------!
+  !  Automatic creation of the mesh fuer Patch 5 Elmts with the data in the header              !
+  !--------------------------------------------------------------------------!
+  subroutine createMesh5el(Mesh2D,RB)
+
+  use types
+
+  implicit none
+
+  !--------------------------------------------------------------------------!
+  ! Variablendeklarationen                                                   !
+  !--------------------------------------------------------------------------!
+  ! Liste der übergebenen Argumente                                          !
+  !                                                                          !
+  type(tMeshGen)                :: Mesh2D       ! Gitterwerte                !
+  type(tRandbedingungen)        :: RB           ! RandB struktur             !
+  !                                                                          !
+  ! Local variable declaration                                               !
+  !    
+  !
+  integer                    :: i,j,n        ! Zählvariablen                   !
+  !--------------------------------------------------------------------------!
+  !!! intent(in)                 :: Const
+  intent(inout)              :: Mesh2D
+  !--------------------------------------------------------------------------!
+  n=0
+  do i= 1,8
+      Mesh2D%x(i)   = patchXe(i)
+      Mesh2D%z(i)   = 0.0
+      Mesh2D%y(i)   = patchYe(i)
+      n=n+1
+  enddo 
+  Mesh2D%nodes = n
+  Mesh2D%elmts = 5
+! Indiz der Punkte fuer 1. Quadrangle !
+  Mesh2D%quad(1,1)=1
+  Mesh2D%quad(1,2)=2
+  Mesh2D%quad(1,3)=6
+  Mesh2D%quad(1,4)=5
+! Indiz der Punkte fuer 2. Quadrangle !
+  Mesh2D%quad(2,1)=6
+  Mesh2D%quad(2,2)=2
+  Mesh2D%quad(2,3)=3
+  Mesh2D%quad(2,4)=7
+! Indiz der Punkte fuer 3. Quadrangle !
+  Mesh2D%quad(3,1)=7
+  Mesh2D%quad(3,2)=3
+  Mesh2D%quad(3,3)=4
+  Mesh2D%quad(3,4)=8
+! Indiz der Punkte fuer 4. Quadrangle !
+  Mesh2D%quad(4,1)=1
+  Mesh2D%quad(4,2)=5
+  Mesh2D%quad(4,3)=8
+  Mesh2D%quad(4,4)=4
+! Indiz der Punkte fuer 5. Quadrangle (Mitte) !
+  Mesh2D%quad(5,1)=5
+  Mesh2D%quad(5,2)=6
+  Mesh2D%quad(5,3)=7
+  Mesh2D%quad(5,4)=8
+! Indiz der Nachbar Elemente fuer 1. Quadrangle convention: -1 ist Randbedingung!
+  Mesh2D%neighbours(1,1)=-1 ! unten
+  Mesh2D%neighbours(1,2)=2 ! rechts
+  Mesh2D%neighbours(1,3)=5 ! top
+  Mesh2D%neighbours(1,4)=4 ! links: hier Vertiz (1,4) linken Nachbar
+! Indiz der Nachbar Elemente fuer 2. Quadrangle !
+  Mesh2D%neighbours(2,1)=1 ! unten
+  Mesh2D%neighbours(2,2)=-1 ! rechts
+  Mesh2D%neighbours(2,3)=3 ! top
+  Mesh2D%neighbours(2,4)=5 ! links: hier Vertiz (1,4) linken Nachbar
+! Indiz der Nachbar Elemente fuer 3. Quadrangle !
+  Mesh2D%neighbours(2,1)=5 ! unten
+  Mesh2D%neighbours(2,2)=3 ! rechts
+  Mesh2D%neighbours(2,3)=-1 ! top
+  Mesh2D%neighbours(2,4)=4 ! links: hier Vertiz (1,4) linken Nachbar
+!! Indiz der Nachbar Elemente fuer 4. Quadrangle !
+  Mesh2D%neighbours(2,1)=1 ! unten
+  Mesh2D%neighbours(2,2)=5 ! rechts
+  Mesh2D%neighbours(2,3)=3 ! top
+  Mesh2D%neighbours(2,4)=-1 ! links: hier Vertiz (1,4) linken Nachbar
+! Indiz der Nachbar Elemente fuer 5. Quadrangle !
+  Mesh2D%neighbours(2,1)=1 ! unten
+  Mesh2D%neighbours(2,2)=2 ! rechts
+  Mesh2D%neighbours(2,3)=3 ! top
+  Mesh2D%neighbours(2,4)=4 ! links: hier Vertiz (1,4) linken Nachbar
+!
+! Indiz der Elemente an boundaries
+  Mesh2D%ntop=1
+  Mesh2D%quadtop(1)=3   ! 3st PatchTest Elmt ist im Top
+  Mesh2D%nbottom=1
+  Mesh2D%quadbottom(1)=1 ! 1st PatchTest Elmt ist unten
+  Mesh2D%nleft=1
+  Mesh2D%quadleft(1)=4  ! 4st PatchTest Elmt hat links Rand
+  Mesh2D%nright=1
+  Mesh2D%quadright(1)=2 ! 2st PatchTest Elmt hat rechts Rand
+  
+  RB%randltype=1      ! RandTyp links: 1=Fixed, 2=Force
+  RB%randl(1)=0.0       ! Randwerte Ux links, der nur ein Ecke ist
+  RB%randl(2)=0.0       ! Randwerte Uy links, der nur ein Ecke..
+  RB%randutype=2      ! RandTyp unten: 2=Force
+  RB%randu(1)=0.5       ! Randwerte Ux 
+  RB%randu(2)=0.0       ! Randwerte Uy 
+  RB%randrtype=1      ! RandTyp rechts: 1=Fixed
+  RB%randr(1)=0.0       ! Randwerte Ux
+  RB%randr(2)=0.0       ! Randwerte Uy 
+  RB%randotype=2      ! RandTyp oben: 2=Force
+  RB%rando(1)=0.5       ! Randwerte Ux
+  RB%rando(2)=0.0       ! Randwerte Uy 
+ 
+ end subroutine createMesh5el
 
   !**************************************************************************!
   !  subroutine  createMeshGen2:                                           !
