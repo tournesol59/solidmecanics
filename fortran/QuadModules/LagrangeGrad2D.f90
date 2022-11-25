@@ -1,5 +1,7 @@
 module LagrangeGrad2D_mod
-! MODULE NOT DEVELOPPED FULLY NOR INTEGRATED 
+! MODULE HAS BEEN REACTIVATED ONLY for linlgfllmatrixplanestress
+! subroutine derived from linlgfillmatrix
+
 ! should implement the sprse matrix version
 ! Use: in Gesetz(1) f_ = Sum,k-i mu,k-i*Phi,i(x,y)
 
@@ -15,11 +17,14 @@ private
 !  end interface
 
 !  interface
+!    module procedure linlgfillmatrixplanestress
+!  end interface
+
+!  interface
 !    module procedure linlgfillbiegung
 !  end interface
 
 public :: linlgallocatesparse, linlgfillmatrix, linlgfillbiegung
-
 contains 
 
 !****************************************************************************************!
@@ -165,6 +170,139 @@ contains
   !SparseSkalarProdRow1(rowcount)=colcount ! normally already done by the algorithm: test it!
 
  END SUBROUTINE linlgfillmatrix
+
+!*******************************************************************
+! procedure linlgfillmatrixplanestress: fill sparse matrix blockwise
+! with an element matrix corresponding to a 8x8 Planestress elenent
+! over a quadrangle
+
+ SUBROUTINE linlgfillmatrixplanestress(Mesh2D, matrixKsum, SparseMatProdRow1, SparseMatProdCol, SparseMatProdVal)
+ use types
+ use interpol2D_mod
+ implicit none
+ type(tMesh2D)          :: Mesh2D
+ real,pointer           :: matrixKsum(:,:)  ! dimension(1:8,1:8)
+ real,pointer           :: SparseMatProdRow1(:)
+ real,pointer           :: SparseMatProdCol(:)
+ real,pointer           :: SparseMatProdVal(:)
+ intent(in)             :: Mesh2D
+ intent(inout)          :: SparseMatProdRow1, SparseMatProdCol, SparseMatProdVal
+
+ ! lokal Variablen !
+ integer                 :: rowcount, colcount, colr1count, i, j, k, l, nx, ny
+ nx=Mesh2D%nraumx
+ ny=Mesh2D%nraumy
+
+ ! matrixKsum is composed of 4 blocks
+ ! [ A B C D ]
+ ! [ B E F G ]
+ ! [ C F H K ]
+ ! [ D G K L ]
+
+ !******* first line of 2x2 blocks
+  colcount=0
+  colr1count=4
+  do i=0,nx*ny
+    if (i.eq.0) then
+    ! fill first first block with sum(L,K,D)
+      SparseMatProdCol(colcount+j)=1, j=1,2
+      ! for thid second line
+      SparseMatProdCol(colr1count+j)=1, j=1,2  
+      l=0
+      SparseMatProdVal(colcount+j)= matrixKsum(6+l,6+j)+ &
+                          matrixKsum(4+l,6+j)+matrixKsum(0+l,6+j), j=1,2
+      l=1
+      SparseMatProdVal(colr1count+j)= matrixKsum(6+l,6+j)+ &
+                          matrixKsum(4+l,6+j)+matrixKsum(0+l,6+j), j=1,2
+
+      colcount=colcount+2
+      colr1count=colr1count+2
+    else if (i.eq.1)) then
+    ! fill first line with sum (K)
+      SparseMatProdCol(colcount+j)=1, j=1,2
+      SparseMatProdCol(colr1count+j)=1, j=1,2
+      l=0
+      SparseMatProdVal(colcount+j)=matrixKsum(4+l,6+j), j=1,2
+      l=1
+      SparseMatProdVal(colr1count+j)=matrixKsum(4+l,6+j), j=1,2
+      colcount=colcount+2
+      colr1count=colr1count+2
+    else if (i.eq.(nx)) then
+    ! fill first line with sum(D)
+      SparseMatProdCol(colcount+j)=1, j=1,2
+      SparseMatProdCol(colr1count+j)=1, j=1,2
+      l=0
+      SparseMatProdVal(colcount+j)=matrixKsum(0+l,6+j), j=1,2
+      l=1
+      SparseMatProdVal(colcount+j)=matrixKsum(0+l,6+j), j=1,2
+   ! else nothing to do
+    endif
+  enddo
+  SparseMatProdRow1(1)=colcount
+  SparseMatProdRow1(2)=colr1count
+  
+  !********* group of lines from 1 to nx, of 2x2 blocks
+ do k=1,nx-1
+    colcount=0
+    colr1count=0
+    do i=0,nx*ny ! we use a loop as a select case
+      if (i.eq.(k-1)) then
+      ! fill with sum(K)   
+      elseif (i.eq.k) then
+      ! fill with sum(L+K+K)
+      elseif (i.eq.(k+1)) then
+      ! fill with sum(K)        
+      endif
+    enddo
+    SparseMatProdRow1(1)=colcount
+    SparseMatProdRow1(2)=colr1count
+  enddo
+
+!********* group of lines from nx+1 to (ny-2)*nx, of 2x2 blocks
+! TBC
+
+!********* group of lines from (ny-1)*nx to ny*nx-1
+
+
+!********* last line  ny*nx
+  colcount=0
+  colr1count=0
+  do i=0,nx*ny
+    if (i.eq.(nx*(ny-1)) then
+    ! fill with sum(F)
+      SparseMatProdCol(colcount+j)=1, j=1,2
+      ! for thid second line
+      SparseMatProdCol(colr1count+j)=1, j=1,2  
+      l=0
+      SparseMatProdVal(colcount+j)= matrixKsum(2+l,4+j), j=1,2
+      l=1
+      SparseMatProdVal(colr1count+j)= matrixKsum(2+l,4+j), j=1,2
+
+      colcount=colcount+2
+      colr1count=colr1count+2
+ 
+    else if (i.eq.(nx*ny-1)) then
+    ! fill with sum(B)
+      SparseMatProdCol(colcount+j)=1, j=1,2
+      SparseMatProdCol(colr1count+j)=1, j=1,2
+      l=0
+      SparseMatProdVal(colcount+j)=matrixKsum(2+l,2+j), j=1,2
+      l=1
+      SparseMatProdVal(colr1count+j)=matrixKsum(2+l,2+j), j=1,2
+      colcount=colcount+2
+      colr1count=colr1count+2
+   else if (i.eq.(nx*ny)) then
+    ! fill with sum(E)
+      SparseMatProdCol(colcount+j)=1, j=1,2
+      SparseMatProdCol(colr1count+j)=1, j=1,2
+      l=0
+      SparseMatProdVal(colcount+j)=matrixKsum(2+l,2+j), j=1,2
+      l=1
+      SparseMatProdVal(colcount+j)=matrixKsum(2+l,2+j), j=1,2
+    endif
+  enddo
+
+ END SUBROUTINE linlgfillmatrixplanestress
 
 !********************************************************************!
 !  procedure linlgfillmatrix: fill matrix mit skalar Produkten von   !
